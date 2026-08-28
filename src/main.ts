@@ -345,21 +345,30 @@ render();
 // LAN room client.  It deliberately speaks only to the authoritative room
 // service: browser state is a projected view, never a reducer input.
 type RoomTicketUi = { roomId: string; token: string; playerId?: PlayerId; role: 'player' | 'spectator' };
-type RoomSummaryUi = { id: string; name: string; seats: number; occupiedSeats: number; status: 'lobby' | 'playing' | 'finished'; hostPlayerId: PlayerId };
+type RoomSummaryUi = { id: string; name: string; seats: number; occupiedSeats: number; spectatorCount: number; status: 'lobby' | 'playing' | 'finished'; hostPlayerId: PlayerId; visibility: 'public' | 'unlisted' };
 type RoomSnapshotUi = { room: RoomSummaryUi; viewer: { playerId?: PlayerId; role: 'player' | 'spectator' }; state?: GameState };
-const roomSessionKey = 'arnak.room-session.v1', roomAddressKey = 'arnak.room-address.v1';
+type AuthSessionUi = { token: string; user: { id: string; username: string; displayName: string }; expiresAt: string };
+const roomSessionKey = 'arnak.room-session.v1', roomAddressKey = 'arnak.room-address.v1', authSessionKey = 'arnak.auth-session.v1';
 let roomAddress = localStorage.getItem(roomAddressKey) || `${location.protocol}//${location.hostname || '127.0.0.1'}:8787`;
 let roomSession: (RoomTicketUi & { baseUrl: string }) | undefined;
 try { roomSession = JSON.parse(localStorage.getItem(roomSessionKey) || '') as RoomTicketUi & { baseUrl: string }; } catch { localStorage.removeItem(roomSessionKey); }
 let roomList: RoomSummaryUi[] = [], roomSnapshot: RoomSnapshotUi | undefined, roomEvents: EventSource | undefined;
+let authSession: AuthSessionUi | undefined, authUsername = '', authDisplayName = '', authPassword = '';
+try { authSession = JSON.parse(localStorage.getItem(authSessionKey) || '') as AuthSessionUi; } catch { localStorage.removeItem(authSessionKey); }
 
 function roomUrl(path: string) { return `${roomAddress.replace(/\/$/, '')}${path}`; }
 async function roomRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(roomUrl(path), { ...init, headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) } });
+  const response = await fetch(roomUrl(path), { ...init, headers: { 'content-type': 'application/json', ...(authSession ? { authorization: `Bearer ${authSession.token}` } : {}), ...(init?.headers ?? {}) } });
   const value = await response.json() as { ok: boolean; error?: string } & T;
   if (!response.ok || !value.ok) throw new Error(value.error || `Room service returned ${response.status}`);
   return value;
 }
+function saveAuthSession(session?: AuthSessionUi) { authSession = session; if (session) localStorage.setItem(authSessionKey, JSON.stringify(session)); else localStorage.removeItem(authSessionKey); }
+async function authenticateRoomUser(mode: 'register' | 'login') {
+  try { localStorage.setItem(roomAddressKey, roomAddress); const path = mode === 'register' ? '/auth/register' : '/auth/login'; const session = (await roomRequest<{ session: AuthSessionUi }>(path, { method: 'POST', body: JSON.stringify({ username: authUsername, displayName: authDisplayName || undefined, password: authPassword }) })).session; saveAuthSession(session); authPassword = ''; message = ''; await refreshRooms(); }
+  catch (error) { message = error instanceof Error ? error.message : String(error); render(); }
+}
+async function logoutRoomUser() { try { await roomRequest('/auth/logout', { method: 'POST' }); } finally { roomEvents?.close(); saveAuthSession(); saveRoomSession(); roomSnapshot = undefined; screen = 'rooms'; render(); } }
 function saveRoomSession(session?: typeof roomSession) {
   roomSession = session;
   if (session) localStorage.setItem(roomSessionKey, JSON.stringify(session)); else localStorage.removeItem(roomSessionKey);
@@ -395,7 +404,7 @@ function watchRoom() {
 async function createLanRoom() {
   try {
     localStorage.setItem(roomAddressKey, roomAddress);
-    const ticket = (await roomRequest<{ ticket: RoomTicketUi }>('/rooms', { method: 'POST', body: JSON.stringify({ name: 'Arnak LAN', seats: setupPlayerCount, hostName: 'Host' }) })).ticket;
+    const ticket = (await roomRequest<{ ticket: RoomTicketUi }>('/rooms', { method: 'POST', body: JSON.stringify({ name: 'Arnak LAN', seats: setupPlayerCount }) })).ticket;
     saveRoomSession({ ...ticket, baseUrl: roomAddress }); await refreshRoomSnapshot(); watchRoom();
   } catch (error) { message = error instanceof Error ? error.message : String(error); render(); }
 }
@@ -423,6 +432,8 @@ async function submitLanCommand(command: unknown) {
   } catch (error) { message = error instanceof Error ? error.message : String(error); render(); }
 }
 function renderRooms() {
+  if (authSession) { app.innerHTML = `<main class="setup-screen"><section class="setup-card room-lobby"><h1>局域网房间</h1><label>服务地址<input data-room-address value="${roomAddress}" spellcheck="false"></label><p>已登录：${authSession.user.displayName}</p><div class="room-actions"><button data-room-refresh>刷新</button><button class="setup-start" data-room-create>创建 ${setupPlayerCount} 人房间</button><button data-auth-logout>退出登录</button></div><div class="room-list">${roomList.map(room => `<article><strong>${room.name}</strong><span>${room.occupiedSeats}/${room.seats} · 旁观 ${room.spectatorCount}</span><small>${room.status}</small>${room.status === 'lobby' && room.occupiedSeats < room.seats ? `<button data-room-join="${room.id}">加入</button>` : ''}<button data-room-watch="${room.id}">旁观</button></article>`).join('') || '<p>没有公开房间</p>'}</div><button data-room-local>本地热座对局</button>${message ? `<div class="message">${message}</div>` : ''}</section></main>`; return; }
+  if (!authSession) { app.innerHTML = `<main class="setup-screen"><section class="setup-card room-lobby"><h1>联机账户</h1><label>服务地址<input data-room-address value="${roomAddress}" spellcheck="false"></label><label>用户名<input data-auth-username value="${authUsername}" autocomplete="username"></label><label>显示名（注册时可填）<input data-auth-display-name value="${authDisplayName}"></label><label>密码<input data-auth-password type="password" value="${authPassword}" autocomplete="current-password"></label><div class="room-actions"><button class="setup-start" data-auth-login>登录</button><button data-auth-register>注册</button></div><p>账户仅用于身份、断线重连和权限隔离。</p><button data-room-local>本地热座对局</button>${message ? `<div class="message">${message}</div>` : ''}</section></main>`; return; }
   app.innerHTML = `<main class="setup-screen"><section class="setup-card room-lobby"><div class="setup-mark">⌂</div><h1>局域网房间</h1><label>服务地址<input data-room-address value="${roomAddress}" spellcheck="false"></label><div class="room-actions"><button data-room-refresh>刷新</button><button class="setup-start" data-room-create>创建 ${setupPlayerCount} 人房间</button></div><div class="room-list">${roomList.map(room => `<article><strong>${room.name}</strong><span>${room.occupiedSeats}/${room.seats}</span><small>${room.status}</small>${room.status === 'lobby' && room.occupiedSeats < room.seats ? `<button data-room-join="${room.id}">加入</button>` : ''}${room.status === 'lobby' ? `<button data-room-watch="${room.id}">旁观</button>` : ''}</article>`).join('') || '<p>没有可加入的房间</p>'}</div><button data-room-local>本地热座对局</button>${message ? `<div class="message">${message}</div>` : ''}</section></main>`;
 }
 function renderRoomLobby() {
@@ -439,10 +450,13 @@ render = () => {
 const localRun = run, localChoose = choose;
 run = (action: GameAction) => { if (roomSession) { void submitLanCommand({ type: 'action', action }); } else localRun(action); };
 choose = (choice: PendingChoice) => { if (roomSession) { const pending = state.pendingRewards[0]; if (pending) void submitLanCommand({ type: 'pending-choice', playerId: pending.playerId, pendingIndex: 0, choice }); } else localChoose(choice); };
-app.addEventListener('input', event => { const target = event.target as HTMLInputElement; if (target.matches('[data-room-address]')) roomAddress = target.value; });
+app.addEventListener('input', event => { const target = event.target as HTMLInputElement; if (target.matches('[data-room-address]')) roomAddress = target.value; if (target.matches('[data-auth-username]')) authUsername = target.value; if (target.matches('[data-auth-display-name]')) authDisplayName = target.value; if (target.matches('[data-auth-password]')) authPassword = target.value; });
 app.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button) return;
   if (button.dataset.roomRefresh !== undefined) { void refreshRooms(); return; }
+  if (button.dataset.authLogin !== undefined) { void authenticateRoomUser('login'); return; }
+  if (button.dataset.authRegister !== undefined) { void authenticateRoomUser('register'); return; }
+  if (button.dataset.authLogout !== undefined) { void logoutRoomUser(); return; }
   if (button.dataset.roomCreate !== undefined) { void createLanRoom(); return; }
   if (button.dataset.roomJoin) { void joinLanRoom(button.dataset.roomJoin); return; }
   if (button.dataset.roomWatch) { void joinLanRoom(button.dataset.roomWatch, true); return; }

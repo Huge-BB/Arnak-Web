@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { RoomService } from './room-service.ts';
+import { projectGameState, RoomService } from './room-service.ts';
+import { createGame } from './engine.ts';
 import type { EngineContext } from './types.ts';
 
 const context: EngineContext = { cards: {} };
@@ -27,4 +28,15 @@ test('spectators receive snapshots but cannot act, and subscribers see state cha
   await rooms.submitCommand(host.roomId, host.token, { type: 'action', action: { type: 'PASS', playerId: 'p1' } });
   assert.equal(snapshots, 2);
   unsubscribe();
+});
+
+test('snapshot projection hides another player pending-choice payload from players and spectators', () => {
+  const state = createGame(['p1', 'p2']);
+  state.pendingRewards = [
+    { playerId: 'p1', sourceId: 'secret-p1', code: 'card:RESOLVE_EFFECT', payload: { privateCard: '0101' } },
+    { playerId: 'p2', sourceId: 'secret-p2', code: 'card:RESOLVE_EFFECT', payload: { privateCard: '0102' } },
+  ];
+  assert.deepEqual(projectGameState(state, 'p1').pendingRewards.map(reward => reward.sourceId), ['secret-p1']);
+  assert.deepEqual(projectGameState(state, 'p2').pendingRewards.map(reward => reward.sourceId), ['secret-p2']);
+  assert.deepEqual(projectGameState(state).pendingRewards, []);
 });

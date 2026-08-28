@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 // Exercises the actual HTTP contract used by the browser rather than only the
 // RoomService class.  A distinct local port keeps it safe beside a dev server.
 const port = Number(process.env.ARNAK_SMOKE_ROOM_PORT ?? 18887);
 const base = `http://127.0.0.1:${port}`;
+const dataDir = await mkdtemp(join(tmpdir(), 'arnak-room-smoke-'));
 const server = spawn(process.execPath, ['--experimental-strip-types', 'src/room-server.ts'], {
   cwd: new URL('..', import.meta.url),
-  env: { ...process.env, ARNAK_ROOM_PORT: String(port) },
+  env: { ...process.env, ARNAK_ROOM_PORT: String(port), ARNAK_DATA_DIR: dataDir },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 let serverOutput = '';
@@ -55,9 +59,11 @@ async function collectSnapshots(response, minimum) {
 
 try {
   await ready();
-  const created = await request('/rooms', { method: 'POST', body: JSON.stringify({ name: 'HTTP smoke', seats: 2 }) });
+  const hostAuth = await request('/auth/register', { method: 'POST', body: JSON.stringify({ username: 'host_user', displayName: 'Host', password: 'correct-horse-battery' }) });
+  const guestAuth = await request('/auth/register', { method: 'POST', body: JSON.stringify({ username: 'guest_user', displayName: 'Guest', password: 'correct-horse-battery' }) });
+  const created = await request('/rooms', { method: 'POST', headers: { authorization: `Bearer ${hostAuth.session.token}` }, body: JSON.stringify({ name: 'HTTP smoke', seats: 2 }) });
   const host = created.ticket;
-  const joined = await request(`/rooms/${host.roomId}/join`, { method: 'POST', body: JSON.stringify({ name: 'Guest' }) });
+  const joined = await request(`/rooms/${host.roomId}/join`, { method: 'POST', headers: { authorization: `Bearer ${guestAuth.session.token}` }, body: JSON.stringify({}) });
   assert.equal(joined.ticket.playerId, 'p2');
   await request(`/rooms/${host.roomId}/start`, { method: 'POST', body: JSON.stringify({ token: host.token, seed: 'http-smoke', researchBoard: 'bird' }) });
   const hostView = await request(`/rooms/${host.roomId}/snapshot?token=${encodeURIComponent(host.token)}`);
@@ -67,6 +73,12 @@ try {
   assert.equal(hostView.snapshot.state.players.p2.hand.length, 0);
   assert.equal(guestView.snapshot.state.players.p1.hand.length, 0);
   assert.equal(guestView.snapshot.state.players.p2.hand.length, 5);
+  const spectatorAuth = await request('/auth/register', { method: 'POST', body: JSON.stringify({ username: 'watcher_user', displayName: 'Watcher', password: 'correct-horse-battery' }) });
+  const spectator = await request(`/rooms/${host.roomId}/join`, { method: 'POST', headers: { authorization: `Bearer ${spectatorAuth.session.token}` }, body: JSON.stringify({ spectator: true }) });
+  const spectatorView = await request(`/rooms/${host.roomId}/snapshot?token=${encodeURIComponent(spectator.ticket.token)}`);
+  assert.equal(spectatorView.snapshot.viewer.role, 'spectator');
+  assert.equal(spectatorView.snapshot.state.players.p1.hand.length, 0);
+  assert.equal(spectatorView.snapshot.state.players.p2.hand.length, 0);
   const abort = new AbortController();
   const events = await fetch(`${base}/rooms/${host.roomId}/events?token=${encodeURIComponent(host.token)}`, { signal: abort.signal });
   const streamed = collectSnapshots(events, 2);
@@ -80,4 +92,5 @@ try {
 } finally {
   server.kill();
   await Promise.race([new Promise(resolve => server.once('exit', resolve)), delay(1000)]);
+  await rm(dataDir, { recursive: true, force: true });
 }

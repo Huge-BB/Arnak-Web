@@ -1,13 +1,12 @@
 # Arnak Web Operations Guide
 
-This guide covers the current local/hot-seat client and the trusted LAN room
-service. It is intentionally separate from the rule-engine architecture:
+This guide covers the current local/hot-seat client and the account-backed LAN
+room service. It is intentionally separate from the rule-engine architecture:
 operations must never alter game rules or bypass `applyEngineCommand()`.
 
 ## Local development
 
 ```powershell
-cd web
 npm install
 npm run dev
 ```
@@ -22,12 +21,10 @@ and `/calibrate.html` for visual coordinate recording.
 Run the game client and the authoritative room service in separate terminals:
 
 ```powershell
-cd web
 npm run server:rooms
 ```
 
 ```powershell
-cd web
 npm run dev -- --host 0.0.0.0
 ```
 
@@ -35,9 +32,11 @@ The room service listens on port `8787` by default; set `ARNAK_ROOM_PORT` to
 change it. On each device, open the host machine's Vite LAN address, select
 the LAN lobby, and use the same room-service address (`http://HOST:8787`).
 
-The host creates the room, other players join, and only the host can start.
-The opaque room ticket is stored in browser local storage, so refreshing that
-browser reconnects during the same room-server lifetime.
+Register or sign in before creating or joining. The host creates the room,
+other players join, and only the host can start. A returning account receives
+its existing seat with a fresh room ticket, so refresh and reconnect are
+supported while the room persists. Spectators may join a running game but are
+read-only.
 
 ## Authority and privacy guarantees
 
@@ -45,20 +44,22 @@ browser reconnects during the same room-server lifetime.
   the authoritative `GameState` and calls the same public engine API as local
   hot-seat play.
 - A ticket may act only for its assigned player seat. Spectators cannot send
-  commands.
+  commands. Tickets are stored server-side only as hashes.
 - Snapshots are projected per viewer: a player receives their own hand, while
   other hands, decks, market decks, and discovery decks are represented only
   by counts.
 - Server-Sent Events deliver state changes after start and accepted commands.
+- Pending-choice payloads are projected only to their owner, avoiding leaks of
+  private hand/card choices.
 
-This is appropriate for a trusted household/LAN test. It is not public-service
-security: there is no account system, TLS termination, rate limiting, or
-durable room persistence yet.
+This is appropriate for a trusted household/LAN test. Accounts and file-backed
+persistence are included, but public deployment still requires TLS
+termination, an exact origin allowlist, reverse-proxy rate limits, durable
+database stores, and production observability. See `MULTIPLAYER.md`.
 
 ## Verification commands
 
 ```powershell
-cd web
 npm run assets:validate:local
 npm test
 npm run test:rooms-http
@@ -70,6 +71,14 @@ server on port `18887` (override with `ARNAK_SMOKE_ROOM_PORT`), creates and
 joins a two-player room, starts it, asserts both private snapshot views, then
 subscribes through SSE and verifies that an accepted command pushes an updated
 snapshot.
+
+## Configuration
+
+Copy `.env.example` into your deployment environment. `ARNAK_DATA_DIR` holds
+the file-backed account and room data; back it up for a self-hosted service.
+Set `ARNAK_ALLOWED_ORIGINS` to the exact comma-separated Web client origins.
+The secure default admits only local Vite origins, so a LAN/deployed client
+must be explicitly added.
 
 ## Production/container direction
 
@@ -92,8 +101,8 @@ not require changes to reducer semantics or the browser command protocol.
 
 ## Current non-goals
 
-- Public matchmaking, accounts, invitations, and reconnect across a server
-  restart.
+- Public matchmaking, invitations, account recovery, and reconnect across a
+  server restart when using the file-backed store.
 - Rule changes inferred from artwork. Unverified research data stays disabled
   in the engine.
 - Pixel-perfect board calibration. The coordinate collector preserves existing
