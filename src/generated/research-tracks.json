@@ -1,0 +1,1147 @@
+{
+  "bird": {
+    "id": "bird",
+    "name": "Bird",
+    "rows": [
+      {
+        "magnifyingPoints": 1,
+        "journalPoints": 0,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "bird:r0:p0",
+            "rowIndex": 0,
+            "pathIndex": 0,
+            "researchLevel": 0
+          },
+          {
+            "id": "bird:r0:p1",
+            "rowIndex": 0,
+            "pathIndex": 1,
+            "researchLevel": 0
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 2,
+        "journalPoints": 1,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "bird:r1:p0",
+            "rowIndex": 1,
+            "pathIndex": 0,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "bird:r1:p1",
+            "rowIndex": 1,
+            "pathIndex": 1,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 4,
+        "journalPoints": 2,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "bird:r2:p0",
+            "rowIndex": 2,
+            "pathIndex": 0,
+            "researchLevel": 2,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 4,
+              "bonusSlotMinimums": [
+                4
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 6,
+        "journalPoints": 4,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "bird:r3:p0",
+            "rowIndex": 3,
+            "pathIndex": 0,
+            "researchLevel": 3,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "bird:r3:p1",
+            "rowIndex": 3,
+            "pathIndex": 1,
+            "researchLevel": 3,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "bird:r3:p2",
+            "rowIndex": 3,
+            "pathIndex": 2,
+            "researchLevel": 3,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 9,
+        "journalPoints": 6,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "bird:r4:p0",
+            "rowIndex": 4,
+            "pathIndex": 0,
+            "researchLevel": 4,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 4,
+              "bonusSlotMinimums": [
+                4
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 12,
+        "journalPoints": 8,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "bird:r5:p0",
+            "rowIndex": 5,
+            "pathIndex": 0,
+            "researchLevel": 5,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "bird:r5:p1",
+            "rowIndex": 5,
+            "pathIndex": 1,
+            "researchLevel": 5,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 16,
+        "journalPoints": 10,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "bird:r6:p0",
+            "rowIndex": 6,
+            "pathIndex": 0,
+            "researchLevel": 6,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 3,
+              "bonusSlotMinimums": [
+                3
+              ]
+            }
+          },
+          {
+            "id": "bird:r6:p1",
+            "rowIndex": 6,
+            "pathIndex": 1,
+            "researchLevel": 6,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 3,
+              "bonusSlotMinimums": [
+                3
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "bridges": [
+      {
+        "id": "bird:start->bird:r0:p1",
+        "from": "bird:start",
+        "to": "bird:r0:p1"
+      },
+      {
+        "id": "bird:start->bird:r0:p0",
+        "from": "bird:start",
+        "to": "bird:r0:p0"
+      },
+      {
+        "id": "bird:r0:p0->bird:r1:p0",
+        "from": "bird:r0:p0",
+        "to": "bird:r1:p0"
+      },
+      {
+        "id": "bird:r0:p0->bird:r1:p1",
+        "from": "bird:r0:p0",
+        "to": "bird:r1:p1"
+      },
+      {
+        "id": "bird:r0:p1->bird:r1:p1",
+        "from": "bird:r0:p1",
+        "to": "bird:r1:p1"
+      },
+      {
+        "id": "bird:r1:p0->bird:r2:p0",
+        "from": "bird:r1:p0",
+        "to": "bird:r2:p0"
+      },
+      {
+        "id": "bird:r1:p1->bird:r2:p0",
+        "from": "bird:r1:p1",
+        "to": "bird:r2:p0"
+      },
+      {
+        "id": "bird:r2:p0->bird:r3:p0",
+        "from": "bird:r2:p0",
+        "to": "bird:r3:p0"
+      },
+      {
+        "id": "bird:r2:p0->bird:r3:p1",
+        "from": "bird:r2:p0",
+        "to": "bird:r3:p1"
+      },
+      {
+        "id": "bird:r2:p0->bird:r3:p2",
+        "from": "bird:r2:p0",
+        "to": "bird:r3:p2"
+      },
+      {
+        "id": "bird:r3:p0->bird:r4:p0",
+        "from": "bird:r3:p0",
+        "to": "bird:r4:p0"
+      },
+      {
+        "id": "bird:r3:p1->bird:r4:p0",
+        "from": "bird:r3:p1",
+        "to": "bird:r4:p0"
+      },
+      {
+        "id": "bird:r3:p2->bird:r4:p0",
+        "from": "bird:r3:p2",
+        "to": "bird:r4:p0"
+      },
+      {
+        "id": "bird:r4:p0->bird:r5:p0",
+        "from": "bird:r4:p0",
+        "to": "bird:r5:p0"
+      },
+      {
+        "id": "bird:r4:p0->bird:r5:p1",
+        "from": "bird:r4:p0",
+        "to": "bird:r5:p1"
+      },
+      {
+        "id": "bird:r5:p0->bird:r6:p0",
+        "from": "bird:r5:p0",
+        "to": "bird:r6:p0"
+      },
+      {
+        "id": "bird:r5:p1->bird:r6:p0",
+        "from": "bird:r5:p1",
+        "to": "bird:r6:p0"
+      },
+      {
+        "id": "bird:r5:p1->bird:r6:p1",
+        "from": "bird:r5:p1",
+        "to": "bird:r6:p1"
+      }
+    ]
+  },
+  "snake": {
+    "id": "snake",
+    "name": "Snake",
+    "rows": [
+      {
+        "magnifyingPoints": 1,
+        "journalPoints": 0,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "snake:r0:p0",
+            "rowIndex": 0,
+            "pathIndex": 0,
+            "researchLevel": 0
+          },
+          {
+            "id": "snake:r0:p1",
+            "rowIndex": 0,
+            "pathIndex": 1,
+            "researchLevel": 0
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 2,
+        "journalPoints": 3,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "snake:r1:p0",
+            "rowIndex": 1,
+            "pathIndex": 0,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "snake:r1:p1",
+            "rowIndex": 1,
+            "pathIndex": 1,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 3,
+              "bonusSlotMinimums": [
+                3
+              ]
+            }
+          },
+          {
+            "id": "snake:r1:p2",
+            "rowIndex": 1,
+            "pathIndex": 2,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 3,
+        "journalPoints": 4,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "snake:r2:p0",
+            "rowIndex": 2,
+            "pathIndex": 0,
+            "researchLevel": 2,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "snake:r2:p1",
+            "rowIndex": 2,
+            "pathIndex": 1,
+            "researchLevel": 2,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 4,
+        "journalPoints": 5,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "snake:r3:p0",
+            "rowIndex": 3,
+            "pathIndex": 0,
+            "researchLevel": 3
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 5,
+        "journalPoints": 8,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "snake:r4:p0",
+            "rowIndex": 4,
+            "pathIndex": 0,
+            "researchLevel": 4,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 4,
+              "bonusSlotMinimums": [
+                4
+              ]
+            }
+          },
+          {
+            "id": "snake:r4:p1",
+            "rowIndex": 4,
+            "pathIndex": 1,
+            "researchLevel": 4,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 4,
+              "bonusSlotMinimums": [
+                4
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 10,
+        "journalPoints": 12,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "snake:r5:p0",
+            "rowIndex": 5,
+            "pathIndex": 0,
+            "researchLevel": 5,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "snake:r5:p1",
+            "rowIndex": 5,
+            "pathIndex": 1,
+            "researchLevel": 5,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 15,
+        "journalPoints": 15,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "snake:r6:p0",
+            "rowIndex": 6,
+            "pathIndex": 0,
+            "researchLevel": 6,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1,
+                3,
+                1
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "bridges": [
+      {
+        "id": "snake:start->snake:r0:p1",
+        "from": "snake:start",
+        "to": "snake:r0:p1"
+      },
+      {
+        "id": "snake:start->snake:r0:p0",
+        "from": "snake:start",
+        "to": "snake:r0:p0"
+      },
+      {
+        "id": "snake:r0:p0->snake:r1:p0",
+        "from": "snake:r0:p0",
+        "to": "snake:r1:p0"
+      },
+      {
+        "id": "snake:r0:p0->snake:r1:p1",
+        "from": "snake:r0:p0",
+        "to": "snake:r1:p1"
+      },
+      {
+        "id": "snake:r0:p1->snake:r1:p1",
+        "from": "snake:r0:p1",
+        "to": "snake:r1:p1"
+      },
+      {
+        "id": "snake:r0:p1->snake:r1:p2",
+        "from": "snake:r0:p1",
+        "to": "snake:r1:p2"
+      },
+      {
+        "id": "snake:r1:p0->snake:r2:p0",
+        "from": "snake:r1:p0",
+        "to": "snake:r2:p0"
+      },
+      {
+        "id": "snake:r1:p1->snake:r2:p0",
+        "from": "snake:r1:p1",
+        "to": "snake:r2:p0"
+      },
+      {
+        "id": "snake:r1:p1->snake:r2:p1",
+        "from": "snake:r1:p1",
+        "to": "snake:r2:p1"
+      },
+      {
+        "id": "snake:r1:p2->snake:r2:p1",
+        "from": "snake:r1:p2",
+        "to": "snake:r2:p1"
+      },
+      {
+        "id": "snake:r2:p0->snake:r3:p0",
+        "from": "snake:r2:p0",
+        "to": "snake:r3:p0"
+      },
+      {
+        "id": "snake:r2:p1->snake:r3:p0",
+        "from": "snake:r2:p1",
+        "to": "snake:r3:p0"
+      },
+      {
+        "id": "snake:r3:p0->snake:r4:p0",
+        "from": "snake:r3:p0",
+        "to": "snake:r4:p0"
+      },
+      {
+        "id": "snake:r3:p0->snake:r4:p1",
+        "from": "snake:r3:p0",
+        "to": "snake:r4:p1"
+      },
+      {
+        "id": "snake:r4:p0->snake:r5:p0",
+        "from": "snake:r4:p0",
+        "to": "snake:r5:p0"
+      },
+      {
+        "id": "snake:r4:p0->snake:r5:p1",
+        "from": "snake:r4:p0",
+        "to": "snake:r5:p1"
+      },
+      {
+        "id": "snake:r4:p1->snake:r5:p1",
+        "from": "snake:r4:p1",
+        "to": "snake:r5:p1"
+      },
+      {
+        "id": "snake:r5:p0->snake:r6:p0",
+        "from": "snake:r5:p0",
+        "to": "snake:r6:p0"
+      },
+      {
+        "id": "snake:r5:p1->snake:r6:p0",
+        "from": "snake:r5:p1",
+        "to": "snake:r6:p0"
+      }
+    ]
+  },
+  "monkey": {
+    "id": "monkey",
+    "name": "Monkey",
+    "rows": [
+      {
+        "magnifyingPoints": 1,
+        "journalPoints": 0,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "monkey:r0:p0",
+            "rowIndex": 0,
+            "pathIndex": 0,
+            "researchLevel": 0
+          },
+          {
+            "id": "monkey:r0:p1",
+            "rowIndex": 0,
+            "pathIndex": 1,
+            "researchLevel": 0
+          },
+          {
+            "id": "monkey:r0:p2",
+            "rowIndex": 0,
+            "pathIndex": 2,
+            "researchLevel": 0
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 3,
+        "journalPoints": 0,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "monkey:r1:p0",
+            "rowIndex": 1,
+            "pathIndex": 0,
+            "researchLevel": 1
+          },
+          {
+            "id": "monkey:r1:p1",
+            "rowIndex": 1,
+            "pathIndex": 1,
+            "researchLevel": 1
+          },
+          {
+            "id": "monkey:r1:p2",
+            "rowIndex": 1,
+            "pathIndex": 2,
+            "researchLevel": 1
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 4,
+        "journalPoints": 1,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "monkey:r2:p0",
+            "rowIndex": 2,
+            "pathIndex": 0,
+            "researchLevel": 2,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 5,
+        "journalPoints": 2,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "monkey:r3:p0",
+            "rowIndex": 3,
+            "pathIndex": 0,
+            "researchLevel": 3
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 5,
+        "journalPoints": 4,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "monkey:r4:p0",
+            "rowIndex": 4,
+            "pathIndex": 0,
+            "researchLevel": 4
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 8,
+        "journalPoints": 7,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "monkey:r5:p0",
+            "rowIndex": 5,
+            "pathIndex": 0,
+            "researchLevel": 5,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 9,
+        "journalPoints": 9,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "monkey:r6:p0",
+            "rowIndex": 6,
+            "pathIndex": 0,
+            "researchLevel": 6
+          },
+          {
+            "id": "monkey:r6:p1",
+            "rowIndex": 6,
+            "pathIndex": 1,
+            "researchLevel": 6
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 15,
+        "journalPoints": 16,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "monkey:r7:p0",
+            "rowIndex": 7,
+            "pathIndex": 0,
+            "researchLevel": 7
+          },
+          {
+            "id": "monkey:r7:p1",
+            "rowIndex": 7,
+            "pathIndex": 1,
+            "researchLevel": 7
+          }
+        ]
+      }
+    ],
+    "bridges": [
+      {
+        "id": "monkey:start->monkey:r0:p2",
+        "from": "monkey:start",
+        "to": "monkey:r0:p2"
+      },
+      {
+        "id": "monkey:start->monkey:r0:p1",
+        "from": "monkey:start",
+        "to": "monkey:r0:p1"
+      },
+      {
+        "id": "monkey:start->monkey:r0:p0",
+        "from": "monkey:start",
+        "to": "monkey:r0:p0"
+      },
+      {
+        "id": "monkey:r0:p0->monkey:r1:p0",
+        "from": "monkey:r0:p0",
+        "to": "monkey:r1:p0"
+      },
+      {
+        "id": "monkey:r0:p1->monkey:r1:p0",
+        "from": "monkey:r0:p1",
+        "to": "monkey:r1:p0"
+      },
+      {
+        "id": "monkey:r0:p1->monkey:r1:p1",
+        "from": "monkey:r0:p1",
+        "to": "monkey:r1:p1"
+      },
+      {
+        "id": "monkey:r0:p2->monkey:r1:p1",
+        "from": "monkey:r0:p2",
+        "to": "monkey:r1:p1"
+      },
+      {
+        "id": "monkey:r0:p2->monkey:r1:p2",
+        "from": "monkey:r0:p2",
+        "to": "monkey:r1:p2"
+      },
+      {
+        "id": "monkey:r1:p0->monkey:r2:p0",
+        "from": "monkey:r1:p0",
+        "to": "monkey:r2:p0"
+      },
+      {
+        "id": "monkey:r1:p1->monkey:r2:p0",
+        "from": "monkey:r1:p1",
+        "to": "monkey:r2:p0"
+      },
+      {
+        "id": "monkey:r1:p2->monkey:r2:p0",
+        "from": "monkey:r1:p2",
+        "to": "monkey:r2:p0"
+      },
+      {
+        "id": "monkey:r2:p0->monkey:r3:p0",
+        "from": "monkey:r2:p0",
+        "to": "monkey:r3:p0"
+      },
+      {
+        "id": "monkey:r3:p0->monkey:r4:p0",
+        "from": "monkey:r3:p0",
+        "to": "monkey:r4:p0"
+      },
+      {
+        "id": "monkey:r4:p0->monkey:r5:p0",
+        "from": "monkey:r4:p0",
+        "to": "monkey:r5:p0"
+      },
+      {
+        "id": "monkey:r5:p0->monkey:r6:p0",
+        "from": "monkey:r5:p0",
+        "to": "monkey:r6:p0"
+      },
+      {
+        "id": "monkey:r5:p0->monkey:r6:p1",
+        "from": "monkey:r5:p0",
+        "to": "monkey:r6:p1"
+      },
+      {
+        "id": "monkey:r6:p0->monkey:r7:p0",
+        "from": "monkey:r6:p0",
+        "to": "monkey:r7:p0"
+      },
+      {
+        "id": "monkey:r6:p1->monkey:r7:p0",
+        "from": "monkey:r6:p1",
+        "to": "monkey:r7:p0"
+      },
+      {
+        "id": "monkey:r6:p1->monkey:r7:p1",
+        "from": "monkey:r6:p1",
+        "to": "monkey:r7:p1"
+      }
+    ]
+  },
+  "lizard": {
+    "id": "lizard",
+    "name": "Lizard",
+    "rows": [
+      {
+        "magnifyingPoints": 1,
+        "journalPoints": 0,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "lizard:r0:p0",
+            "rowIndex": 0,
+            "pathIndex": 0,
+            "researchLevel": 0
+          },
+          {
+            "id": "lizard:r0:p1",
+            "rowIndex": 0,
+            "pathIndex": 1,
+            "researchLevel": 0
+          },
+          {
+            "id": "lizard:r0:p2",
+            "rowIndex": 0,
+            "pathIndex": 2,
+            "researchLevel": 0
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 2,
+        "journalPoints": 1,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "lizard:r1:p0",
+            "rowIndex": 1,
+            "pathIndex": 0,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "lizard:r1:p1",
+            "rowIndex": 1,
+            "pathIndex": 1,
+            "researchLevel": 1,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 3,
+        "journalPoints": 3,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "lizard:r2:p0",
+            "rowIndex": 2,
+            "pathIndex": 0,
+            "researchLevel": 2,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          },
+          {
+            "id": "lizard:r2:p1",
+            "rowIndex": 2,
+            "pathIndex": 1,
+            "researchLevel": 2
+          },
+          {
+            "id": "lizard:r2:p2",
+            "rowIndex": 2,
+            "pathIndex": 2,
+            "researchLevel": 2,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 4,
+        "journalPoints": 3,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "lizard:r3:p0",
+            "rowIndex": 3,
+            "pathIndex": 0,
+            "researchLevel": 3,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 8,
+        "journalPoints": 7,
+        "grantsAssistant": true,
+        "nodes": [
+          {
+            "id": "lizard:r4:p0",
+            "rowIndex": 4,
+            "pathIndex": 0,
+            "researchLevel": 4,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                3,
+                1,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 12,
+        "journalPoints": 10,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "lizard:r5:p0",
+            "rowIndex": 5,
+            "pathIndex": 0,
+            "researchLevel": 5
+          },
+          {
+            "id": "lizard:r5:p1",
+            "rowIndex": 5,
+            "pathIndex": 1,
+            "researchLevel": 5
+          }
+        ]
+      },
+      {
+        "magnifyingPoints": 20,
+        "journalPoints": 13,
+        "grantsAssistant": false,
+        "nodes": [
+          {
+            "id": "lizard:r6:p0",
+            "rowIndex": 6,
+            "pathIndex": 0,
+            "researchLevel": 6,
+            "metadata": {
+              "bonusSlot": true,
+              "bonusMinPlayers": 1,
+              "bonusSlotMinimums": [
+                3,
+                1,
+                1,
+                4
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "bridges": [
+      {
+        "id": "lizard:start->lizard:r0:p2",
+        "from": "lizard:start",
+        "to": "lizard:r0:p2"
+      },
+      {
+        "id": "lizard:start->lizard:r0:p1",
+        "from": "lizard:start",
+        "to": "lizard:r0:p1"
+      },
+      {
+        "id": "lizard:start->lizard:r0:p0",
+        "from": "lizard:start",
+        "to": "lizard:r0:p0"
+      },
+      {
+        "id": "lizard:r0:p0->lizard:r1:p0",
+        "from": "lizard:r0:p0",
+        "to": "lizard:r1:p0"
+      },
+      {
+        "id": "lizard:r0:p1->lizard:r1:p0",
+        "from": "lizard:r0:p1",
+        "to": "lizard:r1:p0"
+      },
+      {
+        "id": "lizard:r0:p1->lizard:r1:p1",
+        "from": "lizard:r0:p1",
+        "to": "lizard:r1:p1"
+      },
+      {
+        "id": "lizard:r0:p2->lizard:r1:p1",
+        "from": "lizard:r0:p2",
+        "to": "lizard:r1:p1"
+      },
+      {
+        "id": "lizard:r1:p0->lizard:r2:p0",
+        "from": "lizard:r1:p0",
+        "to": "lizard:r2:p0"
+      },
+      {
+        "id": "lizard:r1:p0->lizard:r2:p1",
+        "from": "lizard:r1:p0",
+        "to": "lizard:r2:p1"
+      },
+      {
+        "id": "lizard:r1:p1->lizard:r2:p1",
+        "from": "lizard:r1:p1",
+        "to": "lizard:r2:p1"
+      },
+      {
+        "id": "lizard:r1:p1->lizard:r2:p2",
+        "from": "lizard:r1:p1",
+        "to": "lizard:r2:p2"
+      },
+      {
+        "id": "lizard:r2:p0->lizard:r3:p0",
+        "from": "lizard:r2:p0",
+        "to": "lizard:r3:p0"
+      },
+      {
+        "id": "lizard:r2:p1->lizard:r3:p0",
+        "from": "lizard:r2:p1",
+        "to": "lizard:r3:p0"
+      },
+      {
+        "id": "lizard:r2:p2->lizard:r3:p0",
+        "from": "lizard:r2:p2",
+        "to": "lizard:r3:p0"
+      },
+      {
+        "id": "lizard:r3:p0->lizard:r4:p0",
+        "from": "lizard:r3:p0",
+        "to": "lizard:r4:p0"
+      },
+      {
+        "id": "lizard:r4:p0->lizard:r5:p0",
+        "from": "lizard:r4:p0",
+        "to": "lizard:r5:p0"
+      },
+      {
+        "id": "lizard:r4:p0->lizard:r5:p1",
+        "from": "lizard:r4:p0",
+        "to": "lizard:r5:p1"
+      },
+      {
+        "id": "lizard:r5:p0->lizard:r6:p0",
+        "from": "lizard:r5:p0",
+        "to": "lizard:r6:p0"
+      },
+      {
+        "id": "lizard:r5:p1->lizard:r6:p0",
+        "from": "lizard:r5:p1",
+        "to": "lizard:r6:p0"
+      }
+    ]
+  }
+}

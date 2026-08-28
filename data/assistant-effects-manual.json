@@ -1,0 +1,72 @@
+{
+  "$schemaVersion": 1,
+  "notes": [
+    "Base-game assistant rules are structurally captured here from published rules/reference material.",
+    "TTS object JSON has no assistant names or rules text, so effectKey bindings remain null until the sprite identities are visually matched.",
+    "CardID values and GUIDs come from the TTS Assistants deck ordering."
+  ],
+  "effectCatalog": {
+    "twoCoins": {
+      "silver": { "type": "GAIN_RESOURCES", "resources": { "coin": 2 }, "freeAction": true },
+      "gold": { "type": "GAIN_RESOURCES", "resources": { "coin": 3 }, "freeAction": true }
+    },
+    "coinOrPlane": {
+      "silver": { "type": "CHOOSE", "freeAction": true, "options": [ { "type": "GAIN_RESOURCES", "resources": { "coin": 1 } }, { "type": "GAIN_TRAVEL", "travel": { "plane": 1 } } ] },
+      "gold": { "type": "CHOOSE", "freeAction": true, "options": [ { "type": "GAIN_RESOURCES", "resources": { "coin": 2 } }, { "type": "GAIN_TRAVEL", "travel": { "plane": 2 } } ] }
+    },
+    "compassOrBoat": {
+      "silver": { "type": "CHOOSE", "freeAction": true, "options": [ { "type": "GAIN_RESOURCES", "resources": { "compass": 1 } }, { "type": "GAIN_TRAVEL", "travel": { "boat": 1 } } ] },
+      "gold": { "type": "CHOOSE", "freeAction": true, "options": [ { "type": "GAIN_RESOURCES", "resources": { "coin": 1, "compass": 1 } }, { "type": "GAIN_TRAVEL", "travel": { "boat": 2 } } ] }
+    },
+    "compassOrCar": {
+      "silver": { "type": "CHOOSE", "freeAction": true, "options": [ { "type": "GAIN_RESOURCES", "resources": { "compass": 1 } }, { "type": "GAIN_TRAVEL", "travel": { "car": 1 } } ] },
+      "gold": { "type": "CHOOSE", "freeAction": true, "options": [ { "type": "GAIN_RESOURCES", "resources": { "coin": 1, "compass": 1 } }, { "type": "GAIN_TRAVEL", "travel": { "car": 2 } } ] }
+    },
+    "coinToArrowOrJewel": {
+      "silver": { "type": "PAY_RESOURCE_CHOOSE", "freeAction": true, "cost": { "coin": 1 }, "options": [ { "type": "GAIN_RESOURCES", "resources": { "arrowhead": 1 } } ] },
+      "gold": { "type": "PAY_RESOURCE_CHOOSE", "freeAction": true, "cost": { "coin": 1 }, "options": [ { "type": "GAIN_RESOURCES", "resources": { "arrowhead": 1 } }, { "type": "GAIN_RESOURCES", "resources": { "jewel": 1 } } ] }
+    },
+    "bootToArrow": {
+      "silver": { "type": "PAY_TRAVEL_GAIN", "freeAction": true, "cost": { "boot": 1 }, "gain": { "arrowhead": 1 } },
+      "gold": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "arrowhead": 1 } }
+    },
+    "compass": {
+      "silver": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "compass": 1 } },
+      "gold": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "compass": 2 } }
+    },
+    "tablet": {
+      "silver": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "tablet": 1 } },
+      "gold": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "coin": 1, "tablet": 1 } }
+    },
+    "upgradeTrade": {
+      "silver": { "type": "UPGRADE_RESOURCE", "freeAction": true },
+      "gold": { "type": "SEQUENCE", "freeAction": true, "effects": [ { "type": "GAIN_RESOURCES", "resources": { "compass": 1 } }, { "type": "UPGRADE_RESOURCE" } ] }
+    },
+    "drawDiscard": {
+      "silver": { "type": "DRAW_THEN_DISCARD", "freeAction": true, "draw": 1, "discard": 1 },
+      "gold": { "type": "DRAW_CARD", "freeAction": true, "amount": 1 }
+    },
+    "exile": {
+      "silver": { "type": "EXILE_OWN_CARD", "freeAction": true, "max": 1 },
+      "gold": { "type": "SEQUENCE", "freeAction": true, "effects": [ { "type": "GAIN_RESOURCES", "resources": { "compass": 1 } }, { "type": "EXILE_OWN_CARD", "max": 1 } ] }
+    },
+    "marketDiscount": {
+      "silver": { "type": "BUY_WITH_DISCOUNT", "freeAction": false, "itemDiscount": 1, "artifactDiscount": 1 },
+      "gold": { "type": "BUY_WITH_DISCOUNT", "freeAction": false, "itemDiscount": 2, "artifactDiscount": 2 }
+    }
+  },
+  "assistantBindings": [
+    { "assistantId": "fc8dfd", "cardId": 607, "deckId": 6, "cardIndex": 7, "effectKey": "compassOrCar" },
+    { "assistantId": "5c3f5b", "cardId": 604, "deckId": 6, "cardIndex": 4, "effectKey": "exile" },
+    { "assistantId": "8ff939", "cardId": 603, "deckId": 6, "cardIndex": 3, "effectKey": "coinToArrowOrJewel" },
+    { "assistantId": "8c90ac", "cardId": 605, "deckId": 6, "cardIndex": 5, "effectKey": "drawDiscard" },
+    { "assistantId": "2bf231", "cardId": 601, "deckId": 6, "cardIndex": 1, "effectKey": "tablet" },
+    { "assistantId": "224d5d", "cardId": 609, "deckId": 6, "cardIndex": 9, "effectKey": "marketDiscount" },
+    { "assistantId": "a1c97b", "cardId": 608, "deckId": 6, "cardIndex": 8, "effectKey": "compassOrBoat" },
+    { "assistantId": "fd7d0e", "cardId": 611, "deckId": 6, "cardIndex": 11, "effectKey": "compass" },
+    { "assistantId": "c9b827", "cardId": 602, "deckId": 6, "cardIndex": 2, "effectKey": "bootToArrow" },
+    { "assistantId": "f5bdcf", "cardId": 606, "deckId": 6, "cardIndex": 6, "effectKey": "coinOrPlane" },
+    { "assistantId": "c7024f", "cardId": 610, "deckId": 6, "cardIndex": 10, "effectKey": "upgradeTrade" },
+    { "assistantId": "f7574d", "cardId": 703, "deckId": 7, "cardIndex": 3, "effectKey": "twoCoins" }
+  ]
+}

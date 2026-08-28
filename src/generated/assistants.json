@@ -1,0 +1,146 @@
+{
+  "224d5d": {
+    "id": "224d5d",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 9,
+      "uniqueBack": true
+    }
+  },
+  "2bf231": {
+    "id": "2bf231",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 1,
+      "uniqueBack": true
+    }
+  },
+  "5c3f5b": {
+    "id": "5c3f5b",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 4,
+      "uniqueBack": true
+    }
+  },
+  "8c90ac": {
+    "id": "8c90ac",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 5,
+      "uniqueBack": true
+    }
+  },
+  "8ff939": {
+    "id": "8ff939",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 3,
+      "uniqueBack": true
+    }
+  },
+  "a1c97b": {
+    "id": "a1c97b",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 8,
+      "uniqueBack": true
+    }
+  },
+  "c7024f": {
+    "id": "c7024f",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 10,
+      "uniqueBack": true
+    }
+  },
+  "c9b827": {
+    "id": "c9b827",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 2,
+      "uniqueBack": true
+    }
+  },
+  "f5bdcf": {
+    "id": "f5bdcf",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 6,
+      "uniqueBack": true
+    }
+  },
+  "f7574d": {
+    "id": "f7574d",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171881/BD754B5E920A72BA10CA83EDDEFC6E20193662B2/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171839/E6FDA7CE2D396AFD019A00E064B661F5B677626D/",
+      "sheetWidth": 4,
+      "sheetHeight": 2,
+      "cardIndex": 3,
+      "uniqueBack": true
+    }
+  },
+  "fc8dfd": {
+    "id": "fc8dfd",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 7,
+      "uniqueBack": true
+    }
+  },
+  "fd7d0e": {
+    "id": "fd7d0e",
+    "expansion": "Base Game",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171937/212A6AFE5935B5F885C74007CDA1175E75172664/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171774/01DD9569EC237D02229A26C52AA3DAEA396EFC4C/",
+      "sheetWidth": 4,
+      "sheetHeight": 3,
+      "cardIndex": 11,
+      "uniqueBack": true
+    }
+  }
+}

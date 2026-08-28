@@ -1,0 +1,79 @@
+{
+  "$schemaVersion": 2,
+  "boards": {
+    "bird": {
+      "rewards": [
+        { "row": "bird:r0", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 1 }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r0", "token": "journal", "rewards": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r1", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r1", "token": "journal", "rewards": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r2", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r2", "token": "journal", "rewards": [{ "type": "UPGRADE_ASSISTANT", "level": "gold" }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r3", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Bird research rewards" },
+        { "row": "bird:r3", "token": "journal", "rewards": [{ "type": "UPGRADE_ASSISTANT", "level": "gold" }], "verified": true, "source": "TTS Bird Temple original board image" },
+        { "row": "bird:r4", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Bird research rewards" },
+        { "row": "bird:r4", "token": "journal", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 3 }], "verified": true, "source": "User-confirmed Bird research rewards" },
+        { "row": "bird:r5", "token": "magnifying", "rewards": [{ "type": "DRAW_CARD", "amount": 1 }], "verified": true, "source": "User-confirmed Bird research rewards" },
+        { "row": "bird:r5", "token": "journal", "rewards": [{ "type": "ACQUIRE_ARTIFACT_FREE" }], "verified": true, "source": "User-confirmed Bird research rewards" },
+        { "row": "bird:r6", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Bird research rewards" },
+        { "row": "bird:r6", "token": "journal", "rewards": [{ "type": "OVERCOME_GUARDIAN_FREE" }], "verified": true, "source": "User-confirmed Bird research rewards" }
+      ]
+    },
+    "snake": {
+      "rewards": [
+        { "row": "snake:r0", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 1 }], "verified": true, "source": "User-confirmed Snake research rewards" },
+        { "row": "snake:r0", "token": "journal", "rewards": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }], "verified": true, "source": "User-confirmed Snake research rewards" },
+        { "row": "snake:r1", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 3 }], "verified": true, "source": "TTS Snake Temple original board image (three-coin icon at magnifying-glass row 2)" },
+        { "row": "snake:r1", "token": "journal", "rewards": [{ "type": "EXILE_OWN_CARD" }], "verified": true, "source": "TTS Snake Temple original board image (exile-card icon at notebook row 3)" },
+        { "row": "snake:r2", "token": "magnifying", "rewards": [{ "type": "DRAW_CARD", "amount": 1 }], "verified": true, "source": "User-confirmed Snake research rewards" },
+        { "row": "snake:r2", "token": "journal", "rewards": [{ "type": "UPGRADE_ASSISTANT", "level": "gold" }], "verified": true, "source": "TTS Snake Temple original board image (gold-assistant icon at notebook row 4)" },
+        { "row": "snake:r3", "token": "magnifying", "rewards": [{ "type": "CLAIM_SNAKE_RESCUE_ASSISTANT" }], "verified": true, "source": "TTS Snake Temple original board image; Snake Temple rules: Assistant Rescue" },
+        { "row": "snake:r3", "token": "journal", "rewards": [{ "type": "UPGRADE_ASSISTANT", "level": "gold" }], "verified": true, "source": "TTS Snake Temple original board image; Snake Temple rules: Assistant Rescue" },
+        { "row": "snake:r4", "token": "magnifying", "rewards": [{ "type": "UPGRADE_AND_REFRESH_ASSISTANT", "level": "gold" }], "verified": true, "source": "User-confirmed Snake research rewards" },
+        { "row": "snake:r4", "token": "journal", "rewards": [{ "type": "REFRESH_ASSISTANT" }], "verified": true, "source": "User-confirmed Snake research rewards" },
+        { "row": "snake:r5", "token": "magnifying", "rewards": [{ "type": "GAIN_FEAR_CARD", "amount": 1 }], "verified": true, "source": "TTS Snake Temple original board image (black Fear-card icon at magnifying-glass row 10)" },
+        { "row": "snake:r5", "token": "journal", "rewards": [{ "type": "DRAW_CARD", "amount": 1 }], "verified": true, "source": "User-confirmed Snake research rewards" },
+        { "row": "snake:r6", "token": "magnifying", "rewards": [{ "type": "GAIN_FEAR_CARD", "amount": 1 }], "verified": true, "source": "TTS Snake Temple original board image; Snake Temple rules: Dreadful Tales" },
+        { "row": "snake:r6", "token": "journal", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "jewel", "amount": 1 }], "verified": true, "source": "TTS Snake Temple original board image (jewel icon at notebook row 15)" }
+      ]
+    },
+    "monkey": {
+      "rewards": [
+        { "row": "monkey:r0", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 1 }], "verified": true, "source": "TTS Monkey Temple original board image" },
+        { "row": "monkey:r0", "token": "journal", "rewards": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }], "verified": true, "source": "TTS Monkey Temple original board image" },
+        { "row": "monkey:r1", "token": "magnifying", "rewards": [{ "type": "ACTIVATE_VISIBLE_SILVER_ASSISTANT_THEN_BOTTOM" }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r1", "token": "journal", "rewards": [{ "type": "CHOOSE", "count": 1, "options": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }, { "type": "UPGRADE_AND_REFRESH_ASSISTANT", "level": "gold" }] }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r2", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r2", "token": "journal", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 3 }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r3", "token": "magnifying", "rewards": [], "verified": true, "source": "User-confirmed Monkey research rewards; shared magnifying artifact space is handled by the Monkey temple plugin" },
+        { "row": "monkey:r3", "token": "journal", "rewards": [{ "type": "CHOOSE", "count": 1, "options": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }, { "type": "UPGRADE_AND_REFRESH_ASSISTANT", "level": "gold" }] }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r4", "token": "magnifying", "rewards": [], "verified": true, "source": "User-confirmed Monkey research rewards; Monkey temple plugin activates the placed track Artifact on this node" },
+        { "row": "monkey:r4", "token": "journal", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r5", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r5", "token": "journal", "rewards": [{ "type": "ACTIVATE_DISCOVERED_LEVEL1_SITE" }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r6", "token": "magnifying", "rewards": [{ "type": "CHOOSE", "count": 1, "options": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }, { "type": "UPGRADE_AND_REFRESH_ASSISTANT", "level": "gold" }] }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r6", "token": "journal", "rewards": [{ "type": "REFRESH_ASSISTANTS", "amount": 2 }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r7", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Monkey research rewards" },
+        { "row": "monkey:r7", "token": "journal", "rewards": [{ "type": "DRAW_CARD", "amount": 1 }], "verified": true, "source": "User-confirmed Monkey research rewards" }
+      ]
+    },
+    "lizard": {
+      "rewards": [
+          { "row": "lizard:r0", "token": "magnifying", "rewards": [{ "type": "CHOOSE", "count": 1, "options": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 1 }, { "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }] }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+        { "row": "lizard:r0", "token": "journal", "rewards": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }], "verified": true, "source": "TTS Lizard Temple original board image" },
+          { "row": "lizard:r1", "token": "magnifying", "rewards": [{ "type": "CHOOSE", "count": 1, "options": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 1 }, { "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }] }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r1", "token": "journal", "rewards": [{ "type": "CLAIM_ASSISTANT", "level": "silver" }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r2", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "coin", "amount": 2 }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r2", "token": "journal", "rewards": [{ "type": "BUY_ARTIFACT_WITH_DISCOUNT", "discount": 2 }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r3", "token": "magnifying", "rewards": [{ "type": "DRAW_CARD", "amount": 1 }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r3", "token": "journal", "rewards": [{ "type": "UPGRADE_AND_REFRESH_ASSISTANT", "level": "gold" }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r4", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r4", "token": "journal", "rewards": [{ "type": "UPGRADE_AND_REFRESH_ASSISTANT", "level": "gold" }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r5", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r5", "token": "journal", "rewards": [{ "type": "BURN_UNOCCUPIED_LEVEL1_SITE_REFILL_IDOL" }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r6", "token": "magnifying", "rewards": [{ "type": "GAIN_FEAR_CARD", "amount": 2 }], "verified": true, "source": "User-confirmed Lizard research rewards" },
+          { "row": "lizard:r6", "token": "journal", "rewards": [{ "type": "OVERCOME_GUARDIAN_FREE" }], "verified": true, "source": "User-confirmed Lizard research rewards" }
+      ]
+    }
+  }
+}

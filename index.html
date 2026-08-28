@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>阿纳克遗迹 · 本地演示</title>
+  </head>
+  <body>
+    <div id="app">Loading local game…</div>
+    <script>
+      const appRoot = document.getElementById('app');
+      const showBootError = (message) => {
+        appRoot.textContent = `Frontend startup error: ${message}`;
+        appRoot.style.cssText = 'padding:24px;color:#7a1e16;font:600 16px system-ui';
+      };
+      window.addEventListener('error', (event) => showBootError(event.message || 'unknown error'));
+      window.addEventListener('unhandledrejection', (event) => showBootError(String(event.reason || 'unhandled rejection')));
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

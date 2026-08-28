@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createGame, reduce } from './engine.ts';
+import { buyTempleTile, templeTileCost } from './temple-tiles.ts';
+import type { ResearchTrackDefinition } from './types.ts';
+import { templeTileScore } from './scoring.ts';
+test('temple tile costs follow the printed three-cost pyramid',()=>{assert.deepEqual(templeTileCost('bronze',0),{coin:1,tablet:2});assert.deepEqual(templeTileCost('bronze',1),{jewel:1});assert.deepEqual(templeTileCost('silver',0),{coin:1,tablet:2,jewel:1});assert.deepEqual(templeTileCost('silver',1),{jewel:1,compass:1,arrowhead:1});assert.deepEqual(templeTileCost('gold'),{coin:1,tablet:2,jewel:1,compass:1,arrowhead:1});});
+test('a temple-arrived player buys from limited stacks and scores the tile',()=>{const state=createGame(['p1']);state.phase='playing';state.currentPlayer='p1';state.research.templeArrivals=['p1'];state.players.p1.resources.jewel=1;const next=reduce(state,{type:'BUY_TEMPLE_TILE',playerId:'p1',tier:'bronze',combination:1});assert.equal(next.templeTiles.bronze,2);assert.deepEqual(next.players.p1.templeTiles,[2]);assert.equal(templeTileScore(next.players.p1),2);const notArrived=createGame(['p1']);notArrived.phase='playing';assert.throws(()=>reduce(notArrived,{type:'BUY_TEMPLE_TILE',playerId:'p1',tier:'bronze',combination:1}),/requires the Lost Temple/);});
+test('Monkey and Lizard magnifying glass can buy appropriate temple tiles before arrival',()=>{
+ const track:ResearchTrackDefinition={id:'monkey',name:'Monkey',rows:[{magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'monkey:r0:p0',rowIndex:0,pathIndex:0,researchLevel:0}]},{magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'monkey:r1:p0',rowIndex:1,pathIndex:0,researchLevel:1}]},{magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'monkey:r2:p0',rowIndex:2,pathIndex:0,researchLevel:2}]}]};
+ const oneBelow=createGame(['p1']);oneBelow.research.magnifyingNode.p1='monkey:r2:p0';oneBelow.players.p1.resources.coin=1;oneBelow.players.p1.resources.tablet=2;oneBelow.players.p1.resources.jewel=1;buyTempleTile(oneBelow,'p1','silver',undefined,track);assert.deepEqual(oneBelow.players.p1.templeTiles,[6]);
+ const twoBelow=createGame(['p1']);twoBelow.research.magnifyingNode.p1='monkey:r1:p0';twoBelow.players.p1.resources.coin=1;twoBelow.players.p1.resources.tablet=2;buyTempleTile(twoBelow,'p1','bronze',0,track);assert.deepEqual(twoBelow.players.p1.templeTiles,[2]);assert.throws(()=>buyTempleTile(twoBelow,'p1','silver',undefined,track),/requires the Lost Temple/);
+});

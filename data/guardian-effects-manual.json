@@ -1,0 +1,21 @@
+{
+  "$schemaVersion": 1,
+  "description": "Base-game guardian entries transcribed from local cropped TTS artwork. Entries are intentionally omitted until both cost and boon are visually verified.",
+  "guardians": {
+    "094b9c": { "cost": { "compass": 2, "arrowhead": 1 }, "boon": { "type": "GAIN_TRAVEL", "travel": { "boat": 1 } } },
+    "46196d": { "cost": { "coin": 1, "compass": 1, "arrowhead": 1 }, "boon": { "type": "GAIN_TRAVEL", "travel": { "boat": 1 } } },
+    "4820e2": { "cost": { "arrowhead": 1, "travel": { "car": 1 } }, "boon": { "type": "GAIN_TRAVEL", "travel": { "boat": 1 } } },
+    "4e3cf3": { "cost": { "coin": 2, "arrowhead": 1 }, "boon": { "type": "GAIN_TRAVEL", "travel": { "car": 1 } } },
+    "87eb00": { "cost": { "coin": 1, "arrowhead": 1, "travel": { "boot": 1 } }, "boon": { "type": "GAIN_TRAVEL", "travel": { "car": 1 } } },
+    "88e2d0": { "cost": { "jewel": 1, "travel": { "boot": 1 } }, "boon": { "type": "GAIN_TRAVEL", "travel": { "plane": 1 } } },
+    "c1e7ef": { "cost": { "tablet": 3 }, "boon": { "type": "GAIN_TRAVEL", "travel": { "plane": 1 } } },
+    "e5153d": { "cost": { "arrowhead": 1, "travel": { "boat": 1 } }, "boon": { "type": "GAIN_TRAVEL", "travel": { "car": 1 } } }
+    ,"4f2bd2": { "cost": { "tablet": 1, "arrowhead": 1, "travel": { "boot": 1 } }, "boon": { "type": "EXILE_OWN_CARD", "max": 1 } }
+    ,"9cfd06": { "cost": { "compass": 1, "travel": { "boot": 2 } }, "boon": { "type": "EXILE_OWN_CARD", "max": 1 } }
+    ,"9d1649": { "cost": { "arrowhead": 1, "travel": { "plane": 1 } }, "boon": { "type": "EXILE_OWN_CARD", "max": 1 } }
+    ,"faa0f3": { "cost": { "arrowhead": 1, "travel": { "plane": 1 } }, "boon": { "type": "EXILE_OWN_CARD", "max": 1 } }
+    ,"8b09d1": { "cost": { "coin": 1, "arrowhead": 1, "discardCard": 1 }, "boon": { "type": "EXILE_OWN_CARD", "max": 1 } }
+    ,"be4964": { "cost": { "compass": 1, "arrowhead": 1, "discardCard": 1 }, "boon": { "type": "DRAW_CARD", "amount": 1 } }
+    ,"cdb620": { "cost": { "coin": 4 }, "boon": { "type": "UPGRADE_RESOURCE" } }
+  }
+}

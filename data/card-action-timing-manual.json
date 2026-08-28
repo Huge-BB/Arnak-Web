@@ -1,0 +1,29 @@
+{
+  "$schemaVersion": 1,
+  "description": "Verified action timing for base-game cards. Starter cards are free actions; the base-game rules define every Artifact effect as a main action. Item entries are added only after their printed lightning icon has been checked.",
+  "timing": {
+    "0001": "free", "0002": "free", "0003": "free", "0004": "free",
+    "0005": "free", "0006": "free", "0007": "free", "0008": "free",
+    "0009": "free", "0010": "free", "0011": "free", "0012": "free",
+    "0013": "free", "0014": "free", "0015": "free", "0016": "free",
+    "0101": "main", "0102": "main", "0103": "main", "0104": "main",
+    "0105": "main", "0106": "free", "0107": "main", "0108": "free",
+    "0109": "main", "0110": "main", "0111": "main", "0112": "main",
+    "0113": "main", "0114": "main", "0115": "main", "0116": "main",
+    "0117": "main", "0118": "main", "0119": "main", "0120": "main",
+    "0121": "main", "0122": "main", "0123": "main", "0124": "main",
+    "0125": "free", "0126": "main", "0127": "main", "0128": "main",
+    "0129": "main", "0130": "free", "0131": "main", "0132": "free",
+    "0133": "main", "0134": "main", "0135": "main", "0136": "free",
+    "0137": "main", "0138": "main", "0139": "main", "0140": "free",
+    "0201": "main", "0202": "main", "0203": "main", "0204": "main",
+    "0205": "main", "0206": "main", "0207": "main", "0208": "main",
+    "0209": "main", "0210": "main", "0211": "main", "0212": "main",
+    "0213": "main", "0214": "main", "0215": "main", "0216": "main",
+    "0217": "main", "0218": "main", "0219": "main", "0220": "main",
+    "0221": "main", "0222": "main", "0223": "main", "0224": "main",
+    "0225": "main", "0226": "main", "0227": "main", "0228": "main",
+    "0230": "main", "0231": "main", "0232": "main", "0233": "main",
+    "0234": "main", "0235": "main", "1208": "main"
+  }
+}
