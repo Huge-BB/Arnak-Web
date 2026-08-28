@@ -8,7 +8,7 @@ import type { EngineContext, GameState, PlayerId } from './types.ts';
 
 export type RoomTicket = { roomId: string; token: string; playerId?: PlayerId; role: 'player' | 'spectator' };
 export type RoomSummary = { id: string; name: string; seats: number; occupiedSeats: number; spectatorCount: number; status: 'lobby' | 'playing' | 'finished'; hostPlayerId: PlayerId; visibility: 'public' | 'unlisted' };
-export type RoomSnapshot = { room: RoomSummary; viewer: { playerId?: PlayerId; role: 'player' | 'spectator' }; state?: ReturnType<typeof projectGameState> };
+export type RoomSnapshot = { room: RoomSummary; viewer: { playerId?: PlayerId; role: 'player' | 'spectator'; autoPass?: boolean }; state?: ReturnType<typeof projectGameState> };
 type Listener = { token: string; notify: (snapshot: RoomSnapshot) => void };
 
 /** Returns only the private hand belonging to the current room session. */
@@ -86,6 +86,18 @@ export class RoomService {
       room.version += 1;
       room.events.push({ version: room.version, at: new Date().toISOString(), kind: 'command', command });
       if (room.version % 20 === 0) room.snapshots.push({ version: room.version, state: structuredClone(room.state) });
+      this.resolveReservedPasses(room);
+    });
+    await this.broadcast(roomId);
+    return this.snapshot(roomId, token);
+  }
+
+  /** Reserve one automatic PASS for the member's next legal turn this round. */
+  async setAutoPass(roomId: string, token: string, enabled: boolean): Promise<RoomSnapshot> {
+    await this.store.transact(roomId, room => {
+      const member = this.member(room, token);
+      if (!room.state || !member?.playerId) throw new Error('Only a seated player may reserve a pass');
+      member.autoPass = enabled;
     });
     await this.broadcast(roomId);
     return this.snapshot(roomId, token);
@@ -95,7 +107,7 @@ export class RoomService {
     const room = await this.store.read(roomId), member = this.member(room, token);
     if (!member) throw new Error('Unknown room session');
     member.lastSeenAt = new Date().toISOString();
-    return { room: this.summary(room), viewer: { playerId: member.playerId, role: member.role }, ...(room.state ? { state: projectGameState(room.state, member.playerId) } : {}) };
+    return { room: this.summary(room), viewer: { playerId: member.playerId, role: member.role, ...(member.playerId ? { autoPass: Boolean(member.autoPass) } : {}) }, ...(room.state ? { state: projectGameState(room.state, member.playerId) } : {}) };
   }
 
   async subscribe(roomId: string, token: string, notify: (snapshot: RoomSnapshot) => void): Promise<() => void> {
@@ -115,4 +127,19 @@ export class RoomService {
     return { id: room.id, name: room.name, seats: room.seats, occupiedSeats: room.members.filter(member => member.role === 'player').length, spectatorCount: room.members.filter(member => member.role === 'spectator').length, status: room.state?.phase === 'finished' ? 'finished' : room.state ? 'playing' : 'lobby', hostPlayerId: room.hostPlayerId, visibility: room.visibility };
   }
   private member(room: StoredRoom, token: string) { return room.members.find(candidate => candidate.tokenHash === hashToken(token)); }
+  private resolveReservedPasses(room: StoredRoom) {
+    // A scheduled pass is consumed exactly once. The loop handles a chain of
+    // different players who all reserved a pass, including round transitions.
+    while (room.state?.phase === 'playing') {
+      const member = room.members.find(candidate => candidate.playerId === room.state!.currentPlayer);
+      if (!member?.autoPass) return;
+      if (room.state.pendingRewards.some(reward => reward.playerId === member.playerId)) return;
+      member.autoPass = false;
+      const command: EngineCommand = { type: 'action', action: { type: 'PASS', playerId: member.playerId! } };
+      room.state = applyEngineCommand(room.state, command, this.context);
+      room.version += 1;
+      room.events.push({ version: room.version, at: new Date().toISOString(), kind: 'command', command });
+      if (room.version % 20 === 0) room.snapshots.push({ version: room.version, state: structuredClone(room.state) });
+    }
+  }
 }

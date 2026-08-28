@@ -42,6 +42,10 @@ credential that can submit a game command for one specific seat.
   start and cannot submit commands.
 - Public rooms appear in `GET /rooms`; unlisted rooms can be shared by id but
   are omitted from that list.
+- A seated player may reserve one automatic pass through
+  `POST /rooms/:roomId/auto-pass`. The reservation is stored with the room,
+  fires only when that player next has a legal turn, then clears itself. If a
+  pending choice blocks passing, it waits until the choice is resolved.
 
 ## Privacy projection
 

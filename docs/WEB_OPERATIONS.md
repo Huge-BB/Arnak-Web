@@ -36,7 +36,8 @@ Register or sign in before creating or joining. The host creates the room,
 other players join, and only the host can start. A returning account receives
 its existing seat with a fresh room ticket, so refresh and reconnect are
 supported while the room persists. Spectators may join a running game but are
-read-only.
+read-only. During a game, `≫` reserves one automatic skip for your next turn;
+`⏸` cancels it before it fires.
 
 ## Authority and privacy guarantees
 

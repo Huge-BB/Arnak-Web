@@ -1,7 +1,7 @@
 import type { EngineCommand, GameState, PlayerId } from './types.ts';
 import type { UserId } from './auth.ts';
 
-export type StoredMember = { tokenHash: string; userId?: UserId; playerId?: PlayerId; role: 'player' | 'spectator'; name: string; joinedAt: string; lastSeenAt: string };
+export type StoredMember = { tokenHash: string; userId?: UserId; playerId?: PlayerId; role: 'player' | 'spectator'; name: string; joinedAt: string; lastSeenAt: string; autoPass?: boolean };
 export type RoomEvent = { version: number; at: string; kind: 'start' | 'command'; command?: EngineCommand };
 export interface StoredRoom { id: string; name: string; seats: number; hostPlayerId: PlayerId; hostUserId?: UserId; members: StoredMember[]; state?: GameState; version: number; events: RoomEvent[]; snapshots: { version: number; state: GameState }[]; createdAt: string; updatedAt: string; visibility: 'public' | 'unlisted'; }
 

@@ -64,6 +64,7 @@ const server = createServer(async (request, response) => {
     }
     const payload = await body(request), token = String(payload.token ?? '');
     if (request.method === 'POST' && operation === 'join') { const user = await requireUser(request); return send(request, response, 200, { ok: true, ticket: await rooms.joinRoom(roomId, { ...payload, user }) }); }
+    if (request.method === 'POST' && operation === 'auto-pass') return send(request, response, 200, { ok: true, snapshot: await rooms.setAutoPass(roomId, token, Boolean(payload.enabled)) });
     if (request.method === 'POST' && operation === 'start') return send(request, response, 200, { ok: true, snapshot: await rooms.startRoom(roomId, token, payload) });
     if (request.method === 'POST' && operation === 'commands') return send(request, response, 200, { ok: true, snapshot: await rooms.submitCommand(roomId, token, payload.command as EngineCommand) });
     return send(request, response, 404, { ok: false, error: 'Not found' });

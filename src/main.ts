@@ -346,7 +346,7 @@ render();
 // service: browser state is a projected view, never a reducer input.
 type RoomTicketUi = { roomId: string; token: string; playerId?: PlayerId; role: 'player' | 'spectator' };
 type RoomSummaryUi = { id: string; name: string; seats: number; occupiedSeats: number; spectatorCount: number; status: 'lobby' | 'playing' | 'finished'; hostPlayerId: PlayerId; visibility: 'public' | 'unlisted' };
-type RoomSnapshotUi = { room: RoomSummaryUi; viewer: { playerId?: PlayerId; role: 'player' | 'spectator' }; state?: GameState };
+type RoomSnapshotUi = { room: RoomSummaryUi; viewer: { playerId?: PlayerId; role: 'player' | 'spectator'; autoPass?: boolean }; state?: GameState };
 type AuthSessionUi = { token: string; user: { id: string; username: string; displayName: string }; expiresAt: string };
 const roomSessionKey = 'arnak.room-session.v1', roomAddressKey = 'arnak.room-address.v1', authSessionKey = 'arnak.auth-session.v1';
 let roomAddress = localStorage.getItem(roomAddressKey) || `${location.protocol}//${location.hostname || '127.0.0.1'}:8787`;
@@ -431,6 +431,11 @@ async function submitLanCommand(command: unknown) {
     applyRoomSnapshot(snapshot);
   } catch (error) { message = error instanceof Error ? error.message : String(error); render(); }
 }
+async function reserveLanPass(enabled: boolean) {
+  if (!roomSession) return;
+  try { const snapshot = (await roomRequest<{ snapshot: RoomSnapshotUi }>(`/rooms/${roomSession.roomId}/auto-pass`, { method: 'POST', body: JSON.stringify({ token: roomSession.token, enabled }) })).snapshot; applyRoomSnapshot(snapshot); }
+  catch (error) { message = error instanceof Error ? error.message : String(error); render(); }
+}
 function renderRooms() {
   if (authSession) { app.innerHTML = `<main class="setup-screen"><section class="setup-card room-lobby"><h1>局域网房间</h1><label>服务地址<input data-room-address value="${roomAddress}" spellcheck="false"></label><p>已登录：${authSession.user.displayName}</p><div class="room-actions"><button data-room-refresh>刷新</button><button class="setup-start" data-room-create>创建 ${setupPlayerCount} 人房间</button><button data-auth-logout>退出登录</button></div><div class="room-list">${roomList.map(room => `<article><strong>${room.name}</strong><span>${room.occupiedSeats}/${room.seats} · 旁观 ${room.spectatorCount}</span><small>${room.status}</small>${room.status === 'lobby' && room.occupiedSeats < room.seats ? `<button data-room-join="${room.id}">加入</button>` : ''}<button data-room-watch="${room.id}">旁观</button></article>`).join('') || '<p>没有公开房间</p>'}</div><button data-room-local>本地热座对局</button>${message ? `<div class="message">${message}</div>` : ''}</section></main>`; return; }
   if (!authSession) { app.innerHTML = `<main class="setup-screen"><section class="setup-card room-lobby"><h1>联机账户</h1><label>服务地址<input data-room-address value="${roomAddress}" spellcheck="false"></label><label>用户名<input data-auth-username value="${authUsername}" autocomplete="username"></label><label>显示名（注册时可填）<input data-auth-display-name value="${authDisplayName}"></label><label>密码<input data-auth-password type="password" value="${authPassword}" autocomplete="current-password"></label><div class="room-actions"><button class="setup-start" data-auth-login>登录</button><button data-auth-register>注册</button></div><p>账户仅用于身份、断线重连和权限隔离。</p><button data-room-local>本地热座对局</button>${message ? `<div class="message">${message}</div>` : ''}</section></main>`; return; }
@@ -461,6 +466,7 @@ app.addEventListener('click', event => {
   if (button.dataset.roomJoin) { void joinLanRoom(button.dataset.roomJoin); return; }
   if (button.dataset.roomWatch) { void joinLanRoom(button.dataset.roomWatch, true); return; }
   if (button.dataset.roomStart !== undefined) { void startLanRoom(); return; }
+  if (button.dataset.roomAutoPass !== undefined) { void reserveLanPass(button.dataset.roomAutoPass !== 'true'); return; }
   if (button.dataset.roomLeave !== undefined) { roomEvents?.close(); saveRoomSession(); roomSnapshot = undefined; screen = 'rooms'; void refreshRooms(); return; }
   if (button.dataset.roomLocal !== undefined) { screen = 'setup'; render(); return; }
 });
@@ -888,6 +894,10 @@ render = () => {
   finalLanScreenRender();
   if (roomSession && screen === 'game' && roomSession.playerId !== state.currentPlayer) {
     app.querySelectorAll<HTMLButtonElement>('button[data-card-id],button[data-site],button[data-discover],button[data-research],button[data-assistant],button[data-action="end"],button[data-action="pass"]').forEach(button => { button.disabled = true; });
+  }
+  if (roomSession && screen === 'game' && roomSnapshot?.viewer.role === 'player') {
+    const enabled = Boolean(roomSnapshot.viewer.autoPass);
+    app.querySelector('.header-actions')?.insertAdjacentHTML('beforeend', `<button data-room-auto-pass="${enabled}" title="${enabled ? '取消预约跳过' : '下次轮到你时自动跳过'}">${enabled ? '⏸' : '≫'}</button>`);
   }
 };
 const startLocalGame = start;

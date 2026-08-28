@@ -40,3 +40,15 @@ test('snapshot projection hides another player pending-choice payload from playe
   assert.deepEqual(projectGameState(state, 'p2').pendingRewards.map(reward => reward.sourceId), ['secret-p2']);
   assert.deepEqual(projectGameState(state).pendingRewards, []);
 });
+
+test('a reserved pass executes once when the player next receives a legal turn', async () => {
+  const rooms = new RoomService(context), host = await rooms.createRoom({ seats: 2 });
+  const guest = await rooms.joinRoom(host.roomId, { name: 'Guest' });
+  await rooms.startRoom(host.roomId, host.token, { seed: 'reserved-pass' });
+  assert.equal((await rooms.setAutoPass(host.roomId, guest.token, true)).viewer.autoPass, true);
+  await rooms.submitCommand(host.roomId, host.token, { type: 'action', action: { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp-1-a' } });
+  const next = await rooms.submitCommand(host.roomId, host.token, { type: 'action', action: { type: 'END_TURN', playerId: 'p1' } });
+  assert.equal(next.state?.players.p2.hasPassed, true);
+  assert.equal(next.state?.currentPlayer, 'p1');
+  assert.equal((await rooms.snapshot(host.roomId, guest.token)).viewer.autoPass, false);
+});
