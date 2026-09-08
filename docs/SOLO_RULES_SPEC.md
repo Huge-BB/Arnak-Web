@@ -4,6 +4,9 @@ Status: implementation target for the base game only. Expedition Leaders,
 Surprise Shipment, campaign objectives, and purple rival actions are excluded
 until their own solo rules are audited.
 
+Mobile test entry: `/solo.html?difficulty=0` through `5` starts an independent
+base-game solo match. The ordinary setup page exposes the same selector.
+
 ## Sources
 
 - [CGE base rulebook](https://filemanager.czechgames.com/storage/files/lost-ruins-of-arnak/rules/lost-ruins-of-arnak-rules-en.pdf), solo variant, pp. 20–21.
