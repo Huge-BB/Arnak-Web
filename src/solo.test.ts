@@ -49,6 +49,35 @@ test('rival action consumes one tile, advances without payment, then hands the t
   assert.equal(state.solo!.usedActionTiles[0],'research-green');
 });
 
+test('rival uses the next face-down tile arrow, and the first used tile arrow for the final action',()=>{
+  let state=createSoloGame({seed:'solo-arrow',difficulty:0,board:'bird',researchBoard:'bird',context});
+  state.market.items=['item0','item1']; // equal points would be selected by the arrow, but use distinct ids below.
+  context.cards.item0.points=1; context.cards.item1.points=1;
+  state.solo!.actionDeck=['buy-item-green','dig-compass']; // dig-compass points right
+  state=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},context);
+  assert.deepEqual(state.players.rival.playedCards,['item1']);
+  state.currentPlayer='rival'; state.market.items=['item0','item1'];
+  state.solo!.actionDeck=['buy-item-green']; // final tile uses bottom used buy-item-green's left arrow
+  state=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},context);
+  assert.equal(state.players.rival.playedCards.at(-1),'item0');
+});
+
+test('rival removes the Snake rescue assistant and chooses the available 6-point stack by stack arrow',()=>{
+  const snake:ResearchTrackDefinition={id:'snake',name:'Snake',templeArrivalPoints:[12,8,6,4],rows:[
+    {magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'snake:r1',rowIndex:0,pathIndex:0,researchLevel:0,rewards:[{token:'magnifying',verified:true,rewards:[{type:'CLAIM_SNAKE_RESCUE_ASSISTANT'}]}]}]},
+  ],bridges:[{id:'start-r1',from:'snake:start',to:'snake:r1',verified:true},{id:'r1-temple',from:'snake:r1',to:'snake:temple',verified:true}]};
+  const snakeContext:EngineContext={...context,researchTracks:{snake}};
+  let state=createSoloGame({seed:'solo-snake',difficulty:0,board:'snake',researchBoard:'snake',context:snakeContext});
+  state.assistants.specialStack=['rescued']; state.solo!.actionDeck=['research-green','dig-coin'];
+  state=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},snakeContext);
+  assert.deepEqual(state.assistants.specialStack,[]);
+  state.currentPlayer='rival'; state.solo!.actionDeck=['research-green'];
+  state.research.magnifyingNode.rival='snake:temple'; state.templeTiles.silverLeft=0;
+  state=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},snakeContext);
+  assert.equal(state.templeTiles.silverRight,1);
+  assert.equal(state.players.rival.templeTiles.includes(6),true);
+});
+
 test('the rival cannot be driven through normal player actions and never takes guardian Fear at round end',()=>{
   let state=createSoloGame({seed:'solo-guard',difficulty:0,board:'bird',researchBoard:'bird',context});
   assert.throws(()=>reduce(state,{type:'PLACE_WORKER',playerId:'rival',siteId:'camp-1'},context),/only by revealing/);

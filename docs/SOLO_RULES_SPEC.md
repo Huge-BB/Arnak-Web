@@ -23,7 +23,9 @@ base-game solo match. The ordinary setup page exposes the same selector.
   green/red pair (discover, research, overcome guardian, buy item, buy
   artifact). Difficulty 0–5 is exactly the number of selected red tiles.
 - The selected physical tiles are reshuffled every round. Their printed
-  decision arrows, not a new random choice, resolve every left/right tie.
+  decision arrows, not a new random choice, resolve every left/right tie:
+  use the arrow visible on the remaining face-down action stack; for the
+  final reveal, use the arrow on the bottom tile of the used pile.
 
 ## Rival turn
 

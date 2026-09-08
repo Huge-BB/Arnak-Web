@@ -75,13 +75,27 @@ function takeAssistant(state:GameState,direction:Direction){
   const index=direction==='left'?indexes[0]:indexes[indexes.length-1];
   state.assistants.stacks[index].shift();
 }
+function takeSoloSixPointTempleTile(state:GameState,direction:Direction,rival:GameState['players'][PlayerId]) {
+  const preferred=direction==='left'?'silverLeft':'silverRight';
+  const fallback=direction==='left'?'silverRight':'silverLeft';
+  const stack=state.templeTiles[preferred]>0?preferred:state.templeTiles[fallback]>0?fallback:undefined;
+  if(!stack)return false;
+  state.templeTiles[stack]-=1; state.templeTiles.silver-=1; rival.templeTiles.push(6);
+  return true;
+}
+function removeSnakeRescueAssistant(state:GameState,track:NonNullable<EngineContext['researchTracks']>[string],destination:string) {
+  const node=track.rows.flatMap(row=>row.nodes??[]).find(candidate=>candidate.id===destination);
+  const isRescue=node?.rewards?.some(entry=>entry.token==='magnifying'&&entry.rewards.some(reward=>reward.type==='CLAIM_SNAKE_RESCUE_ASSISTANT'));
+  if(isRescue) state.assistants.specialStack.shift();
+  return Boolean(isRescue);
+}
 function advanceRivalResearch(state:GameState,direction:Direction,context:EngineContext,takeSupplyAssistant:boolean) {
   const solo=state.solo!,rival=state.players[solo.rivalPlayerId],track=context.researchTracks?.[state.research.board];
   if(!track) throw new Error(`Solo requires research data for ${state.research.board}`);
   const from=state.research.magnifyingNode[solo.rivalPlayerId];
   if(from===researchTempleNode(track.id)) {
     if(takeSupplyAssistant)takeAssistant(state,direction);
-    if(state.templeTiles.silver>0){ state.templeTiles.silver-=1; rival.templeTiles.push(6); return 'already at Lost Temple: takes a 6-point tile'; }
+    if(takeSoloSixPointTempleTile(state,direction,rival)) return 'already at Lost Temple: takes a 6-point tile';
     return 'already at Lost Temple: no 6-point tile remains';
   }
   const bridges=(track.bridges??[]).filter(bridge=>bridge.from===from&&(!bridge.allowedTokens||bridge.allowedTokens.includes('magnifying')));
@@ -102,8 +116,9 @@ function advanceRivalResearch(state:GameState,direction:Direction,context:Engine
     const points=track.templeArrivalPoints?.[arrival]; if(points!==undefined)state.research.templeArrivalPoints[solo.rivalPlayerId]=points;
     state.research.templeBonusTiles.shift();
   }
+  const rescued=removeSnakeRescueAssistant(state,track,destination);
   if(takeSupplyAssistant)takeAssistant(state,direction);
-  return `researches to ${destination}`;
+  return `researches to ${destination}${rescued?' and removes a Snake rescue assistant':''}`;
 }
 function siteRewardCode(state:GameState,siteId:string,context:EngineContext) {
   const site=state.sites[siteId]; return site.rewardCode??(site.tileId?context.sites?.[site.tileId]?.rewardCode:'')??'';
@@ -152,7 +167,9 @@ function rivalBuy(state:GameState,tileData:RivalTile,context:EngineContext) {
   const solo=state.solo!,rival=state.players[solo.rivalPlayerId],row=tileData.kind==='buy-item'?state.market.items:state.market.artifacts;
   if(!row.length)return `no ${tileData.kind==='buy-item'?'item':'artifact'} available`;
   const ordered=row.map((id,index)=>({id,index,points:context.cards[id]?.points??0})).sort((a,b)=>a.points-b.points||a.index-b.index);
-  const selected=tileData.color==='red'?ordered[ordered.length-1]:ordered[0];
+  const targetPoints=tileData.color==='red'?ordered[ordered.length-1].points:ordered[0].points;
+  const tied=ordered.filter(candidate=>candidate.points===targetPoints);
+  const selected=tileData.direction==='left'?tied[0]:tied[tied.length-1];
   row.splice(row.indexOf(selected.id),1); rival.playedCards.push(selected.id);
   const deck=tileData.kind==='buy-item'?state.market.itemDeck:state.market.artifactDeck,refill=deck.shift(); if(refill){if(tileData.kind==='buy-item')row.push(refill);else row.unshift(refill);}
   return `buys ${context.cards[selected.id]?.name??selected.id}`;
@@ -161,7 +178,10 @@ export function resolveSoloRivalAction(state:GameState,context:EngineContext):Ga
   const solo=state.solo; if(!solo)throw new Error('This is not a solo game');
   if(state.phase!=='playing'||state.currentPlayer!==solo.rivalPlayerId)throw new Error('It is not the rival’s turn');
   const tileId=solo.actionDeck.shift(); if(!tileId)throw new Error('The rival has no action tiles left this round');
-  const data=tile(tileId); let description='',resolved=true;
+  // Rules p.20: resolve ties from the still face-down action stack. On the
+  // final reveal the stack is empty, so use the arrow on the bottom used tile.
+  const decisionTileId=solo.actionDeck[0]??solo.usedActionTiles[0]??tileId;
+  const data={...tile(tileId),direction:tile(decisionTileId).direction}; let description='',resolved=true;
   if(data.skipRoundFive&&state.round===5){description='does nothing in round V';resolved=false;}
   else if(data.kind==='dig')description=rivalDig(state,data,context);
   else if(data.kind==='discover')description=rivalDiscover(state,data,context);

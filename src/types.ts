@@ -109,7 +109,16 @@ export interface DiscoveryState { level1Deck:string[]; level2Deck:string[]; guar
 export interface AssistantSupplyState { stacks:string[][]; specialStack:string[]; }
 export type MoonStaffVariant = 'blue' | 'red';
 export interface MarketState { items:CardId[]; artifacts:CardId[]; itemDeck:CardId[]; artifactDeck:CardId[]; exiled:CardId[]; }
-export interface TempleTileSupply { bronze:number; silver:number; gold:number; }
+export interface TempleTileSupply {
+  bronze:number;
+  /** Total remaining 6-point tiles, retained for the existing UI. */
+  silver:number;
+  /** The two physical 6-point stacks. Their identity matters to the solo rival
+   * and to the two distinct printed cost combinations. */
+  silverLeft:number;
+  silverRight:number;
+  gold:number;
+}
 export interface ResearchState { board:ResearchBoardId; magnifying:Record<PlayerId,number>; journal:Record<PlayerId,number>; magnifyingNode:Record<PlayerId,ResearchNodeId>; journalNode:Record<PlayerId,ResearchNodeId>; templeArrivals:PlayerId[]; templeArrivalPoints:Record<PlayerId,number>; /** Face-up bonus tiles keyed by their research-space node. A node can retain multiple physical slots. */ bonusTiles:Record<ResearchNodeId,string[]>; /** Face-down Lost Temple bonus tiles; only the arriving player may inspect this list. */ templeBonusTiles:string[]; /** Claimed bonus tile ids, retained for replay/audit only. */ claimedBonusTiles:string[]; templeData?:Record<string,unknown>; }
 /** A temporary, typed modifier around an ordinary public action.  It never
  * reimplements the action: PLACE_WORKER / DISCOVER_SITE remain authoritative. */
