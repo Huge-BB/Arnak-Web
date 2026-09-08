@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Pages
         uses: actions/configure-pages@v5
