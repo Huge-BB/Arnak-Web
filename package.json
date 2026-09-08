@@ -26,6 +26,7 @@
     "assets:localize": "npm run assets:prepare && node scripts/localize-assets.mjs",
     "assets:localize:crop": "npm run assets:prepare && node scripts/localize-assets.mjs --crop",
     "assets:temple-tiles": "node scripts/generate-temple-tile-variants.mjs",
+    "assets:solo-actions": "node scripts/fetch-solo-action-sheets.mjs",
     "assets:validate": "node scripts/validate-assets.mjs",
     "assets:validate:local": "node scripts/validate-assets.mjs --local",
     "validate:research": "node scripts/validate-research-manual.mjs && node scripts/validate-research-rewards.mjs",

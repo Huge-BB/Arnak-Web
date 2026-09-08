@@ -12,7 +12,9 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  # Pages deployments must be latest-wins.  Allowing them to overlap can let
+  # an older build finish last and overwrite the current main branch.
+  cancel-in-progress: true
 
 jobs:
   deploy:
