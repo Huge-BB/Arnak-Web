@@ -58,6 +58,9 @@ and make the rival starting player again.
 - **Buy item / artifact:** green takes the lowest printed point value, red the
   highest; break ties using tile arrow. Put it on the rival board and refill
   the market. Effects and costs are ignored.
+- **Round V skips:** exactly green Discover, green Research, green Overcome,
+  and green Buy Item show the printed V-cross. The paired red tiles and both
+  Artifact tiles still resolve in round V.
 
 ## Scoring
 

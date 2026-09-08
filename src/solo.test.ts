@@ -109,6 +109,17 @@ test('physical Discover tiles use their printed round-by-round level and guardia
   assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'&&site.guardian),false);
 });
 
+test('physical green/red action tiles apply their exact printed round-V skips',()=>{
+  const skips=['discover-green','research-green','overcome-green','buy-item-green'];
+  const resolves=['discover-red','research-red','overcome-red','buy-item-red','buy-artifact-green','buy-artifact-red'];
+  for(const tileId of [...skips,...resolves]){
+    const state=createSoloGame({seed:`solo-v-${tileId}`,difficulty:0,board:'bird',researchBoard:'bird',context});
+    state.round=5; state.solo!.actionDeck=[tileId];
+    const next=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},context);
+    assert.equal(next.solo!.lastAction!.resolved,!skips.includes(tileId),tileId);
+  }
+});
+
 test('the rival cannot be driven through normal player actions and never takes guardian Fear at round end',()=>{
   let state=createSoloGame({seed:'solo-guard',difficulty:0,board:'bird',researchBoard:'bird',context});
   assert.throws(()=>reduce(state,{type:'PLACE_WORKER',playerId:'rival',siteId:'camp-1'},context),/only by revealing/);
