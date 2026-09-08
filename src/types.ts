@@ -1,4 +1,16 @@
 export type PlayerId = string;
+export type SoloRivalActionKind = 'dig'|'discover'|'research'|'overcome'|'buy-item'|'buy-artifact';
+export type SoloRivalTileId = string;
+export interface SoloRivalState {
+  /** The normal player and the synthetic rival are both kept in GameState so
+   * occupancy, the market, and the research race use one authoritative board. */
+  humanPlayerId: PlayerId;
+  rivalPlayerId: PlayerId;
+  difficulty: number;
+  actionDeck: SoloRivalTileId[];
+  usedActionTiles: SoloRivalTileId[];
+  lastAction?: { tileId: SoloRivalTileId; description: string; resolved: boolean };
+}
 export type CardId = string;
 export type PlayerColor = 'Yellow' | 'Green' | 'Blue' | 'Red';
 export type Resource = 'tablet' | 'arrowhead' | 'jewel' | 'coin' | 'compass' | 'fear';
@@ -102,13 +114,14 @@ export interface ResearchState { board:ResearchBoardId; magnifying:Record<Player
 /** A temporary, typed modifier around an ordinary public action.  It never
  * reimplements the action: PLACE_WORKER / DISCOVER_SITE remain authoritative. */
 export interface ActionWindowState { playerId:PlayerId; temporaryTravel:TravelCost; forcedSiteAction?:{ kind:'place'|'discover'; travelDiscount?:TravelCost; discoveryCompassDiscount?:number; consumesMainAction:boolean; }; }
-export interface GameState { version:1; phase:'setup'|'playing'|'finished'; round:number; moonStaff:MoonStaffVariant; setupSeed?:string; /** Setup expansions that alter non-market content, including assistant supply/effects. */ enabledExpansions?:string[]; firstPlayer:PlayerId; currentPlayer:PlayerId; players:Record<PlayerId,PlayerState>; playerOrder:PlayerId[]; sites:Record<string,SiteState>; discovery:DiscoveryState; assistants:AssistantSupplyState; market:MarketState; templeTiles:TempleTileSupply; research:ResearchState; pendingRewards:PendingReward[]; actionWindow?:ActionWindowState; }
+export interface GameState { version:1; phase:'setup'|'playing'|'finished'; round:number; moonStaff:MoonStaffVariant; setupSeed?:string; /** Setup expansions that alter non-market content, including assistant supply/effects. */ enabledExpansions?:string[]; firstPlayer:PlayerId; currentPlayer:PlayerId; players:Record<PlayerId,PlayerState>; playerOrder:PlayerId[]; sites:Record<string,SiteState>; discovery:DiscoveryState; assistants:AssistantSupplyState; market:MarketState; templeTiles:TempleTileSupply; research:ResearchState; pendingRewards:PendingReward[]; actionWindow?:ActionWindowState; solo?:SoloRivalState; }
 export type ActionTiming = 'main'|'free';
 export interface EngineContext { cards:Record<CardId,CardDefinition>; cardEffects?:Record<CardId,CardEffect[]>; /** Audited printed timing for a card effect; omitted entries remain under review. */ cardActionTiming?:Partial<Record<CardId,ActionTiming>>; sites?:Record<string,SiteDefinition>; idols?:Record<string,IdolDefinition>; guardians?:Record<string,GuardianDefinition>; assistants?:Record<string,AssistantDefinition>; assistantEffects?:Record<string,AssistantEffectLevels>; researchTracks?:Partial<Record<ResearchBoardId,ResearchTrackDefinition>>; }
 export type GameAction =
  /** `marketExpansions` contains only shared market sets. Expedition Leaders
   * cards are leader-owned starters and are intentionally never a market pool. */
  | { type:'START_GAME'; seed?:string; researchBoard?:ResearchBoardId; moonStaff?:MoonStaffVariant; leaders?:Partial<Record<PlayerId,LeaderId>>; marketExpansions?:string[] }
+ | { type:'SOLO_RIVAL_ACTION'; playerId:PlayerId }
  | { type:'USE_IDOL'; playerId:PlayerId; idolId:CardId; effect:'coinToJewel'|'tablets'|'arrowhead'|'coinCompass'|'draw' }
  | { type:'END_TURN'; playerId:PlayerId }
  | { type:'PASS'; playerId:PlayerId }

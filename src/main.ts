@@ -1,8 +1,9 @@
 import './style.css';import './theme.css';
 import { cardHoverText } from './card-effect-summaries.ts';
 import cards from './generated/cards.json';import assistants from './generated/assistants.json';import sites from './generated/sites.json';import idols from './generated/idols.json';import guardians from './generated/guardians.json';import assetsJson from './generated/local-assets.json';import generatedTracks from './generated/research-tracks.json';import manual from '../data/research-manual-data.json';import rewards from '../data/research-rewards-manual.json';
-import {createGame} from './engine.ts';import {applyEngineCommand} from './engine-api.ts';import type {EngineContext,GameAction,GameState,LeaderId,MoonStaffVariant,PlayerId,ResearchBoardId} from './types.ts';import type {PendingChoice} from './pending-choice.ts';import {withBaseAssistantEffects} from './assistant-effect-data.ts';import {withBaseGuardianEffects} from './guardian-effect-data.ts';import {withBaseCardEffects} from './card-effect-data.ts';import {buildResearchTracks} from './research-data.ts';
+import {createGame,createSoloGame} from './engine.ts';import {applyEngineCommand} from './engine-api.ts';import type {EngineContext,GameAction,GameState,LeaderId,MoonStaffVariant,PlayerId,ResearchBoardId} from './types.ts';import type {PendingChoice} from './pending-choice.ts';import {withBaseAssistantEffects} from './assistant-effect-data.ts';import {withBaseGuardianEffects} from './guardian-effect-data.ts';import {withBaseCardEffects} from './card-effect-data.ts';import {buildResearchTracks} from './research-data.ts';
 import {scoreFinishedGame} from './final-scoring.ts';
+import {scoreSoloGame} from './solo.ts';
 import {canBuyTempleTile,templeTileCost} from './temple-tiles.ts';
 import {canPayTravel} from './travel.ts';
 import {decodeStateCode,encodeStateCode} from './state-code.ts';
@@ -84,8 +85,9 @@ function calibratedResearchComponent(board: ResearchBoardId, id: string, fallbac
 function researchComponentStyle(component: { x: number; y: number; width: number; height: number }) {
   return `${pointStyle(component, RESEARCH_BOARD_SIZE)};--component-w:${component.width / RESEARCH_BOARD_SIZE.width * 100}%;--component-h:${component.height / RESEARCH_BOARD_SIZE.height * 100}%`;
 }
-let state:GameState=createGame(['p1','p2']),screen:'setup'|'game'|'rooms'|'room'='setup',setupPlayerCount=2,setupSeed='arnak-demo',setupMoonStaff:MoonStaffVariant='blue',setupSurpriseShipment=false,setupLeadersMarket=false,setupLeaders:Record<string,LeaderId|''>={p1:'',p2:'',p3:'',p4:''},theme:'bga'|'jungle'='jungle',mainBoard:'bird'|'snake'='bird',researchBoard:ResearchBoardId='bird',researchToken:'magnifying'|'journal'='magnifying',pendingSelection:string[]=[],artifactId:string|undefined,leaderStartingCardId:string|undefined,message='',researchLab=false,researchMoveChoice:{destination:string;tokens:('magnifying'|'journal')[]}|undefined,researchBonusChoice:{destination:string;token:'magnifying'|'journal';tileIds:string[]}|undefined,leaderIdolDraft:{playerId:PlayerId;slotIndex:number}|undefined,leaderIdolSnackDraft:{playerId:PlayerId;slotIndex:number;effect:IdolEffect}|undefined,captainSpecialistDraft:PlayerId|undefined,mysticRitualDraft:PlayerId|undefined;
+let state:GameState=createGame(['p1','p2']),screen:'setup'|'game'|'rooms'|'room'='setup',setupPlayerCount=2,setupSeed='arnak-demo',setupMoonStaff:MoonStaffVariant='blue',setupSurpriseShipment=false,setupLeadersMarket=false,setupLeaders:Record<string,LeaderId|''>={p1:'',p2:'',p3:'',p4:''},theme:'bga'|'jungle'='jungle',mainBoard:'bird'|'snake'='bird',researchBoard:ResearchBoardId='bird',researchToken:'magnifying'|'journal'='magnifying',pendingSelection:string[]=[],artifactId:string|undefined,leaderStartingCardId:string|undefined,message='',researchLab=false,soloDifficulty=2,researchMoveChoice:{destination:string;tokens:('magnifying'|'journal')[]}|undefined,researchBonusChoice:{destination:string;token:'magnifying'|'journal';tileIds:string[]}|undefined,leaderIdolDraft:{playerId:PlayerId;slotIndex:number}|undefined,leaderIdolSnackDraft:{playerId:PlayerId;slotIndex:number;effect:IdolEffect}|undefined,captainSpecialistDraft:PlayerId|undefined,mysticRitualDraft:PlayerId|undefined;
 function start(){const players=Array.from({length:setupPlayerCount},(_,i)=>`p${i+1}`);const leaders=Object.fromEntries(players.flatMap(id=>setupLeaders[id] ? [[id,setupLeaders[id]]] : []));const seed=setupSeed||'arnak-demo',marketExpansions=['Base Game',...(setupLeadersMarket?['Expedition Leaders']:[]),...(setupSurpriseShipment?['Surprise Shipment']:[])];state=createGame(players);state.sites=createBaseBoardSites(players.length,seed,mainBoard);state=applyEngineCommand(state,{type:'action',action:{type:'START_GAME',seed,researchBoard,moonStaff:setupMoonStaff,leaders,marketExpansions}},context);screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message='';render()}
+function startSolo(){const seed=setupSeed||'arnak-solo';researchLab=false;state=createSoloGame({seed,difficulty:soloDifficulty,board:mainBoard,researchBoard,context});screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message=`单人 solo：难度 ${soloDifficulty}，对手先行动。`;render()}
 function startResearchLab(){researchLab=true;setupPlayerCount=1;mainBoard='bird';state=createGame(['p1']);state.sites=createBaseBoardSites(1,setupSeed||'research-lab',mainBoard);state=applyEngineCommand(state,{type:'action',action:{type:'START_GAME',seed:setupSeed||'research-lab',researchBoard,moonStaff:setupMoonStaff,marketExpansions:['Base Game']}},context);const player=state.players.p1;player.resources={coin:40,compass:40,tablet:40,arrowhead:40,jewel:40,fear:0};const travelCards=Object.values(context.cards).filter(card=>card.type!=='Fear'&&Object.values(card.travel??{}).some(amount=>amount>0)).map(card=>card.id);player.hand=[...new Set([...player.hand,...travelCards])];player.idols=[...player.idols,...Object.keys(context.idols??{}).slice(0,5).map(id=>({id,inSlot:false}))];screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message='研究轨实验室：资源与旅行牌已补满。选择研究标记后连续推进；重开会保留当前研究板。';render()}
 function run(action:GameAction){try{state=applyEngineCommand(state,{type:'action',action},context);message=''}catch(e){message=e instanceof Error?e.message:String(e)}render()}
 function choose(choice:PendingChoice){try{const p=state.pendingRewards[0];state=applyEngineCommand(state,{type:'pending-choice',playerId:p.playerId,pendingIndex:0,choice},context);pendingSelection=[];message=''}catch(e){message=e instanceof Error?e.message:String(e)}render()}
@@ -1503,6 +1505,11 @@ const renderWithoutFinalScore = render;
 render = () => {
   renderWithoutFinalScore();
   if (state.phase !== 'finished') return;
+  if (state.solo) {
+    const result = scoreSoloGame(state, context);
+    app.insertAdjacentHTML('beforeend', `<section class="final-score" role="dialog" aria-label="solo final score"><h2>${result.humanWon ? '胜利' : '惜败'}</h2><div><div class="final-score-row ${result.humanWon ? 'winner' : ''}"><span>你</span><strong>${result.human}</strong></div><div class="final-score-row ${result.humanWon ? '' : 'winner'}"><span>对手</span><strong>${result.rival}</strong></div></div><button data-action="reset" title="new game">↻</button></section>`);
+    return;
+  }
   const result = scoreFinishedGame(state, context);
   const rows = result.rankedPlayerIds.map((playerId, index) => {
     const score = result.scores[playerId];
@@ -1861,9 +1868,31 @@ app.addEventListener('click', (event) => {
 const finalSetupWithLanEntry = renderSetup;
 renderSetup = () => {
   finalSetupWithLanEntry();
+  if (screen === 'setup' && !app.querySelector('[data-solo-start]')) {
+    app.querySelector<HTMLButtonElement>('[data-setup-start]')?.insertAdjacentHTML('afterend', `<label class="setup-field solo-difficulty"><span>单人难度</span><select data-solo-difficulty>${[0,1,2,3,4,5].map(level=>`<option value="${level}" ${soloDifficulty===level?'selected':''}>${level} 个红色行动牌</option>`).join('')}</select></label><button data-solo-start>开始单人对手</button>`);
+  }
   if (screen === 'setup' && !app.querySelector('[data-room-open]')) {
     app.querySelector<HTMLButtonElement>('[data-setup-start]')?.insertAdjacentHTML('afterend', '<button data-room-open>局域网房间</button>');
   }
 };
+app.addEventListener('change', event => { const target=event.target as HTMLSelectElement; if(target.matches('[data-solo-difficulty]')) soloDifficulty=Number(target.value); });
+app.addEventListener('click', event => { const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button'); if(button?.dataset.soloStart!==undefined) startSolo(); });
 render();
 if (location.pathname.endsWith('/lab.html')) startResearchLab();
+
+// Solo controls deliberately stay outside the calibrated boards. They are a
+// compact mobile-safe status panel, while all actual changes remain engine
+// commands and therefore share replay/room validation rules.
+const renderWithSoloStatus = render;
+render = () => {
+  renderWithSoloStatus();
+  if (screen !== 'game' || !state.solo || state.phase !== 'playing') return;
+  const solo = state.solo, isRivalTurn = state.currentPlayer === solo.rivalPlayerId;
+  const last = solo.lastAction ? `上一步：${solo.lastAction.description}` : '对手等待揭示行动牌';
+  app.querySelector('header')?.insertAdjacentHTML('afterend', `<section class="solo-status"><strong>单人对手 · 难度 ${solo.difficulty}</strong><span>${solo.actionDeck.length} / 10 张待行动 · ${last}</span>${isRivalTurn ? `<button data-solo-rival-action>揭示对手行动</button>` : '<span>你的回合</span>'}</section>`);
+};
+app.addEventListener('click', event => {
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if(button?.dataset.soloRivalAction!==undefined && state.solo) run({type:'SOLO_RIVAL_ACTION',playerId:state.solo.rivalPlayerId});
+});
+render();

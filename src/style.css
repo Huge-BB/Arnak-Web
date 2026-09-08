@@ -116,3 +116,6 @@
   .debug-timeline{width:100%;margin-top:7px;border-right:0;border-left:0;border-radius:0}
 }
 @media(max-width:600px){.setup-screen{padding-bottom:24px}.setup-card{width:100%}.setup-field input,.setup-field select,.room-address-field input{font-size:16px}}
+/* Base-game solo status lives above the table so a phone never has to scroll
+   past the board just to reveal the next automated action. */
+.solo-status{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:.65rem;justify-content:center;padding:.5rem .75rem;background:rgba(15,38,28,.96);border-bottom:1px solid #baa75a;color:#fff7d3;font-size:.85rem}.solo-status span{opacity:.9}.solo-status button{min-height:34px;background:#d6bb67;color:#17291c;border:1px solid #fff0af;border-radius:6px;font-weight:700}@media (max-width:640px){.solo-status{align-items:stretch;flex-wrap:wrap;justify-content:flex-start}.solo-status button{width:100%;font-size:1rem}.solo-difficulty{grid-column:1/-1}}

@@ -38,8 +38,9 @@ import { LIZARD_TRACK_GUARDIAN_NODE, lizardTrackGuardians, placeLizardTrackGuard
 import { setupMonkeyTrackArtifact } from './temples/monkey-state.ts';
 import { MONKEY_TRACK_ARTIFACT_NODE } from './temples/monkey-topology.ts';
 import { setupAssignedSiteIdols } from './site-idols.ts';
-import { resolveBaseBoardPlacementSite } from './base-board-setup.ts';
+import { createBaseBoardSites, resolveBaseBoardPlacementSite } from './base-board-setup.ts';
 import { useBaseIdol } from './idol-actions.ts';
+import { configureSoloGame, resetSoloRound, resolveSoloRivalAction, SOLO_HUMAN, SOLO_RIVAL } from './solo.ts';
 import type {
   EngineContext,
   GameAction,
@@ -170,6 +171,14 @@ export function createGame(playerIds: PlayerId[]): GameState {
     },
     pendingRewards: [],
   };
+}
+/** Official base-game solo setup. The rival occupies the first seat only so
+ * the existing two-player component setup and turn ownership stay canonical. */
+export function createSoloGame(options:{seed:string;difficulty:number;board:'bird'|'snake';researchBoard:string;context:EngineContext}):GameState {
+  let state=createGame([SOLO_RIVAL,SOLO_HUMAN]);
+  state.sites=createBaseBoardSites(2,options.seed,options.board);
+  state=reduce(state,{type:'START_GAME',seed:options.seed,researchBoard:options.researchBoard,marketExpansions:['Base Game']},options.context);
+  return configureSoloGame(state,options.difficulty);
 }
 function assertPlaying(s: GameState) {
   if (s.phase !== "playing") throw new Error("Game is not in progress");
@@ -509,14 +518,14 @@ function cleanupPlayerForNextRound(
 }
 function resolveGuardianFear(s: GameState, c: EngineContext) {
   for (const site of Object.values(s.sites))
-    if (site.guardian && site.occupiedBy && !s.players[site.occupiedBy].guardianFearImmuneThisRound)
+    if (site.guardian && site.occupiedBy && site.occupiedBy!==s.solo?.rivalPlayerId && !s.players[site.occupiedBy].guardianFearImmuneThisRound)
       addGuardianFear(s, site.occupiedBy, c);
   for (const guardian of lizardTrackGuardians(s)) {
     if (guardian.defeated) continue;
     for (const playerId of s.playerOrder) {
-      if (!s.players[playerId].guardianFearImmuneThisRound && s.research.magnifyingNode[playerId] === guardian.nodeId)
+      if (playerId!==s.solo?.rivalPlayerId && !s.players[playerId].guardianFearImmuneThisRound && s.research.magnifyingNode[playerId] === guardian.nodeId)
         addGuardianFear(s, playerId, c);
-      if (!s.players[playerId].guardianFearImmuneThisRound && s.research.journalNode[playerId] === guardian.nodeId)
+      if (playerId!==s.solo?.rivalPlayerId && !s.players[playerId].guardianFearImmuneThisRound && s.research.journalNode[playerId] === guardian.nodeId)
         addGuardianFear(s, playerId, c);
     }
   }
@@ -530,8 +539,8 @@ function finishRound(s: GameState, c: EngineContext) {
     return;
   }
   advanceMarketToNextRound(s);
-  s.firstPlayer = rotateFirstPlayer(s);
-  s.currentPlayer = s.firstPlayer;
+  if(s.solo) resetSoloRound(s);
+  else { s.firstPlayer = rotateFirstPlayer(s); s.currentPlayer = s.firstPlayer; }
   for (const id of s.playerOrder) runLeaderRoundStart(s, id, c);
 }
 export function reduce(
@@ -541,6 +550,8 @@ export function reduce(
 ): GameState {
   if(action.type!=='START_GAME'&&'playerId' in action)assertNoUnresolvedPendingChoice(state,action.playerId);
   const next = structuredClone(state);
+  if(next.solo&&action.type!=='SOLO_RIVAL_ACTION'&&'playerId' in action&&action.playerId===next.solo.rivalPlayerId)
+    throw new Error('The solo rival may act only by revealing its next action tile');
   switch (action.type) {
     case "START_GAME": {
       if (next.phase !== "setup") throw new Error("Game has already started");
@@ -604,6 +615,13 @@ export function reduce(
         runLeaderRoundStart(next, id, context);
       }
       next.phase = "playing";
+      return next;
+    }
+    case 'SOLO_RIVAL_ACTION': {
+      assertPlaying(next);
+      if(!next.solo||action.playerId!==next.solo.rivalPlayerId) throw new Error('Only the solo rival may reveal a rival action');
+      resolveSoloRivalAction(next,context);
+      if(next.players[next.solo.humanPlayerId].hasPassed&&next.players[next.solo.rivalPlayerId].hasPassed) finishRound(next,context);
       return next;
     }
     case 'USE_IDOL':
