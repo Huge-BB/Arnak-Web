@@ -58,6 +58,15 @@ test('the rival cannot be driven through normal player actions and never takes g
   assert.equal(state.players.rival.discard.includes('fear'),false);
 });
 
+test('rival Dig and Discover consume no more than its six archaeologists',()=>{
+  let state=createSoloGame({seed:'solo-workers',difficulty:0,board:'bird',researchBoard:'bird',context});
+  state.players.rival.availableWorkers=0;
+  state.solo!.actionDeck=['dig-coin'];
+  state=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},context);
+  assert.equal(Object.values(state.sites).some(site=>site.occupiedBy==='rival'),false);
+  assert.match(state.solo!.lastAction!.description,/no rival archaeologist/);
+});
+
 test('when the player has passed, the last rival tile closes the round and rebuilds its action stack',()=>{
   let state=createSoloGame({seed:'solo-round',difficulty:0,board:'bird',researchBoard:'bird',context});
   state.solo!.actionDeck=['dig-coin','dig-compass'];

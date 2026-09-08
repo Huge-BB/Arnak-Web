@@ -110,6 +110,7 @@ function siteRewardCode(state:GameState,siteId:string,context:EngineContext) {
 }
 function rivalDig(state:GameState,tileData:RivalTile,context:EngineContext) {
   const solo=state.solo!,rival=state.players[solo.rivalPlayerId],wanted=tileData.resource!;
+  if(rival.availableWorkers<1)return 'no rival archaeologist is available';
   const code:Record<Resource,string>={coin:'c',compass:'s',tablet:'t',arrowhead:'a',jewel:'j',fear:'f'};
   const candidates=Object.values(state.sites).filter(site=>!site.blocked&&!site.occupiedBy&&siteRewardCode(state,site.id,context).includes(code[wanted]));
   const selected=chooseSite(tileData.direction,candidates,'high');
@@ -124,6 +125,7 @@ function discoverDetails(tileId:string,round:number):{level:1|2;guardian:boolean
 function rivalDiscover(state:GameState,tileData:RivalTile,context:EngineContext) {
   const details=discoverDetails(tileData.id,state.round); if(!details)return 'does nothing in round V';
   const solo=state.solo!,rival=state.players[solo.rivalPlayerId];
+  if(rival.availableWorkers<1)return 'no rival archaeologist is available';
   const siteDeck=details.level===1?state.discovery.level1Deck:state.discovery.level2Deck;
   if(!siteDeck.length)return `no level ${details.level} site tiles remain`;
   if(details.guardian&&!state.discovery.guardianDeck.length)return 'no guardian tiles remain';
