@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { createSoloGame, reduce } from './engine.ts';
 import { scoreSoloGame } from './solo.ts';
+import { withBaseAssistantEffects } from './assistant-effect-data.ts';
+import { withBaseGuardianEffects } from './guardian-effect-data.ts';
+import { withBaseCardEffects } from './card-effect-data.ts';
+import { buildResearchTracks } from './research-data.ts';
 import type { EngineContext, ResearchTrackDefinition } from './types.ts';
 
 const track:ResearchTrackDefinition={
@@ -146,4 +151,30 @@ test('solo scoring gives the human ordinary idol-slot and Fear scoring, while ri
   assert.equal(result.human,13);
   assert.equal(result.rival,5);
   assert.equal(result.humanWon,true);
+});
+
+async function realBaseContext():Promise<EngineContext>{
+  const json=async<T>(relative:string)=>JSON.parse(await readFile(new URL(relative,import.meta.url),'utf8')) as T;
+  const [cards,assistants,sites,idols,guardians,generatedTracks,manual,rewards]=await Promise.all([
+    json<EngineContext['cards']>('./generated/cards.json'),json<NonNullable<EngineContext['assistants']>>('./generated/assistants.json'),json<NonNullable<EngineContext['sites']>>('./generated/sites.json'),json<NonNullable<EngineContext['idols']>>('./generated/idols.json'),json<NonNullable<EngineContext['guardians']>>('./generated/guardians.json'),json<NonNullable<EngineContext['researchTracks']>>('./generated/research-tracks.json'),json<Parameters<typeof buildResearchTracks>[1]>('../data/research-manual-data.json'),json<Parameters<typeof buildResearchTracks>[2]['rewardManual']>('../data/research-rewards-manual.json'),
+  ]);
+  return withBaseCardEffects(withBaseGuardianEffects(withBaseAssistantEffects({cards,assistants,sites,idols,guardians,researchTracks:buildResearchTracks(generatedTracks,manual,{rewardManual:rewards})})));
+}
+
+test('real base-game solo data completes all five rounds on Bird and Snake without pending or turn-flow deadlocks',async()=>{
+  const fullContext=await realBaseContext();
+  for(const board of ['bird','snake'] as const)for(const difficulty of [0,5]){
+    let state=createSoloGame({seed:`solo-full-${board}-${difficulty}`,difficulty,board,researchBoard:board,context:fullContext});
+    while(state.phase==='playing'){
+      assert.equal(state.currentPlayer,'rival');
+      state=reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},fullContext);
+      if(state.phase!=='playing')break;
+      if(state.currentPlayer==='p1')state=reduce(state,{type:'PASS',playerId:'p1'},fullContext);
+    }
+    assert.equal(state.round,5);
+    assert.equal(state.pendingRewards.length,0);
+    const score=scoreSoloGame(state,fullContext);
+    assert.equal(Number.isFinite(score.human),true);
+    assert.equal(Number.isFinite(score.rival),true);
+  }
 });
