@@ -1,9 +1,9 @@
 import { access, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-const repoRoot = resolve(import.meta.dirname, '../..');
-const manifestPath = join(repoRoot, 'web/data/assets-manifest.json');
-const publicRoot = join(repoRoot, 'web/public');
+const repoRoot = resolve(import.meta.dirname, '..');
+const manifestPath = join(repoRoot, 'data/assets-manifest.json');
+const publicRoot = join(repoRoot, 'public');
 const local = process.argv.includes('--local');
 
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
@@ -38,7 +38,7 @@ for (const asset of manifest.assets) {
 }
 
 if (local) {
-  const mapPath = join(repoRoot, 'web/src/generated/local-assets.json');
+  const mapPath = join(repoRoot, 'src/generated/local-assets.json');
   const runtime = JSON.parse(await readFile(mapPath, 'utf8'));
   if (runtime.version !== 1 || !runtime.assets) throw new Error('Invalid local asset map');
   for (const asset of manifest.assets) {

@@ -50,6 +50,14 @@ test('PLACE_WORKER consumes travel cards atomically', () => {
   assert.equal(next.sites.temple.occupiedBy, 'p1');
 });
 
+test('travel payment rejects an unnecessary extra card', () => {
+  const state = reduce(createGame(['p1']), { type: 'START_GAME' });
+  state.sites.temple = { id: 'temple', level: 1, tileId: 'templeTile', idolSlots: 0, travelCost: { car: 1 } };
+  state.players.p1.hand = ['car', 'boat'];
+  assert.throws(() => reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'temple', paymentCardIds: ['car', 'boat'] }, context), /unnecessary/);
+  assert.deepEqual(state.players.p1.hand, ['car', 'boat']);
+});
+
 test('Fear cannot be played for an effect but can pay its printed travel icon', () => {
   const state = reduce(createGame(['p1']), { type: 'START_GAME' });
   state.sites.temple = { id: 'temple', level: 1, tileId: 'templeTile', idolSlots: 0, travelCost: { boot: 1 } };
@@ -59,6 +67,16 @@ test('Fear cannot be played for an effect but can pay its printed travel icon', 
   assert.deepEqual(next.players.p1.hand, []);
   assert.deepEqual(next.players.p1.playedCards, ['fear']);
   assert.equal(next.sites.temple.occupiedBy, 'p1');
+});
+
+test('separate Fear card instances may both pay a two-boot travel cost', () => {
+  const state = reduce(createGame(['p1']), { type: 'START_GAME' });
+  state.sites.temple = { id: 'temple', level: 1, tileId: 'templeTile', idolSlots: 0, travelCost: { boot: 2 } };
+  state.players.p1.hand = ['fear', 'fear'];
+
+  const next = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'temple', paymentCardIds: ['fear', 'fear'] }, context);
+  assert.deepEqual(next.players.p1.hand, []);
+  assert.deepEqual(next.players.p1.playedCards, ['fear', 'fear']);
 });
 
 test('invalid travel payment leaves the input state untouched', () => {

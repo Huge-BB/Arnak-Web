@@ -107,6 +107,42 @@
       "uniqueBack": true
     }
   },
+  "bd8dc7": {
+    "id": "bd8dc7",
+    "expansion": "Expedition Leaders",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171881/BD754B5E920A72BA10CA83EDDEFC6E20193662B2/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171839/E6FDA7CE2D396AFD019A00E064B661F5B677626D/",
+      "sheetWidth": 4,
+      "sheetHeight": 2,
+      "cardIndex": 0,
+      "uniqueBack": true
+    }
+  },
+  "08d375": {
+    "id": "08d375",
+    "expansion": "Expedition Leaders",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171881/BD754B5E920A72BA10CA83EDDEFC6E20193662B2/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171839/E6FDA7CE2D396AFD019A00E064B661F5B677626D/",
+      "sheetWidth": 4,
+      "sheetHeight": 2,
+      "cardIndex": 1,
+      "uniqueBack": true
+    }
+  },
+  "97253a": {
+    "id": "97253a",
+    "expansion": "Expedition Leaders",
+    "image": {
+      "silverUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171881/BD754B5E920A72BA10CA83EDDEFC6E20193662B2/",
+      "goldUrl": "https://steamusercontent-a.akamaihd.net/ugc/1862806463732171839/E6FDA7CE2D396AFD019A00E064B661F5B677626D/",
+      "sheetWidth": 4,
+      "sheetHeight": 2,
+      "cardIndex": 2,
+      "uniqueBack": true
+    }
+  },
   "f7574d": {
     "id": "f7574d",
     "expansion": "Base Game",

@@ -16,7 +16,7 @@
         { "row": "bird:r5", "token": "magnifying", "rewards": [{ "type": "DRAW_CARD", "amount": 1 }], "verified": true, "source": "User-confirmed Bird research rewards" },
         { "row": "bird:r5", "token": "journal", "rewards": [{ "type": "ACQUIRE_ARTIFACT_FREE" }], "verified": true, "source": "User-confirmed Bird research rewards" },
         { "row": "bird:r6", "token": "magnifying", "rewards": [{ "type": "GAIN_RESOURCE", "resource": "compass", "amount": 1 }], "verified": true, "source": "User-confirmed Bird research rewards" },
-        { "row": "bird:r6", "token": "journal", "rewards": [{ "type": "OVERCOME_GUARDIAN_FREE" }], "verified": true, "source": "User-confirmed Bird research rewards" }
+        { "row": "bird:r6", "token": "journal", "rewards": [{ "type": "OVERCOME_GUARDIAN_FREE", "lizardTrackAllowed": true }], "verified": true, "source": "User-confirmed Bird research rewards" }
       ]
     },
     "snake": {

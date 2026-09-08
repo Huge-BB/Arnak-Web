@@ -29,15 +29,14 @@ export function getCardEffects(cardId: CardId, context: EngineContext): CardEffe
   return context.cardEffects?.[cardId] ?? inferBaseStarterEffects(cardId, context);
 }
 
-function gainFearCards(state: GameState, playerId: PlayerId, amount: number, context: EngineContext) {
+export function gainFearCards(state: GameState, playerId: PlayerId, amount: number, context: EngineContext) {
   if (!Number.isInteger(amount) || amount < 0) throw new Error('Fear amount must be a non-negative integer');
   const fear = Object.values(context.cards).find(card => card.type === 'Fear' && card.expansion === 'Base Game');
   if (!fear) throw new Error('Base-game Fear card is missing from the card catalog');
-  for (let i = 0; i < amount; i += 1) state.players[playerId].playedCards.push(fear.id);
+  for (let i = 0; i < amount; i += 1) state.players[playerId].discard.push(fear.id);
 }
-function gainFearToHand(state:GameState,playerId:PlayerId,amount:number,context:EngineContext){if(!Number.isInteger(amount)||amount<0)throw new Error('Fear-to-hand amount must be a non-negative integer');const fear=Object.values(context.cards).find(card=>card.type==='Fear'&&card.expansion==='Base Game');if(!fear)throw new Error('Base-game Fear card is missing from the card catalog');for(let index=0;index<amount;index+=1)state.players[playerId].hand.push(fear.id);}
 /** Expansion cards may have a special effect merely for being exiled. */
-export function resolveOwnedCardExile(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const card=context.cards[cardId];if(card?.expansion!=='Surprise Shipment')return;if(card.name==='Ominous Chalice'){gainFearToHand(state,playerId,1,context);gainResource(state,playerId,'coin',1);}else if(card.name==='Ominous Medallion')gainFearToHand(state,playerId,1,context);else if(card.name==='Ominous Warpaint')gainFearToHand(state,playerId,2,context);}
+export function resolveOwnedCardExile(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const card=context.cards[cardId];if(card?.expansion!=='Surprise Shipment')return;if(card.name==='Ominous Chalice'){gainFearCards(state,playerId,1,context);gainResource(state,playerId,'coin',1);}else if(card.name==='Ominous Medallion')gainFearCards(state,playerId,1,context);else if(card.name==='Ominous Warpaint')gainFearCards(state,playerId,2,context);}
 function drawFromBottom(state:GameState,playerId:PlayerId,amount:number){if(!Number.isInteger(amount)||amount<0)throw new Error('Bottom draw amount must be a non-negative integer');const player=state.players[playerId];for(let index=0;index<amount;index+=1){const card=player.deck.pop();if(!card)break;player.hand.push(card);}}
 function counterValue(state:GameState,playerId:PlayerId,counter:CardEffectCounter,context:EngineContext){const player=state.players[playerId];switch(counter){case'IDOLS':return player.idols.length;case'OCCUPIED_WORKERS':return Object.values(state.sites).filter(site=>site.occupiedBy===playerId).length;case'GUARDIAN_TOTAL':return player.defeatedGuardians.length+Object.values(state.sites).filter(site=>site.occupiedBy===playerId&&site.guardian).length;case'FEAR_IN_HAND_AND_PLAY':return [...player.hand,...player.playedCards].filter(id=>context.cards[id]?.type==='Fear'||(context.cards[id]?.expansion==='Expedition Leaders'&&context.cards[id]?.name==='Hidden Fear')).length;}}
 function spendEffectResources(state:GameState,playerId:PlayerId,cost:ResourceCost){const player=state.players[playerId];for(const resource of ['tablet','arrowhead','jewel','coin','compass'] as const){const amount=cost[resource]??0;if(!Number.isInteger(amount)||amount<0)throw new Error(`Invalid card ${resource} cost`);if(player.resources[resource]<amount)throw new Error(`Insufficient ${resource}`);}for(const resource of ['tablet','arrowhead','jewel','coin','compass'] as const)player.resources[resource]-=cost[resource]??0;}
@@ -94,7 +93,6 @@ export function applyCardEffects(state: GameState, playerId: PlayerId, effects: 
       case 'GAIN_FEAR_CARD':
         gainFearCards(state, playerId, effect.amount, context);
         break;
-      case 'GAIN_FEAR_TO_HAND':gainFearToHand(state,playerId,effect.amount,context);break;
       case 'IGNORE_GUARDIAN_FEAR_THIS_ROUND':
         state.players[playerId].guardianFearImmuneThisRound=true;
         break;
@@ -234,7 +232,8 @@ export function applyCardEffects(state: GameState, playerId: PlayerId, effects: 
       case 'USE_MARKET_ITEM_EFFECT':
       case 'BUY_ARTIFACT_WITH_DISCOUNT_TO_HAND':
       case 'EXCHANGE_ASSISTANT_WITH_AVAILABLE':
-      case 'BUY_ITEM_DISCOUNT_INCLUDE_TOP':
+      case 'BUY_ITEM':
+      case 'BUY_ARTIFACT':
         if (!sourceCardId) throw new Error('Discard card effect requires its source card id');
         state.pendingRewards.push({ playerId, sourceId: `card:${sourceCardId}`, code: 'card:RESOLVE_EFFECT', payload: { type: 'CARD_EFFECT', sourceCardId, effect } });
         return;

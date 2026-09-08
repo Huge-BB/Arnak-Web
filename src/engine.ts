@@ -1,6 +1,7 @@
 import { prepareAssistantSupply } from "./assistants.ts";
 import { assertMainActionAvailable, consumeMainAction } from './action-economy.ts';
 import { activateOwnedAssistant } from "./assistant-actions.ts";
+import { assistantEffectFor } from './assistant-effect-data.ts';
 import { prepareBaseGameSetup } from "./cards.ts";
 import { applyCardEffects, getCardEffects } from "./effects.ts";
 import { beginForcedSiteAction } from './action-window.ts';
@@ -19,6 +20,7 @@ import {
   mysticPerformRitual,
   professorBuyArchiveArtifact,
 } from "./leaders/actions.ts";
+import { leaderIdolActionTiming, useLeaderIdol } from './leaders/idol-actions.ts';
 import { advanceResearchByNode } from "./research-action.ts";
 import { researchStartNode } from "./research-topology.ts";
 import {
@@ -36,6 +38,7 @@ import { LIZARD_TRACK_GUARDIAN_NODE, lizardTrackGuardians, placeLizardTrackGuard
 import { setupMonkeyTrackArtifact } from './temples/monkey-state.ts';
 import { MONKEY_TRACK_ARTIFACT_NODE } from './temples/monkey-topology.ts';
 import { setupAssignedSiteIdols } from './site-idols.ts';
+import { resolveBaseBoardPlacementSite } from './base-board-setup.ts';
 import { useBaseIdol } from './idol-actions.ts';
 import type {
   EngineContext,
@@ -445,6 +448,7 @@ function advanceResearch(
         paymentCardIds: a.paymentCardIds,
         discardCardId: a.discardCardId,
         bonusTileId: a.bonusTileId,
+        costAlternativeIndex: a.costAlternativeIndex,
       },
       c,
     );
@@ -547,6 +551,7 @@ export function reduce(
       });
       const seed = action.seed ?? "default";
       next.setupSeed = seed;
+      next.enabledExpansions = [...new Set(action.marketExpansions ?? ['Base Game'])];
       next.moonStaff = action.moonStaff ?? 'blue';
       next.research.board = action.researchBoard ?? "bird";
       const start = researchStartNode(next.research.board);
@@ -573,6 +578,7 @@ export function reduce(
           next.research.board,
           next.playerOrder.length,
           seed,
+          next.enabledExpansions,
         );
       if (Object.keys(context.cards).length) {
         const setup = prepareBaseGameSetup(
@@ -655,7 +661,7 @@ export function reduce(
       if(next.players[action.playerId].mustPassImmediately){delete next.players[action.playerId].mustPassImmediately;return reduce(next,{type:'PASS',playerId:action.playerId},context);}
       return next;
     case "ACTIVATE_ASSISTANT":
-      { const assistant=next.players[action.playerId]?.assistants.find(candidate=>candidate.id===action.assistantId),effect=assistant?context.assistantEffects?.[assistant.id]?.[assistant.level]:undefined,isMain=effect?.freeAction===false;
+      { const assistant=next.players[action.playerId]?.assistants.find(candidate=>candidate.id===action.assistantId),effect=assistant?assistantEffectFor(next,assistant.id,assistant.level,context):undefined,isMain=effect?.freeAction===false;
       if (isMain) assertMainActionAvailable(next, action.playerId);
       const resolved=activateOwnedAssistant(
         next,
@@ -666,19 +672,22 @@ export function reduce(
     case "PLACE_WORKER": {
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
+      const resolvedAction = { ...action, siteId: resolveBaseBoardPlacementSite(next.sites, action.siteId) };
       const forced=forcedSiteAction(next,action.playerId,'place');
       if(!forced||forced.consumesMainAction)assertMainActionAvailable(next, action.playerId);
-      let site = next.sites[action.siteId];
-      if (!site) throw new Error(`Unknown site: ${action.siteId}`);
+      let site = next.sites[resolvedAction.siteId];
+      if (!site) throw new Error(`Unknown site: ${resolvedAction.siteId}`);
       if (site.blocked) throw new Error('Site is blocked for this player count');
       if (site.occupiedBy) throw new Error("Site is occupied");
-      payDiscardedHandCard(next,action.playerId,site.discardCardCost,action.discardCardId,'Site');
-      const consumesWorker = prepareWorkerForSiteAction(next, action);
-      site = next.sites[action.siteId];
-      payTravel(next,action.playerId,discountedSiteTravelCost(next,action.playerId,site.travelCost??{}),action.paymentCardIds??[],context,'Site travel');
+      // Camp 5's discard is a printed site cost. It must be paid before the
+      // worker is placed and before its jewel reward can be collected.
+      payDiscardedHandCard(next,resolvedAction.playerId,site.discardCardCost,resolvedAction.discardCardId,'Site');
+      const consumesWorker = prepareWorkerForSiteAction(next, resolvedAction);
+      site = next.sites[resolvedAction.siteId];
+      payTravel(next,resolvedAction.playerId,discountedSiteTravelCost(next,resolvedAction.playerId,site.travelCost??{}),resolvedAction.paymentCardIds??[],context,'Site travel');
       if (consumesWorker) next.players[action.playerId].availableWorkers -= 1;
       site.occupiedBy = action.playerId;
-      resolveSite(next, action.playerId, action.siteId, context);
+      resolveSite(next, action.playerId, resolvedAction.siteId, context);
       consumeSiteActionDiscount(next,action.playerId);
       finishSiteAction(next,action.playerId,forced);
       return next;
@@ -698,7 +707,20 @@ export function reduce(
     case "LEADER_CAPTAIN_SPECIALIST":
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
+      assertMainActionAvailable(next, action.playerId);
+      consumeMainAction(next, action.playerId);
       return captainCallSpecialist(next, action.playerId, action.stackIndex);
+    case "LEADER_USE_IDOL": {
+      assertPlaying(next);
+      assertCurrentPlayer(next, action.playerId);
+      const leaderId = next.players[action.playerId]?.leader?.id;
+      if (!leaderId) throw new Error('Leader idol action requires an Expedition Leader');
+      const timing = leaderIdolActionTiming(leaderId, action.effect);
+      if (timing === 'main') assertMainActionAvailable(next, action.playerId);
+      const resolved = useLeaderIdol(next, action.playerId, action.idolId, action.slotIndex, action.effect, context, { snackId: action.snackId });
+      if (timing === 'main') consumeMainAction(resolved, action.playerId);
+      return resolved;
+    }
     case "LEADER_FALCONER_RETURN_EAGLE":
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
@@ -725,6 +747,8 @@ export function reduce(
     case "LEADER_MYSTIC_RITUAL":
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
+      assertMainActionAvailable(next, action.playerId);
+      consumeMainAction(next, action.playerId);
       return mysticPerformRitual(next, action.playerId, action.fearCount);
     case "END_TURN": {
       assertPlaying(next);

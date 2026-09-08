@@ -1,0 +1,10 @@
+{
+  "$schemaVersion": 1,
+  "overrides": {
+    "1eee42": {
+      "expansion": "Surprise Shipment",
+      "replacesBaseSiteId": "604de9",
+      "comment": "Surprise Shipment replacement for the base-game ssi site tile."
+    }
+  }
+}

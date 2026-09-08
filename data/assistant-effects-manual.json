@@ -53,6 +53,18 @@
     "marketDiscount": {
       "silver": { "type": "BUY_WITH_DISCOUNT", "freeAction": false, "itemDiscount": 1, "artifactDiscount": 1 },
       "gold": { "type": "BUY_WITH_DISCOUNT", "freeAction": false, "itemDiscount": 2, "artifactDiscount": 2 }
+    },
+    "elBootCoinTablet": {
+      "silver": { "type": "PAY_TRAVEL_GAIN", "freeAction": true, "cost": { "boot": 1 }, "gain": { "coin": 1, "tablet": 1 } },
+      "gold": { "type": "SEQUENCE", "freeAction": true, "effects": [{ "type": "GAIN_RESOURCES", "resources": { "tablet": 1 } }, { "type": "UPGRADE_RESOURCE" }] }
+    },
+    "elCoinOrDoubleBoot": {
+      "silver": { "type": "CHOOSE", "freeAction": true, "options": [{ "type": "GAIN_RESOURCES", "resources": { "coin": 1 } }, { "type": "GAIN_TRAVEL", "travel": { "boot": 2 } }] },
+      "gold": { "type": "SEQUENCE", "freeAction": true, "effects": [{ "type": "GAIN_FEAR_CARD", "amount": 1 }, { "type": "GAIN_RESOURCES", "resources": { "jewel": 1 } }] }
+    },
+    "elCompassArrow": {
+      "silver": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "compass": 1 } },
+      "gold": { "type": "GAIN_RESOURCES", "freeAction": true, "resources": { "arrowhead": 1 } }
     }
   },
   "assistantBindings": [
@@ -67,6 +79,9 @@
     { "assistantId": "c9b827", "cardId": 602, "deckId": 6, "cardIndex": 2, "effectKey": "bootToArrow" },
     { "assistantId": "f5bdcf", "cardId": 606, "deckId": 6, "cardIndex": 6, "effectKey": "coinOrPlane" },
     { "assistantId": "c7024f", "cardId": 610, "deckId": 6, "cardIndex": 10, "effectKey": "upgradeTrade" },
-    { "assistantId": "f7574d", "cardId": 703, "deckId": 7, "cardIndex": 3, "effectKey": "twoCoins" }
+    { "assistantId": "f7574d", "cardId": 703, "deckId": 7, "cardIndex": 3, "effectKey": "twoCoins" },
+    { "assistantId": "bd8dc7", "cardId": 700, "deckId": 7, "cardIndex": 0, "effectKey": "elBootCoinTablet", "expansion": "Expedition Leaders" },
+    { "assistantId": "08d375", "cardId": 701, "deckId": 7, "cardIndex": 1, "effectKey": "elCoinOrDoubleBoot", "expansion": "Expedition Leaders" },
+    { "assistantId": "97253a", "cardId": 702, "deckId": 7, "cardIndex": 2, "effectKey": "elCompassArrow", "expansion": "Expedition Leaders" }
   ]
 }

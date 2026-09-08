@@ -227,6 +227,8 @@ row × token
 
 ### `GAIN_FEAR_CARD` 获得恐惧牌
 
+将对应数量的基础恐惧牌置入玩家弃牌堆。
+
 ```json
 { "type": "GAIN_FEAR_CARD", "amount": 1 }
 ```

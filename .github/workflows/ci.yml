@@ -1,0 +1,48 @@
+name: Verify
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Engine, room protocol, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate localized assets
+        run: npm run assets:validate:local
+
+      - name: Audit rule-verification evidence
+        run: npm run audit:rules
+
+      - name: Run engine regression suite
+        run: npm test
+
+      - name: Smoke-test the room HTTP/SSE contract
+        run: npm run test:rooms-http
+
+      - name: Build production client
+        run: npm run build

@@ -39,7 +39,7 @@ export const leaderMarketEffects: Record<string, CardEffect[]> = {
   '1201': [{ type:'IF_NO_OTHER_PLAYED_CARDS', ifTrue:[{ type:'DRAW_CARD', amount:2 }], otherwise:[{ type:'GAIN_RESOURCE', resource:'coin', amount:3 }] }],
   // Guardian's Lute: draw, then return one defeated guardian to the supply.
   '1203': [expansionEffectPresets.spendDefeatedGuardian([{ type:'DRAW_CARD', amount:1 }])],
-  '1204': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_TO_HAND', amount:1 }, { type:'USE_STANDARD_IDOL_SLOT_EFFECT' }] }],
+  '1204': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_CARD', amount:1 }, { type:'USE_STANDARD_IDOL_SLOT_EFFECT' }] }],
   '1108': [{ type:'CHOOSE_DISTINCT_BY_MAGNIFYING_ROWS', thresholds:[2,4,7], options:[{type:'DRAW_CARD',amount:1},{type:'GAIN_RESOURCE',resource:'coin',amount:1},{type:'GAIN_RESOURCE',resource:'tablet',amount:1}] }],
   '1116': [{ type:'MOVE_OCCUPIED_WORKER_THEN_ACTIVATE', sourceLevel:2, destination:'level1', activations:1 }],
   // Army Belt selects exactly two distinct printed options.

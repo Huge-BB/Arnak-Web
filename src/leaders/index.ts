@@ -19,6 +19,7 @@ function buildLeaderStartingDeck(state:GameState,playerId:PlayerId,rules:LeaderR
 export function setupLeader(state:GameState,playerId:PlayerId,id:LeaderId,context:EngineContext,seed:string){const rules=leaderRulesFor(id);buildLeaderStartingDeck(state,playerId,rules,context,seed);rules.setup({state,playerId,context,seed});}
 export function runLeaderRoundStart(state:GameState,playerId:PlayerId,context:EngineContext){const leader=state.players[playerId].leader;if(!leader)return;leaderRulesFor(leader.id).onRoundStart?.({state,playerId,context,seed:state.setupSeed??'default',round:state.round});}
 export function runLeaderRoundEnd(state:GameState,playerId:PlayerId,context:EngineContext){const leader=state.players[playerId].leader;if(!leader)return;leaderRulesFor(leader.id).onRoundEnd?.({state,playerId,context,seed:state.setupSeed??'default',round:state.round});}
+/** Mystic's round income is a printed exception: it puts the Fear card in hand, not discard. */
 export function addFearToHand(state:GameState,playerId:PlayerId,context:EngineContext):CardId|undefined{const fear=Object.values(context.cards).find(card=>card.type==='Fear'&&card.expansion==='Base Game');if(!fear)return undefined;state.players[playerId].hand.push(fear.id);return fear.id;}
 
 export function leaderCardDestination(state:GameState,playerId:PlayerId,card:CardDefinition):'hand'|'deck'|'played'{

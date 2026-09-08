@@ -69,13 +69,13 @@ test('Bird free guardian reward becomes a structured target-selection pending re
   assert.deepEqual(game.pendingRewards[0].payload, { type: 'OVERCOME_GUARDIAN_FREE' });
 });
 
-test('Snake GAIN_FEAR_CARD adds a base-game Fear card to played cards', () => {
+test('Snake GAIN_FEAR_CARD adds a base-game Fear card to discard', () => {
   const game = state();
   const context: EngineContext = {
     cards: { fear: { id: 'fear', name: 'Fear', type: 'Fear', expansion: 'Base Game' } },
   };
   resolveResearchReward(game, 'p1', 'snake:test', { type: 'GAIN_FEAR_CARD', amount: 1 }, context);
-  assert.deepEqual(game.players.p1.playedCards, ['fear']);
+  assert.deepEqual(game.players.p1.discard, ['fear']);
 });
 
 test('Monkey REFRESH_ASSISTANTS all readies both assistants', () => {

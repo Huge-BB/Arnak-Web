@@ -21,16 +21,18 @@ and `/calibrate.html` for visual coordinate recording.
 Run the game client and the authoritative room service in separate terminals:
 
 ```powershell
-npm run server:rooms
+npm run server:lan
 ```
 
 ```powershell
-npm run dev -- --host 0.0.0.0
+npm run dev:lan
 ```
 
 The room service listens on port `8787` by default; set `ARNAK_ROOM_PORT` to
-change it. On each device, open the host machine's Vite LAN address, select
-the LAN lobby, and use the same room-service address (`http://HOST:8787`).
+change it. `server:lan` accepts the private IPv4 ranges on Vite ports 5173 and
+4173 by default. On each device, open the host machine's Vite LAN address,
+select the LAN lobby, and use the same room-service address
+(`http://HOST:8787`).
 
 Register or sign in before creating or joining. The host creates the room,
 other players join, and only the host can start. A returning account receives
@@ -77,9 +79,11 @@ snapshot.
 
 Copy `.env.example` into your deployment environment. `ARNAK_DATA_DIR` holds
 the file-backed account and room data; back it up for a self-hosted service.
-Set `ARNAK_ALLOWED_ORIGINS` to the exact comma-separated Web client origins.
-The secure default admits only local Vite origins, so a LAN/deployed client
-must be explicitly added.
+Set `ARNAK_ALLOWED_ORIGINS` to exact comma-separated Web client origins when
+you need a tighter policy. For the trusted-LAN workflow,
+`ARNAK_ALLOW_LAN_ORIGINS` defaults to true and permits only private IPv4 Vite
+origins on ports 5173 and 4173; set it to `false` to use only the explicit
+allowlist.
 
 ## Production/container direction
 

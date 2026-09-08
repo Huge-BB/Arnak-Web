@@ -1,4 +1,4 @@
-import type { EngineContext, GameState, PlayerId, Resource } from './types.ts';
+import type { CardEffect, EngineContext, GameState, PlayerId, Resource } from './types.ts';
 
 const RESOURCE_CODES: Record<string, Resource> = {
   c: 'coin',
@@ -18,7 +18,16 @@ function drawCards(state: GameState, playerId: PlayerId, amount: number) {
 function gainFearCard(state: GameState, playerId: PlayerId, context: EngineContext) {
   const fear = Object.values(context.cards).find(card => card.type === 'Fear' && card.expansion === 'Base Game');
   if (!fear) throw new Error('No base-game Fear card found');
-  state.players[playerId].playedCards.push(fear.id);
+  state.players[playerId].discard.push(fear.id);
+}
+
+function queueSiteEffect(state: GameState, playerId: PlayerId, sourceId: string, code: string, effect: CardEffect) {
+  state.pendingRewards.push({
+    playerId,
+    sourceId,
+    code: 'card:RESOLVE_EFFECT',
+    payload: { type: 'CARD_EFFECT', sourceCardId: sourceId, effect },
+  });
 }
 
 export function resolveRewardCode(
@@ -39,6 +48,16 @@ export function resolveRewardCode(
       drawCards(state, playerId, 1);
     } else if (code === 'f') {
       gainFearCard(state, playerId, context);
+    } else if (code === 'i' || code === 'v') {
+      // Both printed icons grant a free normal Item purchase: select a visible
+      // Item, pay no coins, and use the ordinary Item purchase destination.
+      queueSiteEffect(state, playerId, sourceId, 'BUY_ITEM_FREE', { type: 'BUY_ITEM', discount: 99 });
+    } else if (code === 'u') {
+      queueSiteEffect(state, playerId, sourceId, 'UPGRADE_RESOURCE', { type: 'UPGRADE_RESOURCE_THEN', effects: [] });
+    } else if (code === 'm') {
+      queueSiteEffect(state, playerId, sourceId, 'ACTIVATE_CAMP', { type: 'ACTIVATE_TENT_SITE', requireEmpty: false });
+    } else if (code === 'b') {
+      queueSiteEffect(state, playerId, sourceId, 'RETURN_SLOTTED_IDOL', { type: 'RETURN_SLOTTED_IDOL' });
     } else {
       state.pendingRewards.push({ playerId, sourceId, code });
     }

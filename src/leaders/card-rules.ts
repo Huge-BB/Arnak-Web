@@ -4,7 +4,7 @@ import { falconerAdvanceEagle } from './actions.ts';
 import { explorerSpendSnackOnStartingCard } from './extra-actions.ts';
 
 export type LeaderCardChoice =
-  | 'coin'|'compass'|'tablets'|'exile'|'eagle'|'refreshAssistant'|'suitcaseCompass'|'suitcaseTablet'
+  | 'coin'|'compass'|'tablets'|'exile'|'eagle'|'refreshAssistant'|'upgradeResource'|'suitcaseCompass'|'suitcaseTablet'
   | 'payCoinForPlanes'|'payCoinsForJewel'|'activateSite'|'activateFaceupIdol'|'draw';
 function requirePlayer(state:GameState,playerId:PlayerId){const player=state.players[playerId];if(!player)throw new Error(`Unknown player: ${playerId}`);if(!player.leader)throw new Error(`${playerId} has no expedition leader`);return player;}
 function requireCard(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const player=requirePlayer(state,playerId);const card=context.cards[cardId];if(!card||card.expansion!=='Expedition Leaders')throw new Error(`Not an Expedition Leaders starting card: ${cardId}`);if(!player.hand.includes(cardId)&&!player.playedCards.includes(cardId))throw new Error('Leader card is not available to this player');return{player,card};}
@@ -18,7 +18,7 @@ export function resolveLeaderStartingCard(state:GameState,playerId:PlayerId,card
   case'captain':{
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
    if(card.name==='Piloting'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='payCoinForPlanes'){if(next.players[playerId].resources.coin<1)throw new Error('Piloting requires 1 coin');next.players[playerId].resources.coin-=1;return grantTemporaryTravel(next,playerId,{plane:2});}throw new Error('Invalid Piloting choice');}
-   if(card.name==='Transmission'){const placed=placedArchaeologists(next,playerId);if(placed<1)throw new Error('Transmission has no effect with zero placed archaeologists');if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='compass'&&placed>=2){gain(next,playerId,'compass');return next;}if(choice==='tablets'&&placed>=3){gain(next,playerId,'tablet',2);return next;}throw new Error('Transmission choice is not unlocked');}
+   if(card.name==='Transmission'){const placed=placedArchaeologists(next,playerId);if(placed<1)throw new Error('Transmission has no effect with zero placed archaeologists');if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='compass'&&placed>=2){gain(next,playerId,'compass');return next;}if(choice==='tablets'&&placed>=3){gain(next,playerId,'tablet');return next;}throw new Error('Transmission choice is not unlocked');}
    if(card.name==='Hidden Fear')throw new Error('Hidden Fear cannot be played for an effect');break;
   }
   case'falconer':{
@@ -34,13 +34,13 @@ export function resolveLeaderStartingCard(state:GameState,playerId:PlayerId,card
   }
   case'professor':{
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
-   if(card.name==='Preservation'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='refreshAssistant'){queue(next,playerId,source,'leader:REFRESH_OWN_ASSISTANT',{max:1,freeAction:true});return next;}throw new Error('Invalid Preservation choice');}
+   if(card.name==='Preservation'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='upgradeResource'){queue(next,playerId,source,'leader:UPGRADE_RESOURCE',{allowedResources:['tablet','arrowhead'],freeAction:true});return next;}throw new Error('Invalid Preservation choice');}
    if(card.name==='Arnakology'){if(choice!=='compass')throw new Error('Arnakology grants compass');gain(next,playerId,'compass');queue(next,playerId,source,'leader:OPTIONAL_SWAP_ARCHIVE_ARTIFACT',{freeAction:true});return next;}
    if(card.name==='Linguistics'){const artifacts=countPlayedType(next,playerId,context,'Artifact'),suitcase=(next.players[playerId].leader!.data.suitcase??={compass:0,tablet:0}) as {compass:number;tablet:number};if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='suitcaseCompass'&&artifacts>=1){suitcase.compass=(suitcase.compass??0)+1;return next;}if(choice==='suitcaseTablet'&&artifacts>=2){suitcase.tablet=(suitcase.tablet??0)+1;return next;}throw new Error('Linguistics choice is not unlocked');}break;
   }
   case'explorer':{
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
-   if(card.name==='Hike'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='activateSite'){if(!options.snackId)throw new Error('Hike requires a snack token');const spent=explorerSpendSnackOnStartingCard(next,playerId,options.snackId,cardId,context);queue(spent,playerId,source,'leader:ACTIVATE_DISCOVERED_SITE',{mainAction:true});return spent;}throw new Error('Invalid Hike choice');}
+   if(card.name==='Hike'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='activateSite'){if(!options.snackId)throw new Error('Hike requires a snack token');const spent=explorerSpendSnackOnStartingCard(next,playerId,options.snackId,cardId,context);queue(spent,playerId,source,'leader:ACTIVATE_TENT_SITE',{mainAction:true});return spent;}throw new Error('Invalid Hike choice');}
    if(card.name==='Cartography'){if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='activateFaceupIdol'){if(!options.snackId)throw new Error('Cartography requires a snack token');const spent=explorerSpendSnackOnStartingCard(next,playerId,options.snackId,cardId,context);gain(spent,playerId,'tablet');queue(spent,playerId,source,'leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL',{mainAction:true});return spent;}throw new Error('Invalid Cartography choice');}
    if(card.name==='Scouting'){if(choice!=='compass')throw new Error('Scouting grants compass');gain(next,playerId,'compass');next.players[playerId].leader!.data.scoutingSiteChoiceThisTurn=true;return next;}break;
   }

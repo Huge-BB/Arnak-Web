@@ -23,7 +23,7 @@ function moveStartingCardToPlayArea(state:GameState,playerId:PlayerId,cardId:Car
 export function reduceExpeditionLeaderAction(state:GameState,action:ExpeditionLeaderAction,context:EngineContext):GameState{
  assertLeaderTurn(state,action.playerId);
  switch(action.type){
-  case'LEADER_STARTING_CARD_EFFECT':{const next=moveStartingCardToPlayArea(state,action.playerId,action.cardId);return resolveLeaderStartingCard(next,action.playerId,action.cardId,action.choice,context,{snackId:action.snackId});}
+  case'LEADER_STARTING_CARD_EFFECT':{const isCartographyMainAction=context.cards[action.cardId]?.name==='Cartography'&&action.choice==='activateFaceupIdol';if(isCartographyMainAction)assertMainActionAvailable(state,action.playerId);const next=moveStartingCardToPlayArea(state,action.playerId,action.cardId);const resolved=resolveLeaderStartingCard(next,action.playerId,action.cardId,action.choice,context,{snackId:action.snackId});if(isCartographyMainAction)consumeMainAction(resolved,action.playerId);return resolved;}
   case'LEADER_USE_IDOL':{
     const timing=leaderIdolActionTiming(state.players[action.playerId].leader!.id,action.effect);
     if(timing==='main')assertMainActionAvailable(state,action.playerId);
@@ -38,7 +38,7 @@ export function reduceExpeditionLeaderAction(state:GameState,action:ExpeditionLe
   case'LEADER_PROFESSOR_BUY_ARCHIVE':{const next=professorBuyArchiveArtifact(state,action.playerId,action.cardId,context,action.suitcaseCompass??0);consumeMainAction(next,action.playerId);return next;}
   case'LEADER_EXPLORER_SPEND_SNACK':return explorerSpendSnack(state,action.playerId,action.snackId,action.siteId);
   case'LEADER_MYSTIC_EXILE_FEAR':return mysticExileFear(state,action.playerId,action.cardId,context);
-  case'LEADER_MYSTIC_EXILE_STARTING_CARD':return mysticExileStartingCardForRitual(state,action.playerId,action.cardId,context);
+  case'LEADER_MYSTIC_EXILE_STARTING_CARD':{assertMainActionAvailable(state,action.playerId);const next=mysticExileStartingCardForRitual(state,action.playerId,action.cardId,context);consumeMainAction(next,action.playerId);return next;}
   case'LEADER_MYSTIC_RITUAL':{const next=mysticPerformRitual(state,action.playerId,action.fearCount);consumeMainAction(next,action.playerId);return next;}
  }
 }

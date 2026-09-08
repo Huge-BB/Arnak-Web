@@ -62,7 +62,7 @@
         { "from": "monkey:r0:p2", "to": "monkey:r1:p1", "cost": { "compass": 1, "tablet": 1, "arrowhead": 1 }, "verified": true },
         { "from": "monkey:r0:p2", "to": "monkey:r1:p2", "cost": { "tablet": 1, "jewel": 1 }, "verified": true },
         { "from": "monkey:r1:p0", "to": "monkey:r2:p0", "cost": { "arrowhead": 1, "travel": { "car": 1 } }, "verified": true },
-        { "from": "monkey:r1:p1", "to": "monkey:r2:p0", "cost": { "arrowhead": 1, "travel": { "car": 1 } }, "verified": true },
+        { "from": "monkey:r1:p1", "to": "monkey:r2:p0", "cost": { "arrowhead": 1, "travel": { "car": 1 } }, "alternativeCosts": [{ "tablet": 2, "travel": { "boat": 1 } }], "verified": true, "comment": "User-confirmed: choose either printed cost." },
         { "from": "monkey:r1:p2", "to": "monkey:r2:p0", "cost": { "tablet": 2, "travel": { "boat": 1 } }, "verified": true },
         { "from": "monkey:r2:p0", "to": "monkey:r3:p0", "cost": { "jewel": 1 }, "allowedTokens": ["journal"], "verified": true },
         { "from": "monkey:r2:p0", "to": "monkey:r4:magnifying", "cost": { "tablet": 2, "arrowhead": 1 }, "allowedTokens": ["magnifying"], "verified": true },

@@ -46,9 +46,11 @@ test('a reserved pass executes once when the player next receives a legal turn',
   const guest = await rooms.joinRoom(host.roomId, { name: 'Guest' });
   await rooms.startRoom(host.roomId, host.token, { seed: 'reserved-pass' });
   assert.equal((await rooms.setAutoPass(host.roomId, guest.token, true)).viewer.autoPass, true);
-  await rooms.submitCommand(host.roomId, host.token, { type: 'action', action: { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp-1-a' } });
-  const next = await rooms.submitCommand(host.roomId, host.token, { type: 'action', action: { type: 'END_TURN', playerId: 'p1' } });
-  assert.equal(next.state?.players.p2.hasPassed, true);
-  assert.equal(next.state?.currentPlayer, 'p1');
+  const next = await rooms.submitCommand(host.roomId, host.token, { type: 'action', action: { type: 'PASS', playerId: 'p1' } });
+  // Both players have now passed, so round cleanup immediately resets
+  // hasPassed and rotates first player. Reaching round two proves p2's
+  // one-time reserved pass was consumed.
+  assert.equal(next.state?.round, 2);
+  assert.equal(next.state?.currentPlayer, 'p2');
   assert.equal((await rooms.snapshot(host.roomId, guest.token)).viewer.autoPass, false);
 });

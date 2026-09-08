@@ -123,3 +123,16 @@ test('journal cannot use a Lost Temple entry bridge', () => {
     /Journal cannot enter/,
   );
 });
+
+test('a bridge restricted to one research token rejects the other token', () => {
+  const state = playingGame();
+  const restricted = structuredClone(track);
+  restricted.bridges[0]!.allowedTokens = ['magnifying'];
+  state.research.magnifyingNode.p1 = 'bird:r0:p0';
+  state.research.magnifying.p1 = 0;
+  assert.throws(
+    () => advanceResearchByNode(state, restricted, { playerId: 'p1', token: 'journal', toNodeId: 'bird:r0:p0' }),
+    /journal cannot use this research bridge/,
+  );
+  assert.equal(state.research.journalNode.p1, 'bird:start');
+});

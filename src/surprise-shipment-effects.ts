@@ -34,7 +34,7 @@ export const surpriseShipmentEffects: Record<string, CardEffect[]> = {
   // Shipping Crate: buy one visible Item two coins cheaper and put it on the
   // top of the deck.  The pre-existing purchase resolver handles payment,
   // refill, and the delayed card draw normally.
-  '3116': [{ type:'BUY_ITEM_DISCOUNT_INCLUDE_TOP', discount:2 }],
+  '3116': [{ type:'BUY_ITEM', discount:2, includeTop:true }],
   // Mirror Stone: activate any occupied discovered site, regardless of level.
   '3212': [{ type:'ACTIVATE_OCCUPIED_SITE' }],
   // Ominous Chalice: its ordinary effect is coin then one resource upgrade;
@@ -69,13 +69,13 @@ export const surpriseShipmentEffects: Record<string, CardEffect[]> = {
   '3210': [expansionEffectPresets.spendDefeatedGuardian([{ type:'GAIN_RESOURCE', resource:'arrowhead', amount:2 }])],
   // Coins of Mourning: put a Fear into hand, then gain up to three coins for
   // Fear cards in hand and play (including the one just gained).
-  '3204': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_TO_HAND', amount:1 }, expansionEffectPresets.perFear('coin', 3)] }],
+  '3204': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_CARD', amount:1 }, expansionEffectPresets.perFear('coin', 3)] }],
   // Stones of Mourning follows the same Fear-to-hand template, rewarding a
   // tablet (rather than coins or upgrades) for each counted Fear.
-  '3222': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_TO_HAND', amount:1 }, expansionEffectPresets.perFear('tablet', 3)] }],
+  '3222': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_CARD', amount:1 }, expansionEffectPresets.perFear('tablet', 3)] }],
   // Beads of Mourning: gain Fear to hand, then upgrade once for each Fear in
   // hand/play (up to three).
-  '3202': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_TO_HAND', amount:1 }, expansionEffectPresets.upgradesPerFear(3)] }],
+  '3202': [{ type:'SEQUENCE', effects:[{ type:'GAIN_FEAR_CARD', amount:1 }, expansionEffectPresets.upgradesPerFear(3)] }],
   // Footprints of Artan grants an additional main action this turn.
   '3207': [expansionEffectPresets.extraMainAction()],
   '3206': [{ type:'SEQUENCE', effects:[{ type:'GAIN_TRAVEL', travel:{boat:2} }, expansionEffectPresets.extraMainAction()] }],

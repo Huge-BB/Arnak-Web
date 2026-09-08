@@ -51,6 +51,7 @@ test('user-confirmed Monkey topology has distinct magnifying and journal routes 
  assert.deepEqual(cost('monkey:start','monkey:r0:p1'),{jewel:1});
  assert.deepEqual(cost('monkey:start','monkey:r0:p2'),{compass:1,arrowhead:1});
  assert.deepEqual(cost('monkey:r1:p0','monkey:r2:p0'),{arrowhead:1,travel:{car:1}});
+ assert.deepEqual(findResearchBridge(monkey,'monkey:r1:p1','monkey:r2:p0').alternativeCosts,[{tablet:2,travel:{boat:1}}]);
  assert.deepEqual(cost('monkey:r1:p2','monkey:r2:p0'),{tablet:2,travel:{boat:1}});
  assert.deepEqual(cost('monkey:r2:p0','monkey:r4:magnifying'),{tablet:2,arrowhead:1});
  assert.deepEqual(cost('monkey:r2:p0','monkey:r3:p0'),{jewel:1});

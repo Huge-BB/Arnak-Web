@@ -44,7 +44,7 @@ export function resolvePendingVisibleSilverAssistant(state:GameState,playerId:Pl
 export function resolvePendingBonusTile(state:GameState,playerId:PlayerId,pendingIndex:number,cardId?:CardId,context?:EngineContext):GameState{const pending=assertPendingOwner(state,playerId,pendingIndex),reward=researchRewardPayload(pending.payload);if(reward.type!=='BONUS_TILE'||reward.slot!=='EXILE_OWN_CARD')throw new Error('Pending reward is not an exile research bonus tile');const next=structuredClone(state);if(cardId!==undefined){const player=next.players[playerId];for(const zone of[player.hand,player.playedCards]){const index=zone.indexOf(cardId);if(index>=0){zone.splice(index,1);next.market.exiled.push(cardId);if(context)resolveOwnedCardExile(next,playerId,cardId,context);next.pendingRewards.splice(pendingIndex,1);return next;}}throw new Error('Research bonus exile requires a card from hand or play area');}next.pendingRewards.splice(pendingIndex,1);return next;}
 export function resolvePendingBonusUpgrade(state:GameState,playerId:PlayerId,pendingIndex:number,resource:SpendableResource):GameState{const pending=assertPendingOwner(state,playerId,pendingIndex),reward=researchRewardPayload(pending.payload);if(reward.type!=='BONUS_TILE'||reward.slot!=='UPGRADE_RESOURCE')throw new Error('Pending reward is not an upgrade research bonus tile');const target:Partial<Record<SpendableResource,SpendableResource>>={tablet:'arrowhead',arrowhead:'jewel'},nextResource=target[resource];if(!nextResource)throw new Error(`${resource} cannot be upgraded`);const next=structuredClone(state),resources=next.players[playerId].resources;if(resources[resource]<1)throw new Error(`Insufficient ${resource}`);resources[resource]-=1;resources[nextResource]+=1;next.pendingRewards.splice(pendingIndex,1);return next;}
 
-/** Resolve Bird research or Mystic ritual "overcome a guardian for free". */
+/** Resolve the shared free-guardian effect used by cards, research, and Mystic ritual. */
 export function resolvePendingFreeGuardian(state:GameState,playerId:PlayerId,pendingIndex:number,siteId:string):GameState{
  const pending=assertPendingOwner(state,playerId,pendingIndex); const payload=pending.payload as Record<string,unknown>|undefined;
  if(payload?.type!=='OVERCOME_GUARDIAN_FREE'&&pending.code!=='leader:MYSTIC_OVERCOME_GUARDIAN_FREE')throw new Error('Pending reward is not a free guardian action');
@@ -65,13 +65,13 @@ export function resolvePendingResearchExile(state:GameState,playerId:PlayerId,pe
  const next=structuredClone(state);if(cardId!==undefined){const player=next.players[playerId];for(const zone of[player.hand,player.playedCards]){const index=zone.indexOf(cardId);if(index>=0){zone.splice(index,1);next.market.exiled.push(cardId);if(context)resolveOwnedCardExile(next,playerId,cardId,context);next.pendingRewards.splice(pendingIndex,1);return next;}}throw new Error('Research exile requires a card from hand or play area');}
  next.pendingRewards.splice(pendingIndex,1);return next;
 }
-/** War Club and Revolver may defeat the revealed Lizard track guardian when either research token is on it. */
+/** Shared free-guardian effects with lizardTrackAllowed may defeat the revealed Lizard guardian when the magnifying glass is on it. */
 export function resolvePendingFreeLizardTrackGuardian(state:GameState,playerId:PlayerId,pendingIndex:number):GameState{
  const pending=assertPendingOwner(state,playerId,pendingIndex),payload=pending.payload as Record<string,unknown>|undefined;
  if(payload?.type!=='OVERCOME_GUARDIAN_FREE'||(payload.lizardTrackAllowed!==true&&payload.lizardTrackAllowed!=='uncontested'))throw new Error('This free guardian effect cannot target the Lizard track guardian');
  const next=structuredClone(state),guardian=lizardTrackGuardians(next).find(entry=>!entry.defeated);
  if(!guardian||!guardian.revealed)throw new Error('No revealed Lizard track guardian is available');
- if(payload.lizardTrackAllowed===true&&next.research.magnifyingNode[playerId]!==guardian.nodeId&&next.research.journalNode[playerId]!==guardian.nodeId)throw new Error('Free Lizard guardian action requires your research token at its row');
+ if(payload.lizardTrackAllowed===true&&next.research.magnifyingNode[playerId]!==guardian.nodeId)throw new Error('Free Lizard guardian action requires your magnifying glass at its row');
  if(payload.lizardTrackAllowed==='uncontested'&&next.playerOrder.some(id=>id!==playerId&&(next.research.magnifyingNode[id]===guardian.nodeId||next.research.journalNode[id]===guardian.nodeId)))throw new Error('Bear Trap cannot target the Lizard guardian after another player reaches its row');
  defeatLizardTrackGuardian(next,guardian.id);next.players[playerId].defeatedGuardians.push(guardian.id);next.pendingRewards.splice(pendingIndex,1);return next;
 }

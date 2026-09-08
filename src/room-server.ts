@@ -31,7 +31,10 @@ async function body(request: import('node:http').IncomingMessage): Promise<Recor
 }
 class HttpError extends Error { readonly status: number; constructor(status: number, message: string) { super(message); this.status = status; } }
 const allowedOrigins = new Set((process.env.ARNAK_ALLOWED_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173').split(',').map(value => value.trim()).filter(Boolean));
-function cors(request: import('node:http').IncomingMessage) { const origin = request.headers.origin; return origin && allowedOrigins.has(origin) ? origin : undefined; }
+const allowTrustedLanOrigins = process.env.ARNAK_ALLOW_LAN_ORIGINS !== 'false';
+function isPrivateLanHost(host: string) { const parts = host.split('.').map(Number); return parts.length === 4 && parts.every(Number.isInteger) && (parts[0] === 10 || parts[0] === 192 && parts[1] === 168 || parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31); }
+function isTrustedLanOrigin(origin: string) { try { const url = new URL(origin); return url.protocol === 'http:' && ['5173', '4173'].includes(url.port) && isPrivateLanHost(url.hostname); } catch { return false; } }
+function cors(request: import('node:http').IncomingMessage) { const origin = request.headers.origin; return origin && (allowedOrigins.has(origin) || allowTrustedLanOrigins && isTrustedLanOrigin(origin)) ? origin : undefined; }
 function headers(request: import('node:http').IncomingMessage, extra: Record<string, string> = {}) { const origin = cors(request); return { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer', ...(origin ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {}), ...extra }; }
 function send(request: import('node:http').IncomingMessage, response: import('node:http').ServerResponse, code: number, value: unknown) { response.writeHead(code, headers(request, { 'content-type': 'application/json; charset=utf-8' })); response.end(JSON.stringify(value)); }
 function error(request: import('node:http').IncomingMessage, response: import('node:http').ServerResponse, cause: unknown) { send(request, response, cause instanceof HttpError ? cause.status : 400, { ok: false, error: cause instanceof Error ? cause.message : String(cause) }); }

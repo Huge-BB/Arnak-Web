@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { createGame } from './engine.ts';
 import { reduceWithActionWindow } from './engine-with-action-window.ts';
 import { grantTemporaryTravel } from './action-window.ts';
+import { createBaseBoardSites } from './base-board-setup.ts';
+import { resolvePendingChoice } from './pending-choice.ts';
 import type { EngineContext } from './types.ts';
 
 const context:EngineContext={
@@ -24,6 +26,25 @@ test('temporary travel can combine with a card on later site action',()=>{
   let s=playing();s.sites.x={id:'x',level:1,tileId:'tile',idolSlots:0,travelCost:{boot:1,car:1}};s.players.p1.hand=['boot'];s=grantTemporaryTravel(s,'p1',{plane:1});
   s=reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'x',paymentCardIds:['boot']},ctx);
   assert.deepEqual(s.players.p1.hand,[]);assert.ok(s.players.p1.playedCards.includes('boot'));assert.equal(s.actionWindow?.temporaryTravel.plane,0);
+});
+
+test('a public camp target resolves before the action-window travel wrapper',()=>{
+  const ctx:EngineContext={...context,cards:{boot:{id:'boot',name:'Boot',type:'Starter',expansion:'Base Game',travel:{boot:1}}}};
+  let s=playing();s.sites=createBaseBoardSites(4,'camp-wrapper');s.players.p1.hand=['boot'];
+  s=reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp-3',paymentCardIds:['boot']},ctx);
+  assert.equal(s.sites['camp-3-a'].occupiedBy,'p1');
+});
+
+test('Camp 5 requires a hand discard as a cost before granting its jewel',()=>{
+  const ctx:EngineContext={...context,cards:{boot:{id:'boot',name:'Boot',type:'Starter',expansion:'Base Game',travel:{boot:1}},other:{id:'other',name:'Other',type:'Starter',expansion:'Base Game'}}};
+  let s=playing();s.sites=createBaseBoardSites(4,'camp-five');s.players.p1.hand=['boot','other'];
+  assert.throws(()=>reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp-5',paymentCardIds:['boot']},ctx),/requires one discarded hand card/);
+  s=reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp-5',paymentCardIds:['boot'],discardCardId:'other'},ctx);
+  assert.equal(s.sites['camp-5-a'].occupiedBy,'p1');
+  assert.deepEqual(s.players.p1.hand,[]);
+  assert.deepEqual(s.players.p1.playedCards,['boot','other']);
+  assert.equal(s.pendingRewards.length,0);
+  assert.equal(s.players.p1.resources.jewel,1);
 });
 
 test('END_TURN clears unspent temporary travel before next player',()=>{

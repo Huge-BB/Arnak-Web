@@ -43,7 +43,7 @@ test('assistant upgrade and exhaustion are restricted to the current player owne
 
   const upgraded = upgradeOwnedAssistant(exhausted, 'p1', id);
   assert.equal(upgraded.players.p1.assistants[0].level, 'gold');
-  assert.equal(upgraded.players.p1.assistants[0].exhausted, true);
+  assert.equal(upgraded.players.p1.assistants[0].exhausted, false);
 
   assert.throws(() => upgradeOwnedAssistant(state, 'p2', id), /not p2's turn|does not own assistant/);
 });

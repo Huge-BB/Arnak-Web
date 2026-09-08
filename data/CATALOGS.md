@@ -22,7 +22,7 @@ Files in this directory complement the data extracted from the original TTS mod.
 
 The more detailed research-entry schema is in [`README-research-manual-data.md`](README-research-manual-data.md).
 
-`OVERCOME_GUARDIAN_FREE` normally requires a site target and the caller's archaeologist there. A card entry can set `lizardTrackAllowed: true` only when its printed rule explicitly permits it to defeat the Lizard board's track guardian; that target additionally requires a revealed guardian and one of the caller's research tokens on its row.
+`OVERCOME_GUARDIAN_FREE` normally requires a site target and the caller's archaeologist there. A card entry can set `lizardTrackAllowed: true` only when its printed rule explicitly permits it to defeat the Lizard board's track guardian; that target additionally requires a revealed guardian and the caller's magnifying glass on its row.
 
 The card catalog also contains reusable primitives for temporary travel, bottom-deck draws, printed resource payments, conditional resource gains, and an explicit own-card exile choice. Each primitive has a focused reducer test; use it only where the printed timing and targeting exactly match.
 

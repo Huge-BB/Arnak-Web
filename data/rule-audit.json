@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "statuses": ["unreviewed", "implemented", "verified", "blocked"],
+  "entries": [
+    {
+      "id": "setup.base-game",
+      "title": "Base-game setup, player order, and round-one dealing",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/engine.ts", "src/base-board-setup.ts"],
+      "automatedEvidence": ["src/engine.test.ts", "src/base-board-setup.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Needs a rulebook page reference before it can be marked verified."
+    },
+    {
+      "id": "turns.round-flow",
+      "title": "Main actions, free actions, passing, cleanup, and first-player rotation",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/engine.ts"],
+      "automatedEvidence": ["src/round.test.ts", "src/engine.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Includes pending-choice and temporary-travel cleanup boundaries."
+    },
+    {
+      "id": "travel.payment",
+      "title": "Travel icon substitution and card/temporary-travel payment",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/travel.ts", "src/travel-payment.ts", "src/engine-with-action-window.ts"],
+      "automatedEvidence": ["src/travel.test.ts", "src/temporary-travel.test.ts", "src/temporary-travel-integration.test.ts"],
+      "sourceEvidence": [],
+      "notes": "High-priority cross-module verification target."
+    },
+    {
+      "id": "sites.camps-and-discovery",
+      "title": "Camps, worker placement, discovery, site rewards, and idols",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/engine.ts", "src/base-board-setup.ts"],
+      "automatedEvidence": ["src/base-board-setup.test.ts", "src/sites.test.ts", "src/discovery.test.ts", "src/site-idols.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Verify printed camp travel/reward transcription against the board."
+    },
+    {
+      "id": "guardians.base-catalog",
+      "title": "Guardian costs, defeat action, and one-time boons",
+      "scope": "base",
+      "status": "verified",
+      "implementation": ["src/guardian-actions.ts", "data/guardian-effects-manual.json"],
+      "automatedEvidence": ["src/guardian-actions.test.ts", "src/guardian-effect-data.test.ts"],
+      "sourceEvidence": [{"source": "Physical base-game guardian tiles reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_01.md: all 15 guardian entries confirmed"}],
+      "notes": "All fifteen base-game guardian costs and one-time boons were confirmed in review batch 01."
+    },
+    {
+      "id": "sites.printed-camps",
+      "title": "Printed camp travel costs, rewards, and Camp 5 discard cost",
+      "scope": "base",
+      "status": "verified",
+      "implementation": ["src/base-board-setup.ts", "src/engine.ts"],
+      "automatedEvidence": ["src/base-board-setup.test.ts", "src/engine-with-action-window.test.ts"],
+      "sourceEvidence": [{"source": "Physical base-game board reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_01.md: all five camps confirmed; Camp 5 discard clarified as a cost"}],
+      "notes": "Camp 5 now rejects placement without a selected discarded hand card before awarding its jewel."
+    },
+    {
+      "id": "sites.printed-discovery-spaces",
+      "title": "Bird and Snake printed exploration-space travel costs",
+      "scope": "base",
+      "status": "verified",
+      "implementation": ["src/base-board-setup.ts"],
+      "automatedEvidence": ["src/base-board-setup.test.ts", "src/engine-with-action-window.test.ts"],
+      "sourceEvidence": [{"source": "Physical Bird/Snake main boards reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_02.md: all 12 Bird costs and all 4 Snake overrides confirmed"}],
+      "notes": "Random site-tile, idol, and guardian effects are reviewed independently."
+    },
+    {
+      "id": "market.base-cards",
+      "title": "Base market purchase, timing, and 75 card effects",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/effects.ts", "src/card-effect-actions.ts", "data/card-effects-manual.json"],
+      "automatedEvidence": ["src/effects.test.ts", "src/card-effect-data.test.ts", "npm run audit:cards"],
+      "sourceEvidence": [],
+      "notes": "Coverage count is complete; card-by-card rules-source review remains separate."
+    },
+    {
+      "id": "assistants.base-catalog",
+      "title": "Assistant claiming, upgrading, refreshing, and silver/gold effects",
+      "scope": "base",
+      "status": "verified",
+      "implementation": ["src/assistant-effects.ts", "data/assistant-effects-manual.json"],
+      "automatedEvidence": ["src/assistants.test.ts", "src/assistant-effects.test.ts", "npm run audit:assistants -- --strict"],
+      "sourceEvidence": [{"source": "Physical base-game assistants reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_07.md: assistant-01 through assistant-12 and shared behaviour confirmed; upgrade immediately refreshes"}],
+      "notes": "Base-game scope only. Expedition Leaders assistant additions and the CardID 703 adjustment are tracked separately."
+    },
+    {
+      "id": "assistants.expedition-leaders",
+      "title": "Expedition Leaders assistant additions and adjusted base assistant",
+      "scope": "expansion",
+      "status": "verified",
+      "implementation": ["src/assistants.ts", "src/assistant-effect-data.ts", "src/assistant-effects.ts", "data/assistant-effects-manual.json"],
+      "automatedEvidence": ["src/assistants.test.ts", "src/assistant-effects.test.ts", "npm run audit:assistants -- --strict"],
+      "sourceEvidence": [{"source": "Expedition Leaders assistants reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_07.md: CardIDs 700–702 and CardID 703 silver adjustment confirmed"}],
+      "notes": "The three additions enter only with Expedition Leaders enabled. CardID 703 has the expansion-only silver replacement (1 boot + 1 coin); its gold side remains 3 coins."
+    },
+    {
+      "id": "research.bird-and-snake",
+      "title": "Bird and Snake topology, bridge costs, rewards, and Temple entry",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/research.ts", "data/research-manual-data.json", "data/research-rewards-manual.json"],
+      "automatedEvidence": ["src/research-action.test.ts", "src/research-rewards.test.ts", "src/research-temple-entry-costs.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Record the board/rulebook locator for every reviewed bridge and reward."
+    },
+    {
+      "id": "research.bonus-tile-setup",
+      "title": "Research bonus-tile randomization, face state, and player-count placement",
+      "scope": "base-and-expansion",
+      "status": "implemented",
+      "implementation": ["src/research-bonus-tiles.ts", "src/engine.ts", "src/main.ts"],
+      "automatedEvidence": ["src/research-bonus-tiles.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Seeded random setup and minimum-player slot filtering are implemented. Printed slots, tile-pool composition, face orientation, and missing source art are awaiting owner review in docs/RULE_REVIEW_BATCH_08.md."
+    },
+    {
+      "id": "research.monkey-and-lizard",
+      "title": "Monkey and Lizard route restrictions, special Temple rules, and track guardian",
+      "scope": "expansion",
+      "status": "implemented",
+      "implementation": ["src/temples/monkey-state.ts", "src/temples/lizard-state.ts", "data/research-manual-data.json"],
+      "automatedEvidence": ["src/temples/monkey-state.test.ts", "src/temples/lizard-rewards.test.ts", "src/temple-rules.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Prioritize board-specific exception review before a complete-rules claim."
+    },
+    {
+      "id": "temple.tile-costs-by-board",
+      "title": "Bird, Snake, Monkey, and Lizard Temple reward-tile costs",
+      "scope": "base-and-expansion",
+      "status": "verified",
+      "implementation": ["src/temple-tiles.ts", "data/temple-tile-costs-manual.json"],
+      "automatedEvidence": ["src/temple-tiles.test.ts"],
+      "sourceEvidence": [{"source": "Physical Temple boards reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_06.md: all four Temple 2/6/11-point costs confirmed; Monkey/Lizard corrections recorded"}],
+      "notes": "Costs are board-specific. Six-point and eleven-point tiles are derived from the reviewed 2-point sets so the combinations cannot drift." 
+    },
+    {
+      "id": "research.bridge-costs-by-board",
+      "title": "Bird, Snake, Monkey, and Lizard research-path payment costs",
+      "scope": "base-and-expansion",
+      "status": "verified",
+      "implementation": ["src/research-manual.ts", "src/research-action.ts", "data/research-manual-data.json"],
+      "automatedEvidence": ["src/research-temple-entry-costs.test.ts", "src/research-travel-cost.test.ts", "npm run validate:research"],
+      "sourceEvidence": [{"source": "Physical research boards reviewed by project owner", "locator": "docs/RULE_REVIEW_BATCH_06.md: all listed bridges confirmed; monkey-cost-10 has two mutually-exclusive printed costs"}],
+      "notes": "A bridge can expose alternativeCosts; the reducer requires an explicit selected option and validates its resources, travel cards, idols, and discard cost atomically."
+    },
+    {
+      "id": "temple.tiles-and-scoring",
+      "title": "Temple tiles, Lost Temple arrival, final scoring, and tie-breaks",
+      "scope": "base",
+      "status": "implemented",
+      "implementation": ["src/temple-tiles.ts", "src/final-scoring.ts"],
+      "automatedEvidence": ["src/temple-tiles.test.ts", "src/temple-arrivals.test.ts", "src/final-scoring.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Use a full-game replay as acceptance evidence after source review."
+    },
+    {
+      "id": "leaders.all-six",
+      "title": "All six Expedition Leaders, starting cards, idols, and pending flows",
+      "scope": "expansion",
+      "status": "implemented",
+      "implementation": ["src/leaders/", "src/engine-with-leaders.ts"],
+      "automatedEvidence": ["src/leaders/integration-matrix.test.ts", "src/leaders/card-rules.test.ts", "src/leaders/leader-pending.test.ts"],
+      "sourceEvidence": [],
+      "notes": "Each leader still needs a browser-completed full-game replay. Project-owner confirmation: Mystic's round-income Fear is an explicit exception and enters hand; ordinary gained Fear enters discard."
+    },
+    {
+      "id": "replay-and-network",
+      "title": "Replay determinism, private state projection, and authoritative room commands",
+      "scope": "system",
+      "status": "implemented",
+      "implementation": ["src/replay.ts", "src/room-service.ts", "src/room-server.ts"],
+      "automatedEvidence": ["src/replay.test.ts", "src/room-service.test.ts", "npm run test:rooms-http"],
+      "sourceEvidence": [],
+      "notes": "This is implementation assurance rather than printed-rule verification."
+    }
+  ]
+}

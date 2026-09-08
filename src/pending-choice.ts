@@ -39,7 +39,7 @@ export type PendingChoice =
   | { type: "site-pair"; fromSiteId: string; toSiteId: string }
   | { type: "site-swap"; firstSiteId: string; secondSiteId: string; activateSiteId: string }
   | { type: "site-ids"; siteIds: string[] }
-  | { type: "research-node"; token: import('./types.ts').ResearchToken; nodeId: import('./types.ts').ResearchNodeId; paymentCardIds?: CardId[] }
+  | { type: "research-node"; token: import('./types.ts').ResearchToken; nodeId: import('./types.ts').ResearchNodeId; paymentCardIds?: CardId[]; costAlternativeIndex?:number }
   | { type: "card-count"; count: number }
   | { type: "card-option"; optionIndex: number }
   | { type: "card-options"; optionIndexes: number[] }
@@ -87,6 +87,8 @@ function leaderChoice(choice: PendingChoice): LeaderPendingChoice {
       };
     case "ritual":
       return { type: "ritual", fearCount: choice.fearCount };
+    case "resource":
+      return { type: "resource", resource: choice.resource };
     case "skip":
       return { type: "skip" };
     default:

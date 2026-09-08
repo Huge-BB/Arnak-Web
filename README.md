@@ -46,7 +46,7 @@ Useful focused commands are `npm run audit:cards`, `npm run audit:assistants -- 
 Run the authoritative local/LAN room server in a second terminal:
 
 ```powershell
-npm run server:rooms
+npm run server:lan
 ```
 
 It listens on `http://127.0.0.1:8787` by default (`ARNAK_ROOM_PORT` changes the port). The protocol deliberately separates browser identity from game authority: create a room with `POST /rooms`, join through `POST /rooms/:roomId/join`, start it with `POST /rooms/:roomId/start`, submit an `EngineCommand` to `POST /rooms/:roomId/commands`, and subscribe through `GET /rooms/:roomId/events?token=…` using Server-Sent Events.
@@ -58,7 +58,7 @@ For a trusted LAN test, start the room service on the host and expose Vite on th
 npm run server:rooms
 
 # terminal 2
-npm run dev -- --host 0.0.0.0
+npm run dev:lan
 ```
 
 Open the Vite address using the host's LAN IP on each device, choose **局域网房间**, then create or join a room. The browser defaults its room-service address to the same host on port `8787`; it can be changed in the lobby. The opaque room token is stored only in that browser's local storage, allowing a refresh/reconnect during the same server lifetime.

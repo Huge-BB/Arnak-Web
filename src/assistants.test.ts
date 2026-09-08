@@ -3,6 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import {
   availableAssistantIds,
+  buildBaseAssistantPool,
   claimAssistantFromStack,
   exhaustAssistant,
   prepareAssistantSupply,
@@ -16,18 +17,29 @@ async function loadAssistants(): Promise<Record<string, AssistantDefinition>> {
   return JSON.parse(raw);
 }
 
-test('extracts all twelve base-game assistants with silver and gold artwork', async () => {
+test('extracts twelve base-game and three Expedition Leaders assistants with silver and gold artwork', async () => {
   const assistants = await loadAssistants();
   const all = Object.values(assistants);
-  assert.equal(all.length, 12);
+  assert.equal(all.length, 15);
   for (const assistant of all) {
-    assert.equal(assistant.expansion, 'Base Game');
+    assert.ok(['Base Game', 'Expedition Leaders'].includes(assistant.expansion));
     assert.ok(assistant.image.silverUrl);
     assert.ok(assistant.image.goldUrl);
     assert.equal(assistant.image.uniqueBack, true);
     assert.ok(assistant.image.cardIndex >= 0);
     assert.ok(assistant.image.cardIndex < assistant.image.sheetWidth * assistant.image.sheetHeight);
   }
+});
+
+test('Expedition Leaders adds exactly its three assistants to the supply pool', async () => {
+  const assistants = await loadAssistants();
+  assert.equal(buildBaseAssistantPool(assistants).length, 12);
+  const expanded = buildBaseAssistantPool(assistants, ['Base Game', 'Expedition Leaders']);
+  assert.equal(expanded.length, 15);
+  assert.deepEqual(expanded.filter(id => ['bd8dc7', '08d375', '97253a'].includes(id)).sort(), ['08d375', '97253a', 'bd8dc7']);
+
+  const supply = prepareAssistantSupply(assistants, 'bird', 2, 'leaders-assistants', ['Base Game', 'Expedition Leaders']);
+  assert.deepEqual(supply.stacks.map(stack => stack.length), [5, 5, 5]);
 });
 
 test('known base assistant GUID keeps its TTS sprite identity', async () => {
@@ -87,7 +99,7 @@ test('assistant lifecycle supports exhaust, refresh, and one silver-to-gold upgr
 
   const gold = upgradeAssistant(exhausted);
   assert.equal(gold.level, 'gold');
-  assert.equal(gold.exhausted, true);
+  assert.equal(gold.exhausted, false);
   assert.throws(() => upgradeAssistant(gold), /already gold/);
   assert.throws(() => exhaustAssistant(exhausted), /already exhausted/);
 });

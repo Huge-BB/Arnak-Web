@@ -1,16 +1,37 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { baseAssistantEffects } from './assistant-effect-data.ts';
+import { assistantEffectFor, baseAssistantEffects, withBaseAssistantEffects } from './assistant-effect-data.ts';
 import { createGame } from './engine.ts';
 import { applyEngineCommand } from './engine-api.ts';
 import type { EngineContext, GameState } from './types.ts';
 
 function game():GameState { const state=createGame(['p1']); state.phase='playing'; state.currentPlayer='p1'; return state; }
 
-test('visual assistant bindings build a complete executable base-game catalog',()=>{
+test('visual assistant bindings build complete base-game and Expedition Leaders catalogs',()=>{
  const effects=baseAssistantEffects();
- assert.equal(Object.keys(effects).length,12);
+ assert.equal(Object.keys(effects).length,15);
  assert.deepEqual(effects.f7574d.silver,{type:'GAIN_RESOURCES',resources:{coin:2},freeAction:true});
+ assert.deepEqual(effects.bd8dc7.silver,{type:'PAY_TRAVEL_GAIN',freeAction:true,cost:{boot:1},gain:{coin:1,tablet:1}});
+});
+
+test('Expedition Leaders assistant effects and the 703 silver replacement are expansion-aware',()=>{
+ const effects=baseAssistantEffects();
+ assert.deepEqual(effects.bd8dc7.gold,{type:'SEQUENCE',freeAction:true,effects:[{type:'GAIN_RESOURCES',resources:{tablet:1}},{type:'UPGRADE_RESOURCE'}]});
+ assert.deepEqual(effects['08d375'].silver,{type:'CHOOSE',freeAction:true,options:[{type:'GAIN_RESOURCES',resources:{coin:1}},{type:'GAIN_TRAVEL',travel:{boot:2}}]});
+ assert.deepEqual(effects['08d375'].gold,{type:'SEQUENCE',freeAction:true,effects:[{type:'GAIN_FEAR_CARD',amount:1},{type:'GAIN_RESOURCES',resources:{jewel:1}}]});
+ assert.deepEqual(effects['97253a'].gold,{type:'GAIN_RESOURCES',freeAction:true,resources:{arrowhead:1}});
+ const base=game(), expanded=game(); expanded.enabledExpansions=['Base Game','Expedition Leaders'];
+ const context=withBaseAssistantEffects({cards:{}});
+ assert.deepEqual(assistantEffectFor(base,'f7574d','silver',context),{type:'GAIN_RESOURCES',resources:{coin:2},freeAction:true});
+ assert.deepEqual(assistantEffectFor(expanded,'f7574d','silver',context),{type:'SEQUENCE',freeAction:true,effects:[{type:'GAIN_TRAVEL',travel:{boot:1}},{type:'GAIN_RESOURCES',resources:{coin:1}}]});
+});
+
+test('Expedition Leaders Fear-and-jewel assistant resolves both gains',()=>{
+ const state=game(); state.enabledExpansions=['Base Game','Expedition Leaders']; state.players.p1.assistants=[{id:'08d375',level:'gold',exhausted:false}];
+ const context=withBaseAssistantEffects({cards:{fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}}});
+ const next=applyEngineCommand(state,{type:'action',action:{type:'ACTIVATE_ASSISTANT',playerId:'p1',assistantId:'08d375'}},context);
+ assert.deepEqual(next.players.p1.discard,['fear']);
+ assert.equal(next.players.p1.resources.jewel,1);
 });
 
 test('ACTIVATE_ASSISTANT exhausts the assistant and resolves immediate effects through the public API',()=>{

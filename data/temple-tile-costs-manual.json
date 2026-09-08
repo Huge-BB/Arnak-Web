@@ -1,0 +1,29 @@
+{
+  "$schemaVersion": 1,
+  "notes": [
+    "Each Temple board has its own three 2-point tile costs.",
+    "The two 6-point tiles combine 2-A + 2-B and 2-B + 2-C; the 11-point tile combines all three."
+  ],
+  "boards": {
+    "bird": {
+      "twoPointCosts": [{ "coin": 1, "tablet": 2 }, { "jewel": 1 }, { "compass": 1, "arrowhead": 1 }],
+      "verified": true,
+      "source": "Project owner review: RULE_REVIEW_BATCH_06 Bird Temple"
+    },
+    "snake": {
+      "twoPointCosts": [{ "coin": 1, "tablet": 2 }, { "jewel": 1 }, { "compass": 1, "arrowhead": 1 }],
+      "verified": true,
+      "source": "Project owner review: RULE_REVIEW_BATCH_06 Snake Temple"
+    },
+    "monkey": {
+      "twoPointCosts": [{ "coin": 1, "tablet": 2 }, { "jewel": 1 }, { "coin": 1, "arrowhead": 1 }],
+      "verified": true,
+      "source": "Project owner review: RULE_REVIEW_BATCH_06 Monkey Temple"
+    },
+    "lizard": {
+      "twoPointCosts": [{ "coin": 1, "compass": 1, "tablet": 1 }, { "jewel": 1 }, { "tablet": 1, "arrowhead": 1 }],
+      "verified": true,
+      "source": "Project owner review: RULE_REVIEW_BATCH_06 Lizard Temple"
+    }
+  }
+}

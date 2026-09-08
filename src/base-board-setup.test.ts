@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { blockedCampIds, createBaseBoardSites } from './base-board-setup.ts';
+import { blockedCampIds, createBaseBoardSites, resolveBaseBoardPlacementSite } from './base-board-setup.ts';
 import { createGame, reduce } from './engine.ts';
 
 test('base board keeps five camps and blocks right-hand camp spaces by player count deterministically', () => {
@@ -20,6 +20,23 @@ test('a blocked camp space cannot receive an archaeologist', () => {
   const started = reduce(state, { type: 'START_GAME', seed: 'setup' });
   const blocked = Object.values(started.sites).find((site) => site.blocked)!;
   assert.throws(() => reduce(started, { type: 'PLACE_WORKER', playerId: 'p1', siteId: blocked.id }), /blocked/);
+});
+
+test('one visible camp target resolves to its first available internal worker space', () => {
+  const sites = createBaseBoardSites(4, 'setup');
+  assert.equal(resolveBaseBoardPlacementSite(sites, 'camp-1'), 'camp-1-a');
+  sites['camp-1-a'].occupiedBy = 'p1';
+  assert.equal(resolveBaseBoardPlacementSite(sites, 'camp-1'), 'camp-1-b');
+  sites['camp-1-b'].occupiedBy = 'p2';
+  assert.throws(() => resolveBaseBoardPlacementSite(sites, 'camp-1'), /full/);
+});
+
+test('Snake board uses its own printed travel costs where routes differ', () => {
+  const snake = createBaseBoardSites(4, 'snake', 'snake');
+  assert.deepEqual(snake['level1-6'].travelCost, { boot: 2 });
+  assert.deepEqual(snake['level1-7'].travelCost, { plane: 1 });
+  assert.deepEqual(snake['level2-2'].travelCost, { plane: 1, boot: 1 });
+  assert.deepEqual(snake['level2-3'].travelCost, { car: 1, boat: 1 });
 });
 
 test('setup places one face-up idol on each Level I site and a face-up/down pair on Level II sites', () => {

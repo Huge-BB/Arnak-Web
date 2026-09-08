@@ -5,6 +5,16 @@ import { buyTempleTile, templeTileCost } from './temple-tiles.ts';
 import type { ResearchTrackDefinition } from './types.ts';
 import { templeTileScore } from './scoring.ts';
 test('temple tile costs follow the printed three-cost pyramid',()=>{assert.deepEqual(templeTileCost('bronze',0),{coin:1,tablet:2});assert.deepEqual(templeTileCost('bronze',1),{jewel:1});assert.deepEqual(templeTileCost('silver',0),{coin:1,tablet:2,jewel:1});assert.deepEqual(templeTileCost('silver',1),{jewel:1,compass:1,arrowhead:1});assert.deepEqual(templeTileCost('gold'),{coin:1,tablet:2,jewel:1,compass:1,arrowhead:1});});
+test('Monkey and Lizard temple tiles use their own reviewed 2-point costs',()=>{
+ assert.deepEqual(templeTileCost('bronze',2,'monkey'),{coin:1,arrowhead:1});
+ assert.deepEqual(templeTileCost('silver',1,'monkey'),{jewel:1,coin:1,arrowhead:1});
+ assert.deepEqual(templeTileCost('gold',undefined,'monkey'),{coin:2,tablet:2,jewel:1,arrowhead:1});
+ assert.deepEqual(templeTileCost('bronze',0,'lizard'),{coin:1,compass:1,tablet:1});
+ assert.deepEqual(templeTileCost('bronze',2,'lizard'),{tablet:1,arrowhead:1});
+ assert.deepEqual(templeTileCost('silver',0,'lizard'),{coin:1,compass:1,tablet:1,jewel:1});
+ assert.deepEqual(templeTileCost('silver',1,'lizard'),{jewel:1,tablet:1,arrowhead:1});
+ assert.deepEqual(templeTileCost('gold',undefined,'lizard'),{coin:1,compass:1,tablet:2,jewel:1,arrowhead:1});
+});
 test('a temple-arrived player buys from limited stacks and scores the tile',()=>{const state=createGame(['p1']);state.phase='playing';state.currentPlayer='p1';state.research.templeArrivals=['p1'];state.players.p1.resources.jewel=1;const next=reduce(state,{type:'BUY_TEMPLE_TILE',playerId:'p1',tier:'bronze',combination:1});assert.equal(next.templeTiles.bronze,2);assert.deepEqual(next.players.p1.templeTiles,[2]);assert.equal(templeTileScore(next.players.p1),2);const notArrived=createGame(['p1']);notArrived.phase='playing';assert.throws(()=>reduce(notArrived,{type:'BUY_TEMPLE_TILE',playerId:'p1',tier:'bronze',combination:1}),/requires the Lost Temple/);});
 test('Monkey and Lizard magnifying glass can buy appropriate temple tiles before arrival',()=>{
  const track:ResearchTrackDefinition={id:'monkey',name:'Monkey',rows:[{magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'monkey:r0:p0',rowIndex:0,pathIndex:0,researchLevel:0}]},{magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'monkey:r1:p0',rowIndex:1,pathIndex:0,researchLevel:1}]},{magnifyingPoints:0,journalPoints:0,grantsAssistant:false,nodes:[{id:'monkey:r2:p0',rowIndex:2,pathIndex:0,researchLevel:2}]}]};

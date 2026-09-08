@@ -32,7 +32,7 @@ function gainFearCards(state: GameState, playerId: PlayerId, amount: number, con
   if (!context) throw new Error('Card context is required to gain Fear cards');
   const fear = Object.values(context.cards).find(card => card.type === 'Fear' && card.expansion === 'Base Game');
   if (!fear) throw new Error('No base-game Fear card found');
-  for (let i = 0; i < amount; i += 1) state.players[playerId].playedCards.push(fear.id);
+  for (let i = 0; i < amount; i += 1) state.players[playerId].discard.push(fear.id);
 }
 
 function refreshAssistants(state: GameState, playerId: PlayerId, amount: number | 'all') {

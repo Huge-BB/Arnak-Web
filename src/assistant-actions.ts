@@ -5,6 +5,7 @@ import {
   upgradeAssistant,
 } from './assistants.ts';
 import { resolveAssistantEffect } from './assistant-effects.ts';
+import { assistantEffectFor } from './assistant-effect-data.ts';
 import type { EngineContext, GameState, PlayerAssistant, PlayerId } from './types.ts';
 
 function requirePlayer(state: GameState, playerId: PlayerId) {
@@ -75,10 +76,10 @@ export function activateOwnedAssistant(
   const player = requireCurrentPlayer(next, playerId);
   const index = findAssistant(player.assistants, assistantId);
   const assistant = player.assistants[index];
-  const effect = context.assistantEffects?.[assistant.id]?.[assistant.level];
+  const effect = assistantEffectFor(next,assistant.id,assistant.level,context);
   if (!effect) throw new Error(`No ${assistant.level} effect is defined for assistant: ${assistant.id}`);
   player.assistants[index] = exhaustAssistant(assistant);
-  return resolveAssistantEffect(next, playerId, assistant.id, effect);
+  return resolveAssistantEffect(next, playerId, assistant.id, effect, 'assistant', context);
 }
 
 export function refreshOwnedAssistant(

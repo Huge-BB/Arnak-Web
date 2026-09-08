@@ -1,5 +1,5 @@
 import { applyCardEffects, getCardEffects, resolveOwnedCardExile } from './effects.ts';
-import { buyMarketCardWithDiscount } from './assistant-effects.ts';
+import { buyTypedMarketCardWithDiscount, buyMarketCardWithDiscount } from './assistant-effects.ts';
 import { resolveAssistantEffect } from './assistant-effects.ts';
 import { claimAssistant, upgradeOwnedAssistant } from './assistant-actions.ts';
 import { advanceResearchByNode } from './research-action.ts';
@@ -16,7 +16,7 @@ function payloadAt(state:GameState, playerId:PlayerId, pendingIndex:number):Card
   const pending=state.pendingRewards[pendingIndex];
   if (pending.playerId !== playerId) throw new Error(`Pending reward belongs to ${pending.playerId}`);
   const payload=pending.payload as Partial<CardEffectPendingPayload> | undefined;
-  if (pending.code !== 'card:RESOLVE_EFFECT' || payload?.type !== 'CARD_EFFECT' || typeof payload.sourceCardId !== 'string' || !payload.effect) throw new Error('Pending reward is not a card effect');
+  if ((pending.code !== 'card:RESOLVE_EFFECT' && pending.code !== 'site:DISCARD_AFTER_PLACEMENT') || payload?.type !== 'CARD_EFFECT' || typeof payload.sourceCardId !== 'string' || !payload.effect) throw new Error('Pending reward is not a card effect');
   return payload as CardEffectPendingPayload;
 }
 
@@ -30,7 +30,7 @@ function upgrade(state:GameState, playerId:PlayerId, resource:SpendableResource)
   resources[resource]-=1; resources[target]+=1;
 }
 
-export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pendingIndex:number, choice:{type:'card';cardId:CardId}|{type:'idol';idolId:string}|{type:'idol-effect';effect:IdolEffect}|{type:'guardian';guardianId:string}|{type:'card-count';count:number}|{type:'card-option';optionIndex:number}|{type:'card-options';optionIndexes:number[]}|{type:'keep-and-top';keepCardId:CardId;topDeckCardId?:CardId}|{type:'top-deck';mode:'keep'|'exile';cardIds:CardId[]}|{type:'resource';resource:SpendableResource}|{type:'resource-payment';payment:Partial<Record<SpendableResource,number>>}|{type:'assistants';assistantIds:string[]}|{type:'assistant-stack';stackIndex:number}|{type:'assistant-target';ownerId:PlayerId;assistantId:string}|{type:'assistant-exchange';assistantId:string;stackIndex:number}|{type:'site';siteId:string}|{type:'site-pair';fromSiteId:string;toSiteId:string}|{type:'site-swap';firstSiteId:string;secondSiteId:string;activateSiteId:string}|{type:'site-ids';siteIds:string[]}|{type:'skip'}|{type:'research-node';token:ResearchToken;nodeId:ResearchNodeId;paymentCardIds?:CardId[]}, context:EngineContext):GameState {
+export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pendingIndex:number, choice:{type:'card';cardId:CardId}|{type:'idol';idolId:string}|{type:'idol-effect';effect:IdolEffect}|{type:'guardian';guardianId:string}|{type:'card-count';count:number}|{type:'card-option';optionIndex:number}|{type:'card-options';optionIndexes:number[]}|{type:'keep-and-top';keepCardId:CardId;topDeckCardId?:CardId}|{type:'top-deck';mode:'keep'|'exile';cardIds:CardId[]}|{type:'resource';resource:SpendableResource}|{type:'resource-payment';payment:Partial<Record<SpendableResource,number>>}|{type:'assistants';assistantIds:string[]}|{type:'assistant-stack';stackIndex:number}|{type:'assistant-target';ownerId:PlayerId;assistantId:string}|{type:'assistant-exchange';assistantId:string;stackIndex:number}|{type:'site';siteId:string}|{type:'site-pair';fromSiteId:string;toSiteId:string}|{type:'site-swap';firstSiteId:string;secondSiteId:string;activateSiteId:string}|{type:'site-ids';siteIds:string[]}|{type:'skip'}|{type:'research-node';token:ResearchToken;nodeId:ResearchNodeId;paymentCardIds?:CardId[];costAlternativeIndex?:number}, context:EngineContext):GameState {
   const payload=payloadAt(state,playerId,pendingIndex);
   if(payload.effect.type==='DRAW_BOTTOM_THEN_KEEP'){
     const next=structuredClone(state),player=next.players[playerId];
@@ -160,7 +160,7 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
     const hasWorkerBelow=Object.values(next.sites).some((candidate)=>candidate.occupiedBy===playerId&&candidate.mapRow!==undefined&&site?.mapRow===candidate.mapRow+1);
     if(!site||site.mapRow===undefined||!hasWorkerBelow)throw new Error('Card effect requires a site in the row directly above your archaeologist');
     activateSite(choice.siteId);
-    if(site.level===2&&(payload.effect.fearIfLevel2??0)>0)applyCardEffects(next,playerId,[{type:'GAIN_FEAR_TO_HAND',amount:payload.effect.fearIfLevel2}],context,payload.sourceCardId);
+    if(site.level===2&&(payload.effect.fearIfLevel2??0)>0)applyCardEffects(next,playerId,[{type:'GAIN_FEAR_CARD',amount:payload.effect.fearIfLevel2}],context,payload.sourceCardId);
   } else if (payload.effect.type === 'ACTIVATE_LEVEL1_SITE_IN_ROW_WITH_OWN_WORKER') {
     if(choice.type!=='site')throw new Error('Card effect requires a Level I site in a row containing your archaeologist');
     const site=next.sites[choice.siteId];
@@ -179,6 +179,8 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
     if(!source||source.occupiedBy!==playerId)throw new Error('Card effect source must contain your archaeologist');
     if(payload.effect.sourceLevel!==undefined&&source.level!==payload.effect.sourceLevel)throw new Error(`Card effect source must be a Level ${payload.effect.sourceLevel} site`);
     if(!target||target.occupiedBy)throw new Error('Card effect destination must be unoccupied');
+    const snacks=next.players[playerId].leader?.id==='explorer' ? next.players[playerId].leader?.data.snacks as Array<{used?:boolean;siteId?:string}>|undefined : undefined;
+    if(snacks?.some(snack=>snack.used&&snack.siteId===choice.toSiteId))throw new Error('Explorer cannot relocate to a site marked by a snack token');
     if(payload.effect.destination==='tent'&&!target.isTentSite)throw new Error('Card effect destination must be a tent site');
     if(payload.effect.destination==='tent-or-level1'&&!target.isTentSite&&target.level!==1)throw new Error('Card effect destination must be a tent or Level I site');
     if(payload.effect.destination==='level1'&&target.level!==1)throw new Error('Card effect destination must be a Level I site');
@@ -202,12 +204,12 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
     if(choice.type!=='research-node'||choice.token!=='magnifying')throw new Error('Card effect requires a magnifying-glass research destination');
     const track=context.researchTracks?.[next.research.board];
     if(!track)throw new Error(`Research track data required for ${next.research.board}`);
-    advanceResearchByNode(next,track,{playerId,token:choice.token,toNodeId:choice.nodeId,paymentCardIds:choice.paymentCardIds,resourceDiscount:payload.effect.discount},context);
+    advanceResearchByNode(next,track,{playerId,token:choice.token,toNodeId:choice.nodeId,paymentCardIds:choice.paymentCardIds,costAlternativeIndex:choice.costAlternativeIndex,resourceDiscount:payload.effect.discount},context);
   } else if (payload.effect.type === 'RESEARCH_ANY_DISCOUNT_THEN') {
     if(choice.type!=='research-node')throw new Error('Card effect requires a research destination');
     const track=context.researchTracks?.[next.research.board];
     if(!track)throw new Error(`Research track data required for ${next.research.board}`);
-    advanceResearchByNode(next,track,{playerId,token:choice.token,toNodeId:choice.nodeId,paymentCardIds:choice.paymentCardIds,resourceDiscount:payload.effect.discount},context);
+    advanceResearchByNode(next,track,{playerId,token:choice.token,toNodeId:choice.nodeId,paymentCardIds:choice.paymentCardIds,costAlternativeIndex:choice.costAlternativeIndex,resourceDiscount:payload.effect.discount},context);
     followUps=choice.token==='magnifying'?payload.effect.magnifyingEffects:payload.effect.journalEffects;
   } else if (payload.effect.type === 'CHOOSE_ONE') {
     if(choice.type!=='card-option'||!Number.isInteger(choice.optionIndex)||choice.optionIndex<0||choice.optionIndex>=payload.effect.options.length)throw new Error('Card effect requires one valid option');
@@ -337,20 +339,14 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
     if(choice.type!=='assistant-exchange'||!Number.isInteger(choice.stackIndex)||choice.stackIndex<0||choice.stackIndex>=next.assistants.stacks.length)throw new Error('Card effect requires one owned assistant and one available assistant stack');
     const player=next.players[playerId],ownedIndex=player.assistants.findIndex(assistant=>assistant.id===choice.assistantId),replacement=next.assistants.stacks[choice.stackIndex]?.[0];
     if(ownedIndex<0||!replacement)throw new Error('Card effect requires one owned assistant and one available assistant stack');
-    const owned=player.assistants[ownedIndex];next.assistants.stacks[choice.stackIndex].shift();next.assistants.stacks[choice.stackIndex].unshift(owned.id);
+    const owned=player.assistants[ownedIndex];
+    next.assistants.stacks[choice.stackIndex].shift();next.assistants.stacks[choice.stackIndex].unshift(owned.id);
     player.assistants[ownedIndex]={id:replacement,level:owned.level,exhausted:false};
-  } else if (payload.effect.type === 'BUY_ITEM_DISCOUNT_INCLUDE_TOP') {
-    if(choice.type==='skip'){
-      // Viewing the deck-top card is non-mutating when the optional purchase is declined.
-    } else if(choice.type==='card') {
-      const card=context.cards[choice.cardId];if(!card||card.type!=='Item')throw new Error('Card effect requires an Item from the market or the revealed deck top');
-      const rowIndex=next.market.items.indexOf(choice.cardId),isDeckTop=next.market.itemDeck[0]===choice.cardId;
-      if(rowIndex<0&&!isDeckTop)throw new Error('Card effect requires an Item from the market or the revealed deck top');
-      const cost=Math.max(0,(card.cost??0)-payload.effect.discount);if(next.players[playerId].resources.coin<cost)throw new Error('Insufficient coin');
-      next.players[playerId].resources.coin-=cost;
-      if(isDeckTop)next.market.itemDeck.shift();else {next.market.items.splice(rowIndex,1);const refill=next.market.itemDeck.shift();if(refill)next.market.items.push(refill);}
-      next.players[playerId].deck.push(choice.cardId);
-    } else throw new Error('Card effect requires an Item choice or skip');
+  } else if (payload.effect.type === 'BUY_ITEM' || payload.effect.type === 'BUY_ARTIFACT') {
+    if(choice.type==='skip'&&payload.effect.includeTop){
+      // Viewing a deck-top card is non-mutating when the optional purchase is declined.
+    } else if(choice.type==='card') buyTypedMarketCardWithDiscount(next,playerId,choice.cardId,payload.effect.type==='BUY_ITEM'?'Item':'Artifact',payload.effect.discount,payload.effect.includeTop===true,context);
+    else throw new Error(`Card effect requires a ${payload.effect.type==='BUY_ITEM'?'Item':'Artifact'} choice${payload.effect.includeTop?' or skip':''}`);
   } else if (payload.effect.type === 'BUY_WITH_DISCOUNT') {
     if (choice.type !== 'card') throw new Error('Card effect discount requires a market card choice');
     buyMarketCardWithDiscount(next,playerId,choice.cardId,payload.effect,context);

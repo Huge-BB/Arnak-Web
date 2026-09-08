@@ -18,7 +18,7 @@ for(const file of sourceFiles){const text=await readFile(file,'utf8');const rel=
 const dispatcher=await readFile(join(src,'pending-choice.ts'),'utf8');
 // Some pending codes deliberately share one payload-discriminated branch instead
 // of appearing as a literal in the dispatcher.
-const payloadRoutedCodes={'card:RESOLVE_EFFECT':'CARD_EFFECT','card:OVERCOME_GUARDIAN_FREE':'OVERCOME_GUARDIAN_FREE','card:ACTIVATE_DISCOVERED_LEVEL1_SITE':'ACTIVATE_DISCOVERED_LEVEL1_SITE'};
+const payloadRoutedCodes={'card:RESOLVE_EFFECT':'CARD_EFFECT','card:OVERCOME_GUARDIAN_FREE':'OVERCOME_GUARDIAN_FREE','card:ACTIVATE_DISCOVERED_LEVEL1_SITE':'ACTIVATE_DISCOVERED_LEVEL1_SITE','site:DISCARD_AFTER_PLACEMENT':'CARD_EFFECT'};
 // Leader pending codes are intentionally delegated to the shared leader resolver,
 // rather than repeated as literals in the public dispatcher.
 const leaderPendingDelegated=dispatcher.includes('resolveLeaderPendingChoice');

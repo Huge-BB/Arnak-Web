@@ -1,12 +1,14 @@
 import { shuffleWithSeed } from './rng.ts';
 import type { AssistantDefinition, AssistantSupplyState, PlayerAssistant, ResearchBoardId } from './types.ts';
 
-export function buildBaseAssistantPool(assistants: Record<string, AssistantDefinition>): string[] {
+export function buildBaseAssistantPool(assistants: Record<string, AssistantDefinition>, enabledExpansions: readonly string[] = ['Base Game']): string[] {
+  const enabled = new Set(['Base Game', ...enabledExpansions]);
   const ids = Object.values(assistants)
-    .filter(assistant => assistant.expansion === 'Base Game')
+    .filter(assistant => enabled.has(assistant.expansion))
     .map(assistant => assistant.id)
     .sort();
-  if (ids.length !== 12) throw new Error(`Expected 12 base-game assistants, found ${ids.length}`);
+  const expected = enabled.has('Expedition Leaders') ? 15 : 12;
+  if (ids.length !== expected) throw new Error(`Expected ${expected} enabled assistants, found ${ids.length}`);
   return ids;
 }
 
@@ -26,12 +28,13 @@ export function prepareAssistantSupply(
   board: ResearchBoardId,
   playerCount: number,
   seed: string,
+  enabledExpansions: readonly string[] = ['Base Game'],
 ): AssistantSupplyState {
   if (!Number.isInteger(playerCount) || playerCount < 1 || playerCount > 4) {
     throw new Error('Arnak supports 1-4 players');
   }
 
-  const shuffled = shuffleWithSeed(buildBaseAssistantPool(assistants), `${seed}:assistants`);
+  const shuffled = shuffleWithSeed(buildBaseAssistantPool(assistants, enabledExpansions), `${seed}:assistants`);
   if (board === 'bird') {
     return { stacks: splitThreeStacksLikeTts(shuffled), specialStack: [] };
   }
@@ -65,7 +68,9 @@ export function claimAssistantFromStack(
 
 export function upgradeAssistant(assistant: PlayerAssistant): PlayerAssistant {
   if (assistant.level === 'gold') throw new Error('Assistant is already gold');
-  return { ...assistant, level: 'gold' };
+  // A newly upgraded assistant is immediately ready, even if its silver side
+  // had already been exhausted this round.
+  return { ...assistant, level: 'gold', exhausted: false };
 }
 
 export function exhaustAssistant(assistant: PlayerAssistant): PlayerAssistant {
