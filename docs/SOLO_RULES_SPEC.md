@@ -40,6 +40,8 @@ and make the rival starting player again.
 - **Dig resource:** occupy an unoccupied location providing that resource.
   Prefer the highest printed map row, then use the tile arrow.
 - **Discover:** use the tile's printed round row for level and guardian.
+  Green is I: 1+guardian, II: 1, III: 1+guardian, IV: 2, V: skip;
+  red is I: 1, II: 1+guardian, III: 1, IV: 2+guardian, V: 2.
   Among eligible locations prefer the lowest map row, then the tile arrow.
   Take idols to the rival board: a previously unseen face-up type remains face
   up; a duplicate or a face-down idol goes into the -1 pile. Reveal the site;

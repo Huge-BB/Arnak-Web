@@ -78,6 +78,32 @@ test('rival removes the Snake rescue assistant and chooses the available 6-point
   assert.equal(state.players.rival.templeTiles.includes(6),true);
 });
 
+test('physical Discover tiles use their printed round-by-round level and guardian schedule',()=>{
+  const resolveDiscover=(tileId:string,round:number)=>{
+    const state=createSoloGame({seed:`solo-discover-${tileId}-${round}`,difficulty:0,board:'bird',researchBoard:'bird',context});
+    state.round=round; state.discovery.level1Deck=['site-coin']; state.discovery.level2Deck=['site-coin']; state.discovery.guardianDeck=['guardian'];
+    state.solo!.actionDeck=[tileId,'dig-coin'];
+    return reduce(state,{type:'SOLO_RIVAL_ACTION',playerId:'rival'},context);
+  };
+  let state=resolveDiscover('discover-green',1);
+  assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'&&site.guardian==='guardian'),true);
+  state=resolveDiscover('discover-green',2);
+  assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'&&site.guardian),false);
+  state=resolveDiscover('discover-green',4);
+  assert.equal(Object.values(state.sites).find(site=>site.tileId==='site-coin')?.level,2);
+  state=resolveDiscover('discover-green',5);
+  assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'),false);
+  state=resolveDiscover('discover-red',3);
+  assert.equal(Object.values(state.sites).find(site=>site.tileId==='site-coin')?.level,1);
+  assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'&&site.guardian),false);
+  state=resolveDiscover('discover-red',4);
+  assert.equal(Object.values(state.sites).find(site=>site.tileId==='site-coin')?.level,2);
+  assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'&&site.guardian==='guardian'),true);
+  state=resolveDiscover('discover-red',5);
+  assert.equal(Object.values(state.sites).find(site=>site.tileId==='site-coin')?.level,2);
+  assert.equal(Object.values(state.sites).some(site=>site.tileId==='site-coin'&&site.guardian),false);
+});
+
 test('the rival cannot be driven through normal player actions and never takes guardian Fear at round end',()=>{
   let state=createSoloGame({seed:'solo-guard',difficulty:0,board:'bird',researchBoard:'bird',context});
   assert.throws(()=>reduce(state,{type:'PLACE_WORKER',playerId:'rival',siteId:'camp-1'},context),/only by revealing/);

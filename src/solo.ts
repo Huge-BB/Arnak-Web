@@ -134,8 +134,11 @@ function rivalDig(state:GameState,tileData:RivalTile,context:EngineContext) {
   return `digs ${selected.id} for ${wanted}`;
 }
 function discoverDetails(tileId:string,round:number):{level:1|2;guardian:boolean}|undefined {
-  if(tileId==='discover-green') return round===1?{level:1,guardian:false}:round===2||round===3?{level:1,guardian:true}:round===4?{level:2,guardian:true}:undefined;
-  return round===1?{level:1,guardian:false}:round===2?{level:1,guardian:true}:{level:2,guardian:true};
+  // Transcribed directly from the two physical Discover action tiles.
+  // Green: I 1+guardian, II 1, III 1+guardian, IV 2, V skip.
+  if(tileId==='discover-green') return round===1||round===3?{level:1,guardian:true}:round===2?{level:1,guardian:false}:round===4?{level:2,guardian:false}:undefined;
+  // Red: I 1, II 1+guardian, III 1, IV 2+guardian, V 2.
+  return round===1||round===3?{level:1,guardian:false}:round===2?{level:1,guardian:true}:round===4?{level:2,guardian:true}:round===5?{level:2,guardian:false}:undefined;
 }
 function rivalDiscover(state:GameState,tileData:RivalTile,context:EngineContext) {
   const details=discoverDetails(tileData.id,state.round); if(!details)return 'does nothing in round V';
