@@ -1884,8 +1884,10 @@ app.addEventListener('click', event => { const button=(event.target as HTMLEleme
 render();
 if (location.pathname.endsWith('/lab.html')) startResearchLab();
 if (location.pathname.endsWith('/solo.html')) {
-  const requestedDifficulty=Number(new URLSearchParams(location.search).get('difficulty') ?? soloDifficulty);
+  const params=new URLSearchParams(location.search),requestedDifficulty=Number(params.get('difficulty') ?? soloDifficulty),requestedBoard=params.get('board'),requestedSeed=params.get('seed');
   soloDifficulty=Number.isInteger(requestedDifficulty)&&requestedDifficulty>=0&&requestedDifficulty<=5?requestedDifficulty:2;
+  if(requestedBoard==='bird'||requestedBoard==='snake'){mainBoard=requestedBoard;researchBoard=requestedBoard;}
+  if(requestedSeed)setupSeed=requestedSeed;
   startSolo();
 }
 

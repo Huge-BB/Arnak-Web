@@ -5,7 +5,9 @@ Surprise Shipment, campaign objectives, and purple rival actions are excluded
 until their own solo rules are audited.
 
 Mobile test entry: `/solo.html?difficulty=0` through `5` starts an independent
-base-game solo match. The ordinary setup page exposes the same selector.
+base-game solo match. Add `&board=snake` for the Snake Temple (Bird is the
+default), and `&seed=any-fixed-text` to reproduce the same setup. The ordinary
+setup page exposes the same selector.
 
 ## Sources
 
