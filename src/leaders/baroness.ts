@@ -1,8 +1,8 @@
 import { setLeaderState } from './utils.ts';
 import type { LeaderRules } from './types.ts';
 
-function removeCardEverywhere(player: { hand:string[]; deck:string[]; discard:string[]; playedCards:string[] }, cardId: string) {
-  for (const zone of [player.hand, player.deck, player.discard, player.playedCards]) {
+function removeCardEverywhere(player: { hand:string[]; deck:string[]; playedCards:string[] }, cardId: string) {
+  for (const zone of [player.hand, player.deck, player.playedCards]) {
     let index = zone.indexOf(cardId);
     while (index >= 0) {
       zone.splice(index, 1);

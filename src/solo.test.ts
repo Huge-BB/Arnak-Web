@@ -126,7 +126,7 @@ test('the rival cannot be driven through normal player actions and never takes g
   state.sites['camp-1-a'].occupiedBy='rival'; state.sites['camp-1-a'].guardian='guardian';
   state.players.rival.hasPassed=true; state.currentPlayer='p1';
   state=reduce(state,{type:'PASS',playerId:'p1'},context);
-  assert.equal(state.players.rival.discard.includes('fear'),false);
+  assert.equal(state.players.rival.playedCards.includes('fear'),false);
 });
 
 test('rival Dig and Discover consume no more than its six archaeologists',()=>{
@@ -155,7 +155,7 @@ test('solo scoring gives the human ordinary idol-slot and Fear scoring, while ri
   const state=createSoloGame({seed:'solo-score',difficulty:0,board:'bird',researchBoard:'bird',context});
   state.phase='finished';
   state.players.p1.idols=[{id:'a',faceUp:true},{id:'b',faceUp:true}];
-  state.players.p1.discard=['fear'];
+  state.players.p1.playedCards=['fear'];
   state.players.rival.idols=[{id:'r1',faceUp:true},{id:'r2',faceUp:false}];
   const result=scoreSoloGame(state,context);
   // 2 idols (6) + the base board's empty-slot score (8) - one Fear = 13.

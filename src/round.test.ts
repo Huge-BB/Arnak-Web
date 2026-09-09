@@ -64,7 +64,6 @@ test('played cards are shuffled to the bottom of the deck and hand draws back to
 
   assert.equal(state.players.p1.hand.length, 5);
   assert.equal(state.players.p1.playedCards.length, 0);
-  assert.equal(state.players.p1.discard.length, 0);
   assert.equal(state.players.p1.deck.length, 2);
 });
 

@@ -37,7 +37,7 @@ test('a replay serializes and resumes a card pending choice through the public d
   {type:'pending-choice',playerId:'p1',pendingIndex:0,choice:{type:'card',cardId:'fodder'}},
  ]};
  const result=replayEngineCommands(parseReplay(serializeReplay(replay)),pendingContext);
- assert.equal(result.pendingRewards.length,0);assert.equal(result.players.p1.resources.coin,2);assert.deepEqual(result.players.p1.playedCards,['discard','fodder']);assert.deepEqual(result.players.p1.discard,[]);
+ assert.equal(result.pendingRewards.length,0);assert.equal(result.players.p1.resources.coin,2);assert.deepEqual(result.players.p1.playedCards,['discard','fodder']);
 });
 test('a full two-player leader replay is JSON-stable across all five rounds',async()=>{
  const extracted=JSON.parse(await readFile(new URL('./generated/cards.json',import.meta.url),'utf8')) as EngineContext['cards'];

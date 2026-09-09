@@ -49,7 +49,7 @@ export type PendingChoice =
   | { type: "guardian"; guardianId: string }
   | { type: "keep-and-top"; keepCardId: CardId; topDeckCardId?: CardId }
   | { type: "lizard-track-guardian" }
-  | { type: "card"; cardId: CardId }
+  | { type: "card"; cardId: CardId; zone?: 'hand'|'played' }
   | { type: "archive-swap"; archiveCardId: CardId; marketCardId: CardId }
   | { type: "ritual"; fearCount: 2 | 3 | 4 }
   | { type: "assistant-option"; optionIndex: number }
@@ -77,7 +77,7 @@ function leaderChoice(choice: PendingChoice): LeaderPendingChoice {
     case "assistant":
       return { type: "assistant", assistantId: choice.assistantId };
     case "card":
-      return { type: "card", cardId: choice.cardId };
+      return { type: "card", cardId: choice.cardId, zone: choice.zone };
     case "site":
       return { type: "site", siteId: choice.siteId };
     case "archive-swap":
@@ -176,7 +176,7 @@ function resolvePendingChoiceInternal(
       if (payload.slot === 'EXILE_OWN_CARD') {
         if (choice.type === 'skip') return resolvePendingBonusTile(state, playerId, pendingIndex, undefined, context);
         if (choice.type !== 'card') throw new Error('Research bonus exile requires a card choice or skip');
-        return resolvePendingBonusTile(state, playerId, pendingIndex, choice.cardId, context);
+        return resolvePendingBonusTile(state, playerId, pendingIndex, choice.cardId, context, choice.zone);
       }
       if (payload.slot === 'UPGRADE_RESOURCE') {
         if (choice.type !== 'resource') throw new Error('Research bonus upgrade requires a resource choice');
@@ -195,7 +195,7 @@ function resolvePendingChoiceInternal(
     case 'EXILE_OWN_CARD':
       if(choice.type==='skip')return resolvePendingResearchExile(state,playerId,pendingIndex,undefined,context);
       if(choice.type!=='card')throw new Error('Research exile requires a card choice or skip');
-      return resolvePendingResearchExile(state,playerId,pendingIndex,choice.cardId,context);
+      return resolvePendingResearchExile(state,playerId,pendingIndex,choice.cardId,context,choice.zone);
     case "UPGRADE_ASSISTANT":
     case "UPGRADE_AND_REFRESH_ASSISTANT":
     case "REFRESH_ASSISTANT":

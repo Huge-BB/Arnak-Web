@@ -62,7 +62,7 @@ export function configureSoloGame(state:GameState,difficulty:number):GameState {
   const seed=state.setupSeed??'default';
   const rival=state.players[SOLO_RIVAL];
   rival.name='Rival'; rival.color='Red'; rival.workers=6; rival.availableWorkers=6;
-  rival.deck=[]; rival.hand=[]; rival.discard=[]; rival.playedCards=[]; rival.idols=[]; rival.assistants=[];
+  rival.deck=[]; rival.hand=[]; rival.playedCards=[]; rival.idols=[]; rival.assistants=[];
   rival.resources={coin:0,compass:0,tablet:0,arrowhead:0,jewel:0,fear:0};
   state.solo={humanPlayerId:SOLO_HUMAN,rivalPlayerId:SOLO_RIVAL,difficulty,actionDeck:actionDeck(seed,difficulty),usedActionTiles:[]};
   state.firstPlayer=SOLO_RIVAL; state.currentPlayer=SOLO_RIVAL;

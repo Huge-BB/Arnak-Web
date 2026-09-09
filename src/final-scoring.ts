@@ -5,7 +5,7 @@ import type { CardId, EngineContext, GameState, PlayerId, PlayerState } from './
 export interface PlayerScoreBreakdown { playerId:PlayerId; research:number; templeTiles:number; idols:number; emptyIdolSlots:number; guardians:number; cards:number; total:number; }
 export interface FinalScoreResult { scores:Record<PlayerId,PlayerScoreBreakdown>; rankedPlayerIds:PlayerId[]; winnerIds:PlayerId[]; }
 
-function ownedCards(player:PlayerState):CardId[]{return [...player.hand,...player.deck,...player.discard,...player.playedCards];}
+function ownedCards(player:PlayerState):CardId[]{return [...player.hand,...player.deck,...player.playedCards];}
 export function cardScore(player:PlayerState,context:EngineContext):number{return ownedCards(player).reduce((score,id)=>score+(context.cards[id]?.points??0),0);}
 /** Fancy Tea Set's printed rule is active while owned; it need not be played. */
 function winsTies(player:PlayerState,context:EngineContext){return ownedCards(player).some(id=>context.cards[id]?.expansion==='Surprise Shipment'&&context.cards[id]?.name==='Fancy Tea Set');}

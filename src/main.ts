@@ -162,7 +162,7 @@ pending = () => {
   const payload = (queued.payload ?? {}) as Record<string, unknown>;
   const player = state.players[queued.playerId];
   const panel = (options: string) => `<section class="pending-panel"><span>⌁</span><div>${options}</div></section>`;
-  const cardsOwned = [...player.hand, ...player.playedCards, ...player.discard, ...player.deck];
+  const cardsOwned = [...player.hand, ...player.playedCards, ...player.deck];
   if (queued.code === 'leader:EXILE_OWN_CARD') return panel(cardsOwned.map((id) => pendingButton('▣', { type: 'card', cardId: id })).join(''));
   if (queued.code === 'leader:MYSTIC_RITUAL_CHOICE') {
     const allowed = Array.isArray(payload.allowedFearCounts) ? payload.allowedFearCounts : [2, 3, 4];
@@ -1803,9 +1803,8 @@ pending = () => {
   const isExile = queued.code.includes('EXILE_OWN_CARD') || payload.type === 'EXILE_OWN_CARD' || payload.slot === 'EXILE_OWN_CARD' || nestedEffect?.type === 'EXILE_OWN_CARD';
   if (!isExile) return pendingFinalWithCardArtworkExile();
   const player = state.players[queued.playerId];
-  const cardIds = [...player.hand, ...player.playedCards];
-  const cards = cardIds.map((cardId) => `<button class="card exile-card-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({ type: 'card', cardId }))}" title="放逐：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('');
-  return `<section class="pending-panel exile-card-panel"><span>选择要放逐的牌</span><div>${cards || '<span class="pending-unsupported">没有可放逐的牌</span>'}</div></section>`;
+  const group = (label: string, zone: 'hand'|'played', cardIds: string[]) => `<section class="exile-zone-group"><strong>${label}</strong><div>${cardIds.map((cardId) => `<button class="card exile-card-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({ type: 'card', cardId, zone }))}" title="从${label}放逐：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('') || '<span class="pending-unsupported">无</span>'}</div></section>`;
+  return `<section class="pending-panel exile-card-panel"><span>选择要放逐的牌</span><div class="exile-zone-groups">${group('手牌','hand',player.hand)}${group('打出 / 弃置区','played',player.playedCards)}</div></section>`;
 };
 render();
 
@@ -1826,8 +1825,7 @@ player = (id) => {
 // the personal board rather than existing only in reducer state.
 const playerWithPlayedCards = player;
 player = (id) => {
-  const legacyDiscard = state.players[id].discard;
-  const played = [...state.players[id].playedCards, ...legacyDiscard].map((cardId) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])}" title="打出/弃置：${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
+  const played = state.players[id].playedCards.map((cardId) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])}" title="打出/弃置：${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
   return `${playerWithPlayedCards(id)}<aside class="player-played-zone" aria-label="${id} 打出和弃置区"><strong>打出 / 弃置区</strong><div class="player-played-cards">${played || '<span>暂无卡牌</span>'}</div></aside>`;
 };
 

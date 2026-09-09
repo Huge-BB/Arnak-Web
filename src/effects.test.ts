@@ -190,7 +190,17 @@ test('a card effect adds a base-game Fear card to the shared play/discard area',
  const state=playableState('utility');
  const fearContext:EngineContext={cards:{utility:{id:'utility',name:'Utility',type:'Item',expansion:'Base Game'},fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}},cardEffects:{utility:[{type:'GAIN_FEAR_CARD',amount:1}]}};
  const next=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'utility'},fearContext);
- assert.deepEqual(next.players.p1.playedCards,['utility','fear']);assert.deepEqual(next.players.p1.discard,[]);
+ assert.deepEqual(next.players.p1.playedCards,['utility','fear']);
+});
+
+test('exile choice distinguishes the same card id in hand from the shared play area',()=>{
+ const state=playableState('utility');state.players.p1.hand.push('fear');state.players.p1.playedCards.push('fear');
+ const exileContext:EngineContext={cards:{utility:{id:'utility',name:'Utility',type:'Item',expansion:'Base Game'},fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}},cardEffects:{utility:[{type:'EXILE_OWN_CARD'}]}};
+ const pending=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'utility'},exileContext);
+ const next=resolvePendingChoice(pending,'p1',0,{type:'card',cardId:'fear',zone:'played'},exileContext);
+ assert.deepEqual(next.players.p1.hand,['fear']);
+ assert.deepEqual(next.players.p1.playedCards,['utility']);
+ assert.deepEqual(next.market.exiled,['fear']);
 });
 
 test('a self-exiling card moves only its source card to the market exile',()=>{

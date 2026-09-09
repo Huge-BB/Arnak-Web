@@ -22,12 +22,12 @@ export function falconerUseGuardianBoonForFlight(state:GameState,playerId:Player
 function removeOne(zone:CardId[],cardId:CardId){const index=zone.indexOf(cardId);if(index>=0){zone.splice(index,1);return true;}return false;}
 
 /** Mystic replacement rule: every exiled Fear card goes to the ritual pile instead of normal exile. */
-export function mysticExileFear(state:GameState,playerId:PlayerId,fearCardId:CardId,context:EngineContext):GameState{
+export function mysticExileFear(state:GameState,playerId:PlayerId,fearCardId:CardId,context:EngineContext,source?:'hand'|'played'):GameState{
   const {player}=requireLeader(state,playerId,'mystic');
   const card=context.cards[fearCardId];
   if(!card||card.type!=='Fear')throw new Error('Mystic ritual pile accepts only Fear cards');
   const next=structuredClone(state); const p=next.players[playerId];
-  const removed=removeOne(p.hand,fearCardId)||removeOne(p.playedCards,fearCardId)||removeOne(p.discard,fearCardId)||removeOne(p.deck,fearCardId);
+  const removed=source==='hand'?removeOne(p.hand,fearCardId):source==='played'?removeOne(p.playedCards,fearCardId):removeOne(p.hand,fearCardId)||removeOne(p.playedCards,fearCardId);
   if(!removed)throw new Error('Fear card is not owned by the Mystic');
   const pile=(p.leader!.data.ritualPile??=[]) as CardId[]; pile.push(fearCardId);
   return next;

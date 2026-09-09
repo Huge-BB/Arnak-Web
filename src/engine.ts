@@ -115,7 +115,6 @@ export function createGame(playerIds: PlayerId[]): GameState {
         researchJournal: RESEARCH_START_POSITION,
         deck: [],
         hand: [],
-        discard: [],
         playedCards: [],
         idols: [],
         assistants: [],
@@ -514,12 +513,6 @@ function cleanupPlayerForNextRound(
   p.availableWorkers = p.workers;
   p.hasPassed = false;
   delete p.guardianDefeatRewardsThisRound;
-  // `discard` existed in early saves, but Arnak has one shared play/discard
-  // area. Merge any legacy cards into that area before the normal round shuffle.
-  if (p.discard.length) {
-    p.playedCards.push(...p.discard);
-    p.discard = [];
-  }
   if (p.playedCards.length) {
     p.deck.push(
       ...shuffleWithSeed(

@@ -35,5 +35,4 @@ test('a card effect discard also becomes used this round, rather than an indepen
   applyCardEffects(state, 'p1', context.cardEffects.drum, context, 'drum');
   const resolved = resolvePendingCardEffect(state, 'p1', 0, { type: 'card', cardId: 'fodder' }, context);
   assert.deepEqual(resolved.players.p1.playedCards, ['fodder']);
-  assert.deepEqual(resolved.players.p1.discard, []);
 });

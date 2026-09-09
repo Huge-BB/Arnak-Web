@@ -74,6 +74,5 @@ export function replaceStartingDeckWithLeaderCards(
   const player = state.players[playerId];
   player.hand = cards.slice(0, 5);
   player.deck = cards.slice(5);
-  player.discard = [];
   player.playedCards = [];
 }

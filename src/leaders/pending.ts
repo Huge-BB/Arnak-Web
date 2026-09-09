@@ -7,7 +7,7 @@ import { resolveOwnedCardExile } from '../effects.ts';
 
 export type LeaderPendingChoice =
   | { type:'assistant'; assistantId:string }
-  | { type:'card'; cardId:CardId }
+  | { type:'card'; cardId:CardId; zone?:'hand'|'played' }
   | { type:'site'; siteId:string }
   | { type:'archiveSwap'; archiveCardId:CardId; marketCardId:CardId }
   | { type:'ritual'; fearCount:2|3|4 }
@@ -15,7 +15,7 @@ export type LeaderPendingChoice =
   | { type:'skip' };
 function ownedPending(state:GameState,playerId:PlayerId,index:number){if(!Number.isInteger(index)||index<0||index>=state.pendingRewards.length)throw new Error(`Invalid pending reward index: ${index}`);const p=state.pendingRewards[index];if(p.playerId!==playerId)throw new Error(`Pending reward belongs to ${p.playerId}`);return p;}
 function removePending(state:GameState,index:number){const next=structuredClone(state);next.pendingRewards.splice(index,1);return next;}
-function removeOwnedCard(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const next=structuredClone(state),p=next.players[playerId];for(const zone of[p.hand,p.playedCards,p.discard,p.deck]){const i=zone.indexOf(cardId);if(i>=0){zone.splice(i,1);next.market.exiled.push(cardId);resolveOwnedCardExile(next,playerId,cardId,context);return next;}}throw new Error('Card is not owned by the player');}
+function removeOwnedCard(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext,source?:'hand'|'played'){const next=structuredClone(state),p=next.players[playerId],zones=source==='hand'?[p.hand]:source==='played'?[p.playedCards]:[p.hand,p.playedCards];for(const zone of zones){const i=zone.indexOf(cardId);if(i>=0){zone.splice(i,1);next.market.exiled.push(cardId);resolveOwnedCardExile(next,playerId,cardId,context);return next;}}throw new Error('Card is not in the selected hand or play area');}
 function addCaptainHiddenFearBonus(state:GameState,playerId:PlayerId,context:EngineContext,cardId:CardId){const player=state.players[playerId],card=context.cards[cardId];if(player.leader?.id!=='captain'||card?.name!=='Hidden Fear')return;const fear=Object.values(context.cards).find(candidate=>candidate.type==='Fear'&&candidate.expansion==='Base Game');if(fear)player.playedCards.push(fear.id);player.resources.compass+=1;}
 export function resolveLeaderPendingChoice(state:GameState,playerId:PlayerId,pendingIndex:number,choice:LeaderPendingChoice,context:EngineContext):GameState{
  const pending=ownedPending(state,playerId,pendingIndex),payload=(pending.payload??{}) as Record<string,unknown>;
@@ -25,7 +25,7 @@ export function resolveLeaderPendingChoice(state:GameState,playerId:PlayerId,pen
   case'leader:REFRESH_OWN_ASSISTANT':{if(choice.type!=='assistant')throw new Error('Assistant refresh requires an assistant choice');return removePending(refreshOwnedAssistant(state,playerId,choice.assistantId),pendingIndex);}
   case'leader:EXILE_OWN_CARD':{
    if(choice.type!=='card')throw new Error('Exile effect requires a card choice');const card=context.cards[choice.cardId];let resolved:GameState;
-   if(state.players[playerId].leader?.id==='mystic'&&card?.type==='Fear')resolved=mysticExileFear(state,playerId,choice.cardId,context);else{resolved=removeOwnedCard(state,playerId,choice.cardId,context);addCaptainHiddenFearBonus(resolved,playerId,context,choice.cardId);}
+   if(state.players[playerId].leader?.id==='mystic'&&card?.type==='Fear')resolved=mysticExileFear(state,playerId,choice.cardId,context,choice.zone);else{resolved=removeOwnedCard(state,playerId,choice.cardId,context,choice.zone);addCaptainHiddenFearBonus(resolved,playerId,context,choice.cardId);}
    resolved=removePending(resolved,pendingIndex);
    if(payload.thenMysticRitual===true)resolved.pendingRewards.push({playerId,sourceId:pending.sourceId,code:'leader:MYSTIC_RITUAL_CHOICE',payload:{allowedFearCounts:payload.allowedFearCounts??[2,3,4],mainAction:true}});
    return resolved;

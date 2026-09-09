@@ -30,7 +30,7 @@ function upgrade(state:GameState, playerId:PlayerId, resource:SpendableResource)
   resources[resource]-=1; resources[target]+=1;
 }
 
-export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pendingIndex:number, choice:{type:'card';cardId:CardId}|{type:'idol';idolId:string}|{type:'idol-effect';effect:IdolEffect}|{type:'guardian';guardianId:string}|{type:'card-count';count:number}|{type:'card-option';optionIndex:number}|{type:'card-options';optionIndexes:number[]}|{type:'keep-and-top';keepCardId:CardId;topDeckCardId?:CardId}|{type:'top-deck';mode:'keep'|'exile';cardIds:CardId[]}|{type:'resource';resource:SpendableResource}|{type:'resource-payment';payment:Partial<Record<SpendableResource,number>>}|{type:'assistants';assistantIds:string[]}|{type:'assistant-stack';stackIndex:number}|{type:'assistant-target';ownerId:PlayerId;assistantId:string}|{type:'assistant-exchange';assistantId:string;stackIndex:number}|{type:'site';siteId:string}|{type:'site-pair';fromSiteId:string;toSiteId:string}|{type:'site-swap';firstSiteId:string;secondSiteId:string;activateSiteId:string}|{type:'site-ids';siteIds:string[]}|{type:'skip'}|{type:'research-node';token:ResearchToken;nodeId:ResearchNodeId;paymentCardIds?:CardId[];costAlternativeIndex?:number}, context:EngineContext):GameState {
+export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pendingIndex:number, choice:{type:'card';cardId:CardId;zone?:'hand'|'played'}|{type:'idol';idolId:string}|{type:'idol-effect';effect:IdolEffect}|{type:'guardian';guardianId:string}|{type:'card-count';count:number}|{type:'card-option';optionIndex:number}|{type:'card-options';optionIndexes:number[]}|{type:'keep-and-top';keepCardId:CardId;topDeckCardId?:CardId}|{type:'top-deck';mode:'keep'|'exile';cardIds:CardId[]}|{type:'resource';resource:SpendableResource}|{type:'resource-payment';payment:Partial<Record<SpendableResource,number>>}|{type:'assistants';assistantIds:string[]}|{type:'assistant-stack';stackIndex:number}|{type:'assistant-target';ownerId:PlayerId;assistantId:string}|{type:'assistant-exchange';assistantId:string;stackIndex:number}|{type:'site';siteId:string}|{type:'site-pair';fromSiteId:string;toSiteId:string}|{type:'site-swap';firstSiteId:string;secondSiteId:string;activateSiteId:string}|{type:'site-ids';siteIds:string[]}|{type:'skip'}|{type:'research-node';token:ResearchToken;nodeId:ResearchNodeId;paymentCardIds?:CardId[];costAlternativeIndex?:number}, context:EngineContext):GameState {
   const payload=payloadAt(state,playerId,pendingIndex);
   if(payload.effect.type==='DRAW_BOTTOM_THEN_KEEP'){
     const next=structuredClone(state),player=next.players[playerId];
@@ -104,8 +104,8 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
   } else if (payload.effect.type === 'EXILE_OWN_CARD') {
     if (choice.type !== 'card') throw new Error('Card effect exile requires a card choice');
     const player=next.players[playerId];
-    let removed=false;
-    for(const zone of [player.hand,player.playedCards]){const index=zone.indexOf(choice.cardId);if(index>=0){zone.splice(index,1);next.market.exiled.push(choice.cardId);resolveOwnedCardExile(next,playerId,choice.cardId,context);removed=true;break;}}
+    const zones=choice.zone==='hand'?[player.hand]:choice.zone==='played'?[player.playedCards]:[player.hand,player.playedCards];let removed=false;
+    for(const zone of zones){const index=zone.indexOf(choice.cardId);if(index>=0){zone.splice(index,1);next.market.exiled.push(choice.cardId);resolveOwnedCardExile(next,playerId,choice.cardId,context);removed=true;break;}}
     if(!removed) throw new Error('Card effect exile requires a card in hand or play area');
     followUps=payload.effect.effects??[];
   } else if (payload.effect.type === 'RETURN_FEAR_FROM_PLAY_TO_HAND') {
