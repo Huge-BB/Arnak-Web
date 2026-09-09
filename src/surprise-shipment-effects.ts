@@ -46,7 +46,7 @@ export const surpriseShipmentEffects: Record<string, CardEffect[]> = {
   // Totem of Trade upgrades twice; the second upgrade is deliberately chained
   // after the first selection so it may use the resource just created.
   '3225': [{ type:'UPGRADE_RESOURCE_THEN', effects:[{ type:'UPGRADE_RESOURCE_THEN', effects:[] }] }],
-  '3230': [expansionEffectPresets.extraMainAction()],
+  '3230': [{ type:'GAIN_TRAVEL', travel:{ plane:2 } }, expansionEffectPresets.extraMainAction()],
   '3205': [{ type:'SEQUENCE', effects:[{ type:'GAIN_RESOURCE', resource:'tablet', amount:2 }, { type:'CHOOSE_ONE', options:[{ type:'RETURN_FEAR_FROM_PLAY_TO_HAND' }, { type:'SEQUENCE', effects:[] }] }] }],
   '3120': [{ type:'CHOOSE_ONE_BY_OTHER_PLAYED_COUNT', options:[
     {minimum:0,effect:{type:'DRAW_CARD',amount:1}},

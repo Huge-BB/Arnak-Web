@@ -4,6 +4,7 @@ import generatedCards from './generated/cards.json' with { type:'json' };
 import { withBaseCardEffects } from './card-effect-data.ts';
 import { buyArtifactWithDiscount } from './assistant-effects.ts';
 import { createGame } from './engine.ts';
+import { applyCardEffects, getCardEffects } from './effects.ts';
 import type { EngineContext } from './types.ts';
 
 test('verified market card effects merge without overriding caller effects',()=>{
@@ -61,6 +62,14 @@ test('Surprise Shipment cards are main actions by safe default, with audited lig
  assert.equal(context.cardActionTiming?.['3103'],'main');
  assert.equal(context.cardActionTiming?.['3104'],'free');
  assert.equal(context.cardActionTiming?.['3210'],'main');
+});
+
+test('Wings of Ara-Anu grants two temporary planes and an additional main action',()=>{
+ const context=withBaseCardEffects({cards:generatedCards as EngineContext['cards']}),state=createGame(['p1']);state.phase='playing';state.currentPlayer='p1';
+ applyCardEffects(state,'p1',getCardEffects('3230',context),context,'3230');
+ assert.deepEqual(state.actionWindow?.temporaryTravel,{plane:2});
+ assert.equal(state.players.p1.extraMainActions,1);
+ assert.equal(context.cardActionTiming?.['3230'],'main');
 });
 
 test('regular Expedition Leaders market cards are safe main actions, while leader starting cards are not market timings',()=>{
