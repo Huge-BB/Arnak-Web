@@ -1437,14 +1437,19 @@ research = () => {
       return `<span class="research-bonus-slot" style="${researchComponentStyle(component)}">${bonusTile(tileId, index)}</span>`;
     });
   }).join('');
-  const monkey = state.research.templeData?.monkeyTrackArtifact as { nodeId?: string } | undefined;
-  const monkeyNode = monkey?.nodeId ? byId[monkey.nodeId] : undefined;
-  const artifact = '';
-  const lizard = (state.research.templeData?.lizardGuardians as { nodeId: string; defeated: boolean }[] | undefined)?.find((entry) => !entry.defeated);
-  const lizardNode = lizard ? byId[lizard.nodeId] : undefined;
-  const guardianAsset = lizard ? assets[`guardian:${lizard.id}:face`] : undefined;
-  const guardian = lizardNode ? `<button class="track-guardian" style="--guardian-x:${33 + lizardNode.pathIndex * 19}%;--guardian-y:${13 + lizardNode.rowIndex * 10}%;${sprite(guardianAsset)}" data-lizard-guardian title="Lizard track guardian"></button>` : '';
-  const assistantSupply = '';
+  const monkey = state.research.templeData?.monkeyTrackArtifact as { artifactId?: string; nodeId?: string } | undefined;
+  const artifactComponent = calibratedResearchComponent('monkey', 'research-track-artifact', { x:257,y:1704,width:150,height:215 });
+  const artifactAsset = monkey?.artifactId ? assets[`card:${monkey.artifactId}:face`] : undefined;
+  const artifact = state.research.board==='monkey' && artifactAsset
+    ? `<span class="research-setup-piece research-track-artifact" style="${researchComponentStyle(artifactComponent)};${sprite(artifactAsset)}" title="cost-3 track Artifact"></span>` : '';
+  const lizard = (state.research.templeData?.lizardGuardians as { id:string; nodeId:string; defeated:boolean; revealed:boolean }[] | undefined)?.find((entry) => !entry.defeated);
+  const guardianComponent = calibratedResearchComponent('lizard', 'research-track-guardian', { x:494,y:1596,width:220,height:220 });
+  const guardianStyle = lizard?.revealed ? sprite(assets[`guardian:${lizard.id}:face`]) : `background-image:url('${publicAsset('/assets/guardian-back.jpg')}')`;
+  const guardian = state.research.board==='lizard' && lizard
+    ? `<button class="research-setup-piece research-track-guardian" style="${researchComponentStyle(guardianComponent)};${guardianStyle}" ${lizard.revealed ? 'data-lizard-guardian' : 'disabled'} title="${lizard.revealed ? 'overcome Lizard track guardian' : 'unrevealed Lizard track guardian'}"></button>` : '';
+  const snakeAssistants = state.research.board==='snake' ? state.assistants.specialStack : [];
+  const assistantComponent = calibratedResearchComponent('snake', 'research-rescue-assistants', { x:475,y:1731,width:170,height:170 });
+  const assistantSupply = snakeAssistants.length ? `<span class="research-setup-piece research-rescue-assistants" style="${researchComponentStyle(assistantComponent)}" title="Snake rescue assistants">${snakeAssistants.map((assistantId,index)=>`<i style="--stack-index:${index};${sprite(assistantAsset(assistantId,'silver'))}"></i>`).join('')}<b>${snakeAssistants.length}</b></span>` : '';
   const temple = ([
     ['bronze', 2, '2a'], ['bronze', 2, '2b'], ['bronze', 2, '2c'],
     ['silver', 6, '6a'], ['silver', 6, '6b'], ['gold', 11, '11'],
