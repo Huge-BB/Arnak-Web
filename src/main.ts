@@ -12,6 +12,7 @@ import { calibrationMark, calibrationStorageKey, readBoardCalibration } from './
 import {BASE_BOARD_INTERACTION_SPOTS,createBaseBoardSites} from './base-board-setup.ts';
 import {BASE_IDOL_EFFECTS,BASE_IDOL_SLOTS,LEADER_IDOL_EFFECT_LAYOUT,LEADER_LAYOUT,RESEARCH_BOARD_SIZE,RESEARCH_TEMPLE_TILE_COMPONENTS,SUPPLY_BOARD_COMPONENTS,SUPPLY_BOARD_SIZE,researchTokenPoint,pointStyle,playerPointStyle} from './board-layout.ts';
 import {idolSlotConfig,type IdolEffect} from './leaders/idol-actions.ts';
+import {isLeaderStartingCard} from './leaders/utils.ts';
 type Asset={url?:string;sheetUrl:string;sheetWidth:number;sheetHeight:number;cardIndex:number};type Spot={id:string;level:1|2;left:number;top:number;width?:number;height?:number;rewardCode?:string};
 const tracks=buildResearchTracks(generatedTracks,manual,{rewardManual:rewards}),context:EngineContext=withBaseCardEffects(withBaseGuardianEffects(withBaseAssistantEffects({cards,assistants,sites,idols,guardians,researchTracks:tracks}))),assets=(assetsJson as {assets:Record<string,Asset>}).assets,app=document.querySelector<HTMLDivElement>('#app')!;
 const spots:Spot[]=BASE_BOARD_INTERACTION_SPOTS;
@@ -150,7 +151,7 @@ function pending(){const p=state.pendingRewards[0];if(!p)return'';const payload=
 function artifact(){if(!artifactId)return'';const p=state.players[state.currentPlayer];if(!p.hand.includes(artifactId))return'';return`<section class="pending-panel artifact-panel"><span>◆</span><div>${p.hand.filter(x=>x!==artifactId).map(x=>`<button class="card" data-artifact-payment="${x}"><i style="${sprite(assets[`card:${x}:face`])}"></i></button>`).join('')}<button class="pending-button" data-artifact-cancel>×</button></div></section>`}
 function render(){document.documentElement.dataset.theme='jungle';const active=state.players[state.currentPlayer];app.innerHTML=`<main><header><div class="round">${state.round}</div><div class="turn-dot ${active.color.toLowerCase()}"></div><div class="header-actions"><select data-main-board><option value="bird" ${mainBoard==='bird'?'selected':''}>普通</option><option value="snake" ${mainBoard==='snake'?'selected':''}>进阶</option></select><select data-board>${(['bird','snake','monkey','lizard'] as ResearchBoardId[]).map(x=>`<option value="${x}" ${researchBoard===x?'selected':''}>${x}</option>`).join('')}</select><button class="${researchToken==='magnifying'?'active':''}" data-token="magnifying">⌕</button><button class="${researchToken==='journal'?'active':''}" data-token="journal">▤</button><button data-action="end">✓</button><button data-action="pass">≫</button><button data-action="reset">↻</button></div></header><section class="play-surface">${board()}<aside class="market"><div class="market-row">${state.market.items.map(x=>card(x,'buy')).join('')}</div><div class="market-row">${state.market.artifacts.map(x=>card(x,'buy')).join('')}</div></aside></section><section class="players">${state.playerOrder.map(player).join('')}</section><section class="hand">${active.hand.map(x=>card(x,'play')).join('')}</section>${artifact()}${pending()}${message?`<div class="message">${message}</div>`:''}</main>`}
 app.addEventListener('change',e=>{const t=e.target as HTMLSelectElement;if(t.matches('[data-main-board]')){mainBoard=t.value as typeof mainBoard;render()}else if(t.matches('[data-board]')){researchBoard=t.value as ResearchBoardId;start()}});
-app.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b||b.disabled)return;const pid=state.currentPlayer,id=b.dataset.cardId;if(b.dataset.artifactCancel!==undefined){artifactId=undefined;render();return}if(b.dataset.artifactPayment&&artifactId){const action:GameAction={type:'PLAY_CARD',playerId:pid,cardId:artifactId,activationPaymentCardId:b.dataset.artifactPayment};try{state=applyEngineCommand(state,{type:'action',action},context);artifactId=undefined;message='';recordReducerEvent(action,'accepted')}catch(x){message=x instanceof Error?x.message:String(x);recordReducerEvent(action,'rejected',message)}render();return}if(b.dataset.pendingSelect){const x=b.dataset.pendingSelect;pendingSelection=pendingSelection.includes(x)?pendingSelection.filter(y=>y!==x):[...pendingSelection,x];render();return}if(b.dataset.pendingMulti){if(b.dataset.pendingMulti==='assistants')choose({type:'assistants',assistantIds:pendingSelection});else if(b.dataset.pendingMulti==='sites')choose({type:'site-ids',siteIds:pendingSelection});else choose({type:'card-options',optionIndexes:pendingSelection.map(Number)});return}if(b.dataset.pendingChoice){choose(JSON.parse(decodeURIComponent(b.dataset.pendingChoice)) as PendingChoice);return}if(b.dataset.assistant){run({type:'ACTIVATE_ASSISTANT',playerId:pid,assistantId:b.dataset.assistant});return}if(id){if(b.dataset.cardAction==='play'&&context.cards[id]?.expansion==='Expedition Leaders'){leaderStartingCardId=id;render();return}if(b.dataset.cardAction==='play'&&context.cards[id]?.type==='Artifact'){artifactId=id;render();return}run(b.dataset.cardAction==='buy'?{type:'BUY_CARD',playerId:pid,cardId:id}:{type:'PLAY_CARD',playerId:pid,cardId:id});return}if(b.dataset.site)run({type:'PLACE_WORKER',playerId:pid,siteId:b.dataset.site});else if(b.dataset.discover)run({type:'DISCOVER_SITE',playerId:pid,siteId:b.dataset.discover});else if(b.dataset.research)run({type:'ADVANCE_RESEARCH',playerId:pid,track:researchToken,toNodeId:b.dataset.research});else if(b.dataset.token){researchToken=b.dataset.token as typeof researchToken;render()}else if(b.dataset.action==='end')run({type:'END_TURN',playerId:pid});else if(b.dataset.action==='pass')run({type:'PASS',playerId:pid});else if(b.dataset.action==='reset')start()});
+app.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b||b.disabled)return;const pid=state.currentPlayer,id=b.dataset.cardId;if(b.dataset.artifactCancel!==undefined){artifactId=undefined;render();return}if(b.dataset.artifactPayment&&artifactId){const action:GameAction={type:'PLAY_CARD',playerId:pid,cardId:artifactId,activationPaymentCardId:b.dataset.artifactPayment};try{state=applyEngineCommand(state,{type:'action',action},context);artifactId=undefined;message='';recordReducerEvent(action,'accepted')}catch(x){message=x instanceof Error?x.message:String(x);recordReducerEvent(action,'rejected',message)}render();return}if(b.dataset.pendingSelect){const x=b.dataset.pendingSelect;pendingSelection=pendingSelection.includes(x)?pendingSelection.filter(y=>y!==x):[...pendingSelection,x];render();return}if(b.dataset.pendingMulti){if(b.dataset.pendingMulti==='assistants')choose({type:'assistants',assistantIds:pendingSelection});else if(b.dataset.pendingMulti==='sites')choose({type:'site-ids',siteIds:pendingSelection});else choose({type:'card-options',optionIndexes:pendingSelection.map(Number)});return}if(b.dataset.pendingChoice){choose(JSON.parse(decodeURIComponent(b.dataset.pendingChoice)) as PendingChoice);return}if(b.dataset.assistant){run({type:'ACTIVATE_ASSISTANT',playerId:pid,assistantId:b.dataset.assistant});return}if(id){if(b.dataset.cardAction==='play'&&isLeaderStartingCard(context,state.players[pid]?.leader?.id,id)){leaderStartingCardId=id;render();return}if(b.dataset.cardAction==='play'&&context.cards[id]?.type==='Artifact'){artifactId=id;render();return}run(b.dataset.cardAction==='buy'?{type:'BUY_CARD',playerId:pid,cardId:id}:{type:'PLAY_CARD',playerId:pid,cardId:id});return}if(b.dataset.site)run({type:'PLACE_WORKER',playerId:pid,siteId:b.dataset.site});else if(b.dataset.discover)run({type:'DISCOVER_SITE',playerId:pid,siteId:b.dataset.discover});else if(b.dataset.research)run({type:'ADVANCE_RESEARCH',playerId:pid,track:researchToken,toNodeId:b.dataset.research});else if(b.dataset.token){researchToken=b.dataset.token as typeof researchToken;render()}else if(b.dataset.action==='end')run({type:'END_TURN',playerId:pid});else if(b.dataset.action==='pass')run({type:'PASS',playerId:pid});else if(b.dataset.action==='reset')start()});
 
 // Extend the generic card/research choice panel with leader and assistant
 // pending flows that use the same public PendingChoice dispatcher.
@@ -1923,4 +1924,115 @@ app.addEventListener('click', event => {
   const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if(button?.dataset.soloRivalAction!==undefined && state.solo) run({type:'SOLO_RIVAL_ACTION',playerId:state.solo.rivalPlayerId});
 });
+render();
+
+// Selection prompts used to be built incrementally with terse glyphs.  Keep
+// their existing typed buttons (and therefore their reducer contracts), but
+// give every non-card choice a human-readable label at the final render edge.
+// This catches legacy and expansion prompts alike instead of relying on each
+// individual feature to remember its own presentation layer.
+const choiceResourceName: Record<string, string> = { coin: '金币', compass: '罗盘', tablet: '石板', arrowhead: '箭头', jewel: '宝石' };
+const choiceTravelName: Record<string, string> = { boot: '靴子', car: '车', boat: '船', plane: '飞机' };
+function choiceBundle(value: unknown) {
+  if (!value || typeof value !== 'object') return '';
+  return Object.entries(value as Record<string, unknown>)
+    .filter(([, amount]) => Number(amount) > 0)
+    .map(([kind, amount]) => `${Number(amount)} ${choiceResourceName[kind] ?? choiceTravelName[kind] ?? kind}`)
+    .join(' + ');
+}
+function describeChoiceEffect(value: unknown): string {
+  if (!value || typeof value !== 'object') return '执行此效果';
+  const effect = value as Record<string, unknown>;
+  switch (effect.type) {
+    case 'GAIN_RESOURCES': return `获得 ${choiceBundle(effect.resources)}`;
+    case 'GAIN_RESOURCE': return `获得 ${effect.amount ?? 1} ${choiceResourceName[String(effect.resource)] ?? String(effect.resource)}`;
+    case 'GAIN_TRAVEL': return `获得 ${choiceBundle(effect.travel)}`;
+    case 'DRAW_CARD': return `抽 ${effect.amount ?? 1} 张牌`;
+    case 'EXILE_OWN_CARD': return '放逐自己的一张牌';
+    case 'UPGRADE_RESOURCE': return '升级一种资源';
+    case 'SEQUENCE': return Array.isArray(effect.effects) ? effect.effects.map(describeChoiceEffect).join('，然后') : '执行连续效果';
+    case 'PAY_RESOURCE_CHOOSE': return `支付 ${choiceBundle(effect.cost)} 后选择效果`;
+    case 'BUY_WITH_DISCOUNT': return `折扣购买（物品 -${effect.itemDiscount ?? 0} 金币；神器 -${effect.artifactDiscount ?? 0} 罗盘）`;
+    default: return `执行效果：${String(effect.type ?? '未知')}`;
+  }
+}
+function choiceLabel(button: HTMLButtonElement, queued: GameState['pendingRewards'][number] | undefined): string | undefined {
+  if (button.dataset.leaderCardChoice) {
+    try {
+      const choice = JSON.parse(decodeURIComponent(button.dataset.leaderCardChoice)) as { choice?: string; snackId?: string };
+      const labels: Record<string, string> = { coin: '获得 1 金币', compass: '获得 1 罗盘', tablets: '获得 1 石板', draw: '抽 1 张牌', eagle: '推进猎鹰', exile: '放逐自己的一张牌', refreshAssistant: '重置一名助手', upgradeResource: '升级一种资源', suitcaseCompass: '在公文包中放入 1 罗盘', suitcaseTablet: '在公文包中放入 1 石板', payCoinForPlanes: '支付 1 金币，获得 2 飞机', payCoinsForJewel: '支付 2 金币，获得 1 宝石', activateSite: `使用${choice.snackId ?? ''}零食，激活营地`, activateFaceupIdol: `使用${choice.snackId ?? ''}零食，激活正面神像` };
+      return labels[choice.choice ?? ''];
+    } catch { return undefined; }
+  }
+  if (button.dataset.leaderCardCancel !== undefined) return '取消';
+  if (button.dataset.pendingMulti !== undefined || button.dataset.pairConfirm !== undefined || button.dataset.archiveConfirm !== undefined || button.dataset.topDeckConfirm !== undefined || button.dataset.drawConfirm !== undefined) return '确认选择';
+  if (button.dataset.pendingResearch) {
+    const token = button.dataset.pendingResearchToken;
+    return `${token === 'journal' ? '笔记本' : '放大镜'}：推进至 ${button.dataset.pendingResearch}`;
+  }
+  if (button.dataset.pairSite) {
+    const site = state.sites[button.dataset.pairSite];
+    return `选择地点：${site?.id ?? button.dataset.pairSite}${site ? `（${site.level} 级）` : ''}`;
+  }
+  if (button.dataset.pendingSelect) {
+    const selected = button.dataset.pendingSelect, player = queued ? state.players[queued.playerId] : undefined;
+    const assistant = player?.assistants.find((candidate) => candidate.id === selected);
+    if (assistant) return `选择助手 ${context.assistants[selected]?.name ?? selected}（${assistant.level === 'gold' ? '金色' : '银色'}）`;
+    const site = state.sites[selected];
+    if (site) return `选择地点：${site.id}（${site.level} 级）`;
+    return `选择第 ${[...button.parentElement?.querySelectorAll('[data-pending-select]') ?? []].indexOf(button) + 1} 项`;
+  }
+  if (button.dataset.researchChoiceToken) return button.dataset.researchChoiceToken === 'magnifying' ? '推进放大镜' : '推进笔记本';
+  if (!button.dataset.pendingChoice) return undefined;
+  try {
+    const choice = JSON.parse(decodeURIComponent(button.dataset.pendingChoice)) as Record<string, unknown>;
+    const playerId = queued?.playerId;
+    const player = playerId ? state.players[playerId] : undefined;
+    if (choice.type === 'assistant-option') {
+      const payload = (queued?.payload ?? {}) as Record<string, unknown>;
+      const effect = (payload.effect ?? context.assistantEffects?.[String(payload.assistantId)]?.[payload.level as 'silver' | 'gold']) as Record<string, unknown> | undefined;
+      const option = Array.isArray(effect?.options) ? effect.options[Number(choice.optionIndex)] : undefined;
+      const prefix = effect?.type === 'PAY_RESOURCE_CHOOSE' ? `支付 ${choiceBundle(effect.cost)}：` : '';
+      return `${prefix}${describeChoiceEffect(option)}`;
+    }
+    if (choice.type === 'card-option') {
+      const payload = (queued?.payload ?? {}) as Record<string, unknown>, effect = payload.effect as Record<string, unknown> | undefined;
+      return describeChoiceEffect(Array.isArray(effect?.options) ? effect.options[Number(choice.optionIndex)] : undefined);
+    }
+    if (choice.type === 'assistant' || choice.type === 'assistant-target') {
+      const assistantId = String(choice.assistantId ?? '');
+      const owned = player?.assistants.find((assistant) => assistant.id === assistantId);
+      return `选择助手 ${context.assistants[assistantId]?.name ?? assistantId}${owned ? `（${owned.level === 'gold' ? '金色' : '银色'}）` : ''}`;
+    }
+    if (choice.type === 'assistant-stack') return `选择助手供应第 ${Number(choice.stackIndex) + 1} 堆`;
+    if (choice.type === 'assistant-resource' || choice.type === 'resource') return `选择 ${choiceResourceName[String(choice.resource)] ?? String(choice.resource)}`;
+    if (choice.type === 'card') return `选择卡牌：${context.cards[String(choice.cardId)]?.name ?? String(choice.cardId)}`;
+    if (choice.type === 'site') { const site = state.sites[String(choice.siteId)]; return `选择地点：${site?.id ?? String(choice.siteId)}${site ? `（${site.level} 级）` : ''}`; }
+    if (choice.type === 'guardian') return `选择守卫：${String(choice.guardianId)}`;
+    if (choice.type === 'idol') return `选择神像：${String(choice.idolId)}`;
+    if (choice.type === 'idol-effect') return `执行神像效果：${String(choice.effect)}`;
+    if (choice.type === 'lizard-track-guardian') return '选择蜥蜴神庙遭遇的守卫';
+    if (choice.type === 'skip') return '跳过';
+    if (choice.type === 'research-option') return `选择研究推进方案 ${Number(choice.optionIndex) + 1}`;
+  } catch { return undefined; }
+  return undefined;
+}
+function isGlyphOnly(text: string) { return !/[\p{L}]/u.test(text.trim()); }
+function makePendingChoicesReadable() {
+  const queued = state.pendingRewards[0];
+  app.querySelectorAll<HTMLButtonElement>('.pending-panel button').forEach((button) => {
+    if (button.classList.contains('card')) return;
+    const label = choiceLabel(button, queued);
+    if (label && (isGlyphOnly(button.textContent ?? '') || button.dataset.leaderCardChoice !== undefined)) {
+      button.replaceChildren(document.createTextNode(label));
+      button.title = label;
+      button.classList.add('pending-readable-choice');
+    }
+  });
+  app.querySelectorAll<HTMLElement>('.pending-panel > span').forEach((heading) => {
+    if (isGlyphOnly(heading.textContent ?? '')) heading.textContent = '请选择要执行的效果';
+  });
+}
+const renderWithReadablePendingChoices = render;
+render = () => { renderWithReadablePendingChoices(); makePendingChoicesReadable(); };
 render();

@@ -16,5 +16,15 @@ test('Baroness recovers Special Delivery even if it was exiled',()=>{let s=baseS
 test('Baroness without playing Special Delivery buys Item to deck normally',()=>{let s=baseState();setupLeader(s,'p1','baroness',context,'seed');s.market.items=['item'];s.players.p1.resources.coin=1;s=reduce(s,{type:'BUY_CARD',playerId:'p1',cardId:'item'},context);assert.ok(s.players.p1.deck.includes('item'));assert.ok(!s.players.p1.hand.includes('item'));});
 test('Baroness round II income is granted once',()=>{const s=baseState();setupLeader(s,'p1','baroness',context,'seed');s.round=2;runLeaderRoundStart(s,'p1',context);assert.equal(s.players.p1.resources.coin,1);runLeaderRoundStart(s,'p1',context);assert.equal(s.players.p1.resources.coin,1);});
 test('Professor creates archive and receives suitcase bonuses',()=>{let s=baseState();setupLeader(s,'p1','professor',context,'seed');assert.deepEqual(s.players.p1.leader!.data.archive,['a1','a2','a3']);s.round=2;runLeaderRoundStart(s,'p1',context);assert.equal((s.players.p1.leader!.data.suitcase as any).compass,1);s.players.p1.resources.compass=2;s=professorBuyArchiveArtifact(s,'p1','a1',context,1);assert.equal(s.players.p1.resources.compass,0);});
+test('Professor setup uses Professor Funding rather than the Falconer printing with the same name',()=>{
+ const productionContext=structuredClone(context);
+ productionContext.cards['1003']={id:'1003',name:'Funding',type:'Starter',expansion:'Expedition Leaders'};
+ productionContext.cards['1012']={id:'1012',name:'Funding',type:'Starter',expansion:'Expedition Leaders'};
+ let s=baseState();
+ setupLeader(s,'p1','professor',productionContext,'seed');
+ const deck=[...s.players.p1.hand,...s.players.p1.deck];
+ assert.ok(deck.includes('1012'));
+ assert.ok(!deck.includes('1003'));
+});
 test('Explorer has one archaeologist and snack rules',()=>{let s=baseState();setupLeader(s,'p1','explorer',context,'seed');assert.equal(s.players.p1.workers,1);s=explorerSpendSnack(s,'p1','free','site-a');assert.throws(()=>explorerSpendSnack(s,'p1','free','site-b'),/already been used/);s.round=3;s.players.p1.resources.compass=1;s=explorerSpendSnack(s,'p1','compass','site-b');assert.equal(s.players.p1.resources.compass,0);});
 test('Mystic round-income Fear enters hand as its explicit exception, and ritual supports all tiers',()=>{let s=baseState();setupLeader(s,'p1','mystic',context,'seed');assert.ok(addFearToHand(s,'p1',context));assert.ok(s.players.p1.hand.includes('fear1'));assert.ok(!s.players.p1.discard.includes('fear1'));s.players.p1.leader!.data.ritualPile=['fear1','fear1'];s=mysticPerformRitual(s,'p1',2);assert.equal(s.players.p1.resources.coin,1);s.players.p1.leader!.data.ritualPile=['fear1','fear1','fear1'];s=mysticPerformRitual(s,'p1',3);assert.equal(s.pendingRewards.at(-1)?.code,'leader:MYSTIC_BUY_ARTIFACT_DISCOUNT');s.players.p1.leader!.data.ritualPile=['fear1','fear1','fear1','fear1'];s=mysticPerformRitual(s,'p1',4);assert.equal(s.pendingRewards.at(-1)?.code,'leader:MYSTIC_OVERCOME_GUARDIAN_FREE');});

@@ -2,12 +2,13 @@ import { grantTemporaryTravel } from '../action-window.ts';
 import type { CardId, EngineContext, GameState, PlayerId } from '../types.ts';
 import { falconerAdvanceEagle } from './actions.ts';
 import { explorerSpendSnackOnStartingCard } from './extra-actions.ts';
+import { isLeaderStartingCard } from './utils.ts';
 
 export type LeaderCardChoice =
   | 'coin'|'compass'|'tablets'|'exile'|'eagle'|'refreshAssistant'|'upgradeResource'|'suitcaseCompass'|'suitcaseTablet'
   | 'payCoinForPlanes'|'payCoinsForJewel'|'activateSite'|'activateFaceupIdol'|'draw';
 function requirePlayer(state:GameState,playerId:PlayerId){const player=state.players[playerId];if(!player)throw new Error(`Unknown player: ${playerId}`);if(!player.leader)throw new Error(`${playerId} has no expedition leader`);return player;}
-function requireCard(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const player=requirePlayer(state,playerId);const card=context.cards[cardId];if(!card||card.expansion!=='Expedition Leaders')throw new Error(`Not an Expedition Leaders starting card: ${cardId}`);if(!player.hand.includes(cardId)&&!player.playedCards.includes(cardId))throw new Error('Leader card is not available to this player');return{player,card};}
+function requireCard(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const player=requirePlayer(state,playerId);const card=context.cards[cardId];if(!card||!isLeaderStartingCard(context,player.leader?.id,cardId))throw new Error(`Not a starting card for this expedition leader: ${cardId}`);if(!player.hand.includes(cardId)&&!player.playedCards.includes(cardId))throw new Error('Leader card is not available to this player');return{player,card};}
 function queue(next:GameState,playerId:PlayerId,source:string,code:string,payload:Record<string,unknown>={}){next.pendingRewards.push({playerId,sourceId:source,code,payload});}
 function gain(next:GameState,playerId:PlayerId,resource:'coin'|'compass'|'tablet',amount=1){next.players[playerId].resources[resource]+=amount;}
 function placedArchaeologists(state:GameState,playerId:PlayerId){return Object.values(state.sites).filter(site=>site.occupiedBy===playerId).length;}
