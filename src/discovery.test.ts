@@ -58,7 +58,7 @@ test('level II discovery costs 6 compasses and takes one face-up plus one face-d
     { id: 'idolChoice', faceUp: true },
     { id: 'idolCoin', faceUp: false },
   ]);
-  assert.deepEqual(next.pendingRewards, [{ playerId: 'p1', sourceId: 'idolChoice', code: 'e' }]);
+  assert.deepEqual(next.pendingRewards, [{ playerId: 'p1', sourceId: 'idolChoice', code: 'card:RESOLVE_EFFECT', payload: { type: 'CARD_EFFECT', sourceCardId: 'idolChoice', effect: { type: 'EXILE_OWN_CARD' } } }]);
   assert.equal(next.sites.slot.tileId, 'level2Tile');
   assert.equal(next.sites.slot.guardian, 'guardian1');
 });

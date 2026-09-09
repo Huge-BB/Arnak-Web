@@ -55,6 +55,18 @@ test('reviewed site symbols queue their typed effects and i/v buy an Item for fr
   assert.equal(resolved.players.p1.resources.coin, 0);
 });
 
+test('the e idol reward queues a resolvable own-card exile instead of an opaque symbol', () => {
+  const state = createGame(['p1']);
+  state.phase = 'playing';
+  state.players.p1.hand = ['starter'];
+  const idolContext: EngineContext = { cards: { starter: { id: 'starter', name: 'Starter', type: 'Starter', expansion: 'Base Game' } } };
+  resolveRewardCode(state, 'p1', 'exile-idol', 'e', idolContext);
+  assert.equal(state.pendingRewards[0]?.code, 'card:RESOLVE_EFFECT');
+  assert.equal((state.pendingRewards[0]?.payload as { effect: { type: string } }).effect.type, 'EXILE_OWN_CARD');
+  const resolved = resolvePendingChoice(state, 'p1', 0, { type: 'card', cardId: 'starter' }, idolContext);
+  assert.ok(resolved.market.exiled.includes('starter'));
+});
+
 test('an undefeated guardian gives Fear before round cleanup', () => {
   let state = reduce(createGame(['p1']), { type: 'START_GAME', seed: 'guardian-test' });
   state.sites.slot = { id: 'slot', level: 1, guardian: 'guardian-1', idolSlots: 0 };

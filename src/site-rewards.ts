@@ -54,6 +54,8 @@ export function resolveRewardCode(
       queueSiteEffect(state, playerId, sourceId, 'BUY_ITEM_FREE', { type: 'BUY_ITEM', discount: 99 });
     } else if (code === 'u') {
       queueSiteEffect(state, playerId, sourceId, 'UPGRADE_RESOURCE', { type: 'UPGRADE_RESOURCE_THEN', effects: [] });
+    } else if (code === 'e') {
+      queueSiteEffect(state, playerId, sourceId, 'EXILE_OWN_CARD', { type: 'EXILE_OWN_CARD' });
     } else if (code === 'm') {
       queueSiteEffect(state, playerId, sourceId, 'ACTIVATE_CAMP', { type: 'ACTIVATE_TENT_SITE', requireEmpty: false });
     } else if (code === 'b') {

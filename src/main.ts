@@ -92,7 +92,7 @@ function soloActionFace(tileId:string){return SOLO_ACTION_ART.has(tileId)?`<i cl
 function start(){const players=Array.from({length:setupPlayerCount},(_,i)=>`p${i+1}`);const leaders=Object.fromEntries(players.flatMap(id=>setupLeaders[id] ? [[id,setupLeaders[id]]] : []));const seed=setupSeed||'arnak-demo',marketExpansions=['Base Game',...(setupLeadersMarket?['Expedition Leaders']:[]),...(setupSurpriseShipment?['Surprise Shipment']:[])];state=createGame(players);state.sites=createBaseBoardSites(players.length,seed,mainBoard);state=applyEngineCommand(state,{type:'action',action:{type:'START_GAME',seed,researchBoard,moonStaff:setupMoonStaff,leaders,marketExpansions}},context);screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message='';render()}
 function startSolo(){const seed=setupSeed||'arnak-solo';researchLab=false;const unsupportedResearchBoard=researchBoard!=='bird'&&researchBoard!=='snake',soloResearchBoard=unsupportedResearchBoard?'bird':researchBoard;if(unsupportedResearchBoard)researchBoard=soloResearchBoard;state=createSoloGame({seed,difficulty:soloDifficulty,board:mainBoard,researchBoard:soloResearchBoard,context});screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message=`单人 solo：难度 ${soloDifficulty}，对手先行动。${unsupportedResearchBoard?' 已切换至基础研究板。':''}`;render()}
 function randomLabSeed(){return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;}
-function startResearchLab(seed=labSeed||randomLabSeed()){labSeed=seed;researchLab=true;setupPlayerCount=1;mainBoard='bird';state=createGame(['p1']);state.sites=createBaseBoardSites(1,seed,mainBoard);state=applyEngineCommand(state,{type:'action',action:{type:'START_GAME',seed,researchBoard,moonStaff:setupMoonStaff,marketExpansions:['Base Game']}},context);const player=state.players.p1;player.resources={coin:40,compass:40,tablet:40,arrowhead:40,jewel:40,fear:0};const travelCards=Object.values(context.cards).filter(card=>card.type!=='Fear'&&Object.values(card.travel??{}).some(amount=>amount>0)).map(card=>card.id),marketCards=Object.values(context.cards).filter(card=>card.type==='Item'||card.type==='Artifact').map(card=>card.id),sample=shuffleWithSeed(marketCards,`${seed}:lab:cards`);player.hand=[...new Set([...travelCards,...sample.slice(0,3)])];player.deck=sample.slice(3,15);player.discard=[];player.idols=[...player.idols,...Object.keys(context.idols??{}).slice(0,5).map(id=>({id,inSlot:false}))];screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message=`研究轨实验室：seed ${seed}；资源、旅行牌与随机抽牌库已准备。`;render()}
+function startResearchLab(seed=labSeed||randomLabSeed()){labSeed=seed;researchLab=true;setupPlayerCount=1;mainBoard='bird';state=createGame(['p1']);state.sites=createBaseBoardSites(1,seed,mainBoard);const leaders=setupLeaders.p1?{p1:setupLeaders.p1}:undefined;state=applyEngineCommand(state,{type:'action',action:{type:'START_GAME',seed,researchBoard,moonStaff:setupMoonStaff,leaders,marketExpansions:['Base Game']}},context);const player=state.players.p1;player.resources={coin:40,compass:40,tablet:40,arrowhead:40,jewel:40,fear:0};const marketCards=Object.values(context.cards).filter(card=>card.type==='Item'||card.type==='Artifact').map(card=>card.id),sample=shuffleWithSeed(marketCards,`${seed}:lab:cards`).slice(0,12);player.deck=[...player.deck,...sample];player.idols=[...player.idols,...Object.keys(context.idols??{}).slice(0,5).map(id=>({id,inSlot:false}))];screen='game';pendingSelection=[];artifactId=undefined;leaderStartingCardId=undefined;message=`研究轨实验室：seed ${seed}；保留${leaders?'领袖':'基础'}起始牌组，并追加随机测试牌库。`;render()}
 function run(action:GameAction){try{state=applyEngineCommand(state,{type:'action',action},context);message=''}catch(e){message=e instanceof Error?e.message:String(e)}render()}
 function choose(choice:PendingChoice){try{const p=state.pendingRewards[0];state=applyEngineCommand(state,{type:'pending-choice',playerId:p.playerId,pendingIndex:0,choice},context);pendingSelection=[];message=''}catch(e){message=e instanceof Error?e.message:String(e)}render()}
 const publicAsset=(path:string)=>!path||/^(?:https?:|data:)/.test(path)?path:`${import.meta.env.BASE_URL.replace(/\/$/,'')}${path.startsWith('/')?path:`/${path}`}`;
@@ -221,7 +221,7 @@ function leaderBoardHotspots(id: PlayerId) {
     const point = calibratedLeaderPoint(leader.id, markId, fallback);
     const idol = playerState.idols.find((candidate) => candidate.inSlot && candidate.slotIndex === slotIndex);
     const dimensions = mark ? `;--leader-hotspot-w:${mark.width / 1270 * 100}%;--leader-hotspot-h:${mark.height / 328 * 100}%` : '';
-    return `<span class="leader-idol-slot ${slot.blue ? 'blue' : 'standard'} ${idol ? 'filled' : ''}" style="${playerPointStyle(point, true)}${dimensions}" title="${idol ? 'used idol' : `${slot.blue ? 'blue ' : ''}idol slot ${slotIndex + 1}`}">${idol ? `<i style="${sprite(assets[`idol:${idol.id}:face`])}"></i>` : ''}</span>`;
+    return `<span class="leader-idol-slot ${slot.blue ? 'blue' : 'standard'} ${idol ? 'filled' : ''}" style="${playerPointStyle(point, true)}${dimensions}" title="${idol ? 'used idol' : `${slot.blue ? 'blue ' : ''}idol slot ${slotIndex + 1}`}">${idol ? `<i style="background-image:url('${publicAsset('/assets/idol-back.jpg')}')"></i>` : ''}</span>`;
   }).join('');
   const effectHotspot = (effect: IdolEffect, point: { x: number; y: number }, label: string, key = effect, needsBlue = false) => {
     const markId = `leader-${leader.id}-idol-effect-${key}`, mark = calibrationMark(`leader-${leader.id}`, markId);
@@ -1041,7 +1041,7 @@ player = (id: PlayerId) => {
   const slots = [0, 1, 2, 3].map((slotIndex) => {
     const idol = playerState.idols.find((candidate) => candidate.inSlot && candidate.slotIndex === slotIndex);
     const point = calibratedPlayerPoint(`player-base-idol-slot-${slotIndex}`, BASE_IDOL_SLOTS[slotIndex]!);
-    return `<span class="base-idol-slot ${idol ? 'filled' : ''}" style="${playerPointStyle(point)}" title="${idol ? 'used idol' : 'empty idol slot'}">${idol ? `<i style="${sprite(assets[`idol:${idol.id}:face`])}"></i>` : ''}</span>`;
+    return `<span class="base-idol-slot ${idol ? 'filled' : ''}" style="${playerPointStyle(point)}" title="${idol ? 'used idol' : 'empty idol slot'}">${idol ? `<i style="background-image:url('${publicAsset('/assets/idol-back.jpg')}')"></i>` : ''}</span>`;
   }).join('');
   const canUse = id === state.currentPlayer && playerState.idols.some((candidate) => !candidate.inSlot) && nextSlot !== undefined;
   const effects = BASE_IDOL_EFFECTS.map(({ effect, point }) => `<button class="base-idol-effect" style="${playerPointStyle(calibratedPlayerPoint(`player-base-idol-effect-${effect}`, point))}" ${canUse ? '' : 'disabled'} data-base-idol-direct="${effect}" title="use an idol: ${effect}"></button>`).join('');
@@ -1820,6 +1820,15 @@ player = (id) => {
   return playerWithAssistantArtwork(id).replace(/<div class="assistants">[\s\S]*?<\/div>/, `<div class="assistants">${assistants}</div>`);
 };
 
+// Played cards are a first-class player zone: effects, Fear, exile choices,
+// and end-of-round cleanup all refer to this zone, so it must be visible on
+// the personal board rather than existing only in reducer state.
+const playerWithPlayedCards = player;
+player = (id) => {
+  const played = state.players[id].playedCards.map((cardId, index) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])};--played-index:${index}" title="played: ${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
+  return playerWithPlayedCards(id).replace('</section>', `<div class="player-played-cards" aria-label="played cards">${played}</div></section>`);
+};
+
 // When an effect asks the player to choose from the public assistant supply,
 // the stacks themselves are the choices. Do not duplicate them in a modal.
 const pendingWithDirectAssistantSupply = pending;
@@ -1851,7 +1860,7 @@ const renderWithResearchLabControls = render;
 render = () => {
   renderWithResearchLabControls();
   if (screen !== 'game') return;
-  if (researchLab) app.querySelector('header')?.insertAdjacentHTML('afterend', `<section class="research-lab-controls"><strong>研究轨实验室</strong><label>seed <input data-research-lab-seed value="${labSeed}" spellcheck="false"></label><span>资源 40 · 全旅行牌 · 随机抽牌库</span><button data-research-lab-reroll>随机重开</button><button data-research-lab-restart>按此 seed 重开</button><button data-research-lab-exit>返回设置</button></section>`);
+  if (researchLab) app.querySelector('header')?.insertAdjacentHTML('afterend', `<section class="research-lab-controls"><strong>研究轨实验室</strong><label>领袖 <select data-research-lab-leader>${leaderOptions(setupLeaders.p1)}</select></label><label>seed <input data-research-lab-seed value="${labSeed}" spellcheck="false"></label><span>资源 40 · 官方起始牌组 · 随机抽牌库</span><button data-research-lab-reroll>随机重开</button><button data-research-lab-restart>按此 seed 重开</button><button data-research-lab-exit>返回设置</button></section>`);
   if (researchMoveChoice) app.insertAdjacentHTML('beforeend', `<section class="pending-panel research-marker-choice"><span>选择推进标记</span><div>${researchMoveChoice.tokens.map((token) => `<button data-research-choice-token="${token}">${token === 'magnifying' ? '⌕ 放大镜' : '▤ 笔记本'}</button>`).join('')}</div></section>`);
 };
 app.addEventListener('click', (event) => {
@@ -1885,6 +1894,7 @@ renderSetup = () => {
   }
 };
 app.addEventListener('change', event => { const target=event.target as HTMLSelectElement; if(target.matches('[data-solo-difficulty]')) soloDifficulty=Number(target.value); });
+app.addEventListener('change', event => { const target=event.target as HTMLSelectElement; if(target.matches('[data-research-lab-leader]')) setupLeaders.p1=target.value as LeaderId|''; });
 app.addEventListener('input', event => { const target=event.target as HTMLInputElement; if(target.matches('[data-research-lab-seed]')) labSeed=target.value; });
 app.addEventListener('click', event => { const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button'); if(button?.dataset.soloStart!==undefined) startSolo(); });
 render();
