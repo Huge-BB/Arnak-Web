@@ -4,6 +4,8 @@
  * site semantics, costs, or legality, which remain authoritative in the
  * engine.  Reload the game after editing coordinates in the collector.
  */
+import embeddedCalibration from './generated/board-calibration-defaults.json';
+
 export type CalibrationMark = {
   id: string;
   kind: 'token' | 'hotspot';
@@ -19,14 +21,16 @@ export type CalibrationMark = {
 export const calibrationStorageKey = 'arnak.board-calibrator.v2';
 
 export function readBoardCalibration(): Record<string, CalibrationMark[]> {
+  const defaults = (embeddedCalibration as { boards: Record<string, CalibrationMark[]> }).boards;
   try {
     const value: unknown = JSON.parse(localStorage.getItem(calibrationStorageKey) || '{}');
-    if (!value || typeof value !== 'object') return {};
-    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([board, marks]) => [
+    if (!value || typeof value !== 'object') return defaults;
+    const local = Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([board, marks]) => [
       board,
       Array.isArray(marks) ? marks.filter((mark): mark is CalibrationMark => Boolean(mark) && typeof mark === 'object' && typeof (mark as CalibrationMark).id === 'string' && Number.isFinite((mark as CalibrationMark).x) && Number.isFinite((mark as CalibrationMark).y)) : [],
     ]));
-  } catch { return {}; }
+    return { ...defaults, ...local };
+  } catch { return defaults; }
 }
 
 export function calibrationMark(board: string, id: string) {
