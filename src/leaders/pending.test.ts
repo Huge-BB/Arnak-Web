@@ -27,11 +27,11 @@ test('Mystic Fear exile pending routes Fear to ritual pile',()=>{
   assert.deepEqual(s.players.p1.leader!.data.ritualPile,['fear']); assert.equal(s.pendingRewards.length,0);
 });
 
-test('Captain gains a Fear to discard and a compass when Hidden Fear is exiled',()=>{
+test('Captain gains a Fear to the shared play/discard area and a compass when Hidden Fear is exiled',()=>{
   let s=createGame(['p1']);s.phase='playing';s.currentPlayer='p1';s.players.p1.leader={id:'captain',data:{}};s.players.p1.hand=['hidden'];
   s.pendingRewards=[{playerId:'p1',sourceId:'x',code:'leader:EXILE_OWN_CARD'}];
   s=resolveLeaderPendingChoice(s,'p1',0,{type:'card',cardId:'hidden'},context);
-  assert.ok(s.market.exiled.includes('hidden'));assert.ok(s.players.p1.discard.includes('fear'));assert.equal(s.players.p1.resources.compass,1);assert.equal(s.pendingRewards.length,0);
+  assert.ok(s.market.exiled.includes('hidden'));assert.ok(s.players.p1.playedCards.includes('fear'));assert.equal(s.players.p1.resources.compass,1);assert.equal(s.pendingRewards.length,0);
 });
 
 test('Baroness optional far-left market exile can resolve or skip',()=>{

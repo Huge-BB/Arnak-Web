@@ -41,7 +41,7 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
       next.pendingRewards[pendingIndex].payload={...payload,stage:'choose-keep',drawnCardIds};return next;
     }
     if(choice.type!=='card'||!payload.drawnCardIds?.includes(choice.cardId))throw new Error('Bottom draw keep requires one of the drawn cards');
-    player.hand.push(choice.cardId);for(const cardId of payload.drawnCardIds)if(cardId!==choice.cardId)player.discard.push(cardId);next.pendingRewards.splice(pendingIndex,1);return next;
+    player.hand.push(choice.cardId);for(const cardId of payload.drawnCardIds)if(cardId!==choice.cardId)player.playedCards.push(cardId);next.pendingRewards.splice(pendingIndex,1);return next;
   }
   if(payload.effect.type==='DRAW_THEN_KEEP_AND_OPTIONAL_TOP'){
     const next=structuredClone(state),player=next.players[playerId];
@@ -52,7 +52,7 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
       next.pendingRewards[pendingIndex].payload={...payload,stage:'choose-keep',drawnCardIds};return next;
     }
     if(choice.type!=='keep-and-top'||!payload.drawnCardIds?.includes(choice.keepCardId)||choice.topDeckCardId!==undefined&&(!payload.drawnCardIds.includes(choice.topDeckCardId)||choice.topDeckCardId===choice.keepCardId))throw new Error('Draw selection requires one kept card and an optional different top-deck card');
-    player.hand.push(choice.keepCardId);if(choice.topDeckCardId)player.deck.unshift(choice.topDeckCardId);for(const cardId of payload.drawnCardIds)if(cardId!==choice.keepCardId&&cardId!==choice.topDeckCardId)player.discard.push(cardId);next.pendingRewards.splice(pendingIndex,1);return next;
+    player.hand.push(choice.keepCardId);if(choice.topDeckCardId)player.deck.unshift(choice.topDeckCardId);for(const cardId of payload.drawnCardIds)if(cardId!==choice.keepCardId&&cardId!==choice.topDeckCardId)player.playedCards.push(cardId);next.pendingRewards.splice(pendingIndex,1);return next;
   }
   if(payload.effect.type==='DRAW_TOP_PROCESS'){
     if(payload.stage!=='top-process'||!payload.drawnCardIds)throw new Error('Top-deck card effect has no revealed cards');

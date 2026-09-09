@@ -30,7 +30,7 @@ test('Expedition Leaders Fear-and-jewel assistant resolves both gains',()=>{
  const state=game(); state.enabledExpansions=['Base Game','Expedition Leaders']; state.players.p1.assistants=[{id:'08d375',level:'gold',exhausted:false}];
  const context=withBaseAssistantEffects({cards:{fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}}});
  const next=applyEngineCommand(state,{type:'action',action:{type:'ACTIVATE_ASSISTANT',playerId:'p1',assistantId:'08d375'}},context);
- assert.deepEqual(next.players.p1.discard,['fear']);
+ assert.deepEqual(next.players.p1.playedCards,['fear']);
  assert.equal(next.players.p1.resources.jewel,1);
 });
 
@@ -59,7 +59,7 @@ test('assistant draw/discard pending effect draws before validating the discard 
  let next=applyEngineCommand(state,{type:'action',action:{type:'ACTIVATE_ASSISTANT',playerId:'p1',assistantId:'a'}},context);
  next=applyEngineCommand(next,{type:'pending-choice',playerId:'p1',pendingIndex:0,choice:{type:'card',cardId:'drawn'}},context);
  assert.deepEqual(next.players.p1.hand,[]);
- assert.deepEqual(next.players.p1.discard,['drawn']);
+ assert.deepEqual(next.players.p1.playedCards,['drawn']);
 });
 
 test('assistant resource upgrade and discounted market purchase resolve through pending choices',()=>{

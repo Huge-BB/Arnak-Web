@@ -1826,8 +1826,9 @@ player = (id) => {
 // the personal board rather than existing only in reducer state.
 const playerWithPlayedCards = player;
 player = (id) => {
-  const played = state.players[id].playedCards.map((cardId, index) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])};--played-index:${index}" title="played: ${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
-  return playerWithPlayedCards(id).replace('</section>', `<div class="player-played-cards" aria-label="played cards">${played}</div></section>`);
+  const legacyDiscard = state.players[id].discard;
+  const played = [...state.players[id].playedCards, ...legacyDiscard].map((cardId) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])}" title="打出/弃置：${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
+  return `${playerWithPlayedCards(id)}<aside class="player-played-zone" aria-label="${id} 打出和弃置区"><strong>打出 / 弃置区</strong><div class="player-played-cards">${played || '<span>暂无卡牌</span>'}</div></aside>`;
 };
 
 // Keep numeric resources out of the illustrated personal board.  The board

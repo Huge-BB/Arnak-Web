@@ -74,6 +74,6 @@ test('an undefeated guardian gives Fear before round cleanup', () => {
   state = reduce(state, { type: 'PASS', playerId: 'p1' }, context);
 
   assert.equal(state.round, 2);
-  assert.ok(state.players.p1.discard.includes('fear'));
+  assert.ok(state.players.p1.hand.includes('fear') || state.players.p1.deck.includes('fear'));
   assert.equal(state.sites.slot.occupiedBy, undefined);
 });

@@ -33,7 +33,7 @@ export function gainFearCards(state: GameState, playerId: PlayerId, amount: numb
   if (!Number.isInteger(amount) || amount < 0) throw new Error('Fear amount must be a non-negative integer');
   const fear = Object.values(context.cards).find(card => card.type === 'Fear' && card.expansion === 'Base Game');
   if (!fear) throw new Error('Base-game Fear card is missing from the card catalog');
-  for (let i = 0; i < amount; i += 1) state.players[playerId].discard.push(fear.id);
+  for (let i = 0; i < amount; i += 1) state.players[playerId].playedCards.push(fear.id);
 }
 /** Expansion cards may have a special effect merely for being exiled. */
 export function resolveOwnedCardExile(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const card=context.cards[cardId];if(card?.expansion!=='Surprise Shipment')return;if(card.name==='Ominous Chalice'){gainFearCards(state,playerId,1,context);gainResource(state,playerId,'coin',1);}else if(card.name==='Ominous Medallion')gainFearCards(state,playerId,1,context);else if(card.name==='Ominous Warpaint')gainFearCards(state,playerId,2,context);}

@@ -115,7 +115,7 @@ test('bottom-draw keep effects preserve exactly one selected card and discard th
  const candidates=resolvePendingChoice(pending,'p1',0,{type:'card-count',count:2},keepContext);
  assert.deepEqual(candidates.players.p1.deck,['top']);assert.equal(candidates.pendingRewards.length,1);
  const next=resolvePendingChoice(candidates,'p1',0,{type:'card',cardId:'keep'},keepContext);
- assert.deepEqual(next.players.p1.hand,['keep']);assert.deepEqual(next.players.p1.discard,['discard']);
+ assert.deepEqual(next.players.p1.hand,['keep']);assert.deepEqual(next.players.p1.playedCards,['utility','discard']);
 });
 
 test('top-draw selection can keep one card, return a different card to deck top, and discard the rest',()=>{
@@ -124,7 +124,7 @@ test('top-draw selection can keep one card, return a different card to deck top,
  const pending=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'utility'},selectionContext);
  const candidates=resolvePendingChoice(pending,'p1',0,{type:'card-count',count:3},selectionContext);
  const next=resolvePendingChoice(candidates,'p1',0,{type:'keep-and-top',keepCardId:'keep',topDeckCardId:'return'},selectionContext);
- assert.deepEqual(next.players.p1.hand,['keep']);assert.deepEqual(next.players.p1.deck,['return','unseen']);assert.deepEqual(next.players.p1.discard,['discard']);
+ assert.deepEqual(next.players.p1.hand,['keep']);assert.deepEqual(next.players.p1.deck,['return','unseen']);assert.deepEqual(next.players.p1.playedCards,['utility','discard']);
 });
 
 test('a pass-for-gain choice grants its reward and immediately passes the player',()=>{
@@ -186,11 +186,11 @@ test('a card can pay one resource to gain a fixed resource bundle',()=>{
  assert.equal(next.players.p1.resources.compass,0);assert.equal(next.players.p1.resources.tablet,1);assert.equal(next.players.p1.resources.arrowhead,1);
 });
 
-test('a card effect adds a base-game Fear card to discard',()=>{
+test('a card effect adds a base-game Fear card to the shared play/discard area',()=>{
  const state=playableState('utility');
  const fearContext:EngineContext={cards:{utility:{id:'utility',name:'Utility',type:'Item',expansion:'Base Game'},fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}},cardEffects:{utility:[{type:'GAIN_FEAR_CARD',amount:1}]}};
  const next=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'utility'},fearContext);
- assert.deepEqual(next.players.p1.playedCards,['utility']);assert.deepEqual(next.players.p1.discard,['fear']);
+ assert.deepEqual(next.players.p1.playedCards,['utility','fear']);assert.deepEqual(next.players.p1.discard,[]);
 });
 
 test('a self-exiling card moves only its source card to the market exile',()=>{
@@ -445,21 +445,21 @@ test('Ominous artifacts trigger their printed penalty when an owned card effect 
  const exileContext:EngineContext={cards,cardEffects:{utility:[{type:'EXILE_OWN_CARD'}]}};
  state=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'utility'},exileContext);
  state=resolvePendingChoice(state,'p1',0,{type:'card',cardId:'chalice'},exileContext);
- assert.deepEqual(state.market.exiled,['chalice']);assert.equal(state.players.p1.resources.coin,1);assert.deepEqual(state.players.p1.discard,['fear']);
+ assert.deepEqual(state.market.exiled,['chalice']);assert.equal(state.players.p1.resources.coin,1);assert.ok(state.players.p1.playedCards.includes('fear'));
 });
 
-test('Mourning effects put gained Fear in discard before counting Fear in hand and play',()=>{
+test('Mourning effects put gained Fear in the shared play area before counting Fear in hand and play',()=>{
  const cards={mourning:{id:'mourning',name:'Coins of Mourning',type:'Artifact',expansion:'Surprise Shipment'},payment:{id:'payment',name:'Payment',type:'Starter',expansion:'Base Game'},fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}};
  const state=createGame(['p1']);state.phase='playing';state.players.p1.hand=['mourning','payment'];
  const next=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'mourning',activationPaymentCardId:'payment'},{cards,cardEffects:{mourning:[{type:'SEQUENCE',effects:[{type:'GAIN_FEAR_CARD',amount:1},expansionEffectPresets.perFear('coin',3)]}]}});
-  assert.equal(next.players.p1.resources.coin,0);assert.deepEqual(next.players.p1.discard,['fear']);
+  assert.equal(next.players.p1.resources.coin,1);assert.ok(next.players.p1.playedCards.includes('fear'));
 });
 
 test('Stones of Mourning gains tablets per Fear in hand and play after discarding its Fear',()=>{
  const cards={stones:{id:'stones',name:'Stones of Mourning',type:'Artifact',expansion:'Surprise Shipment'},payment:{id:'payment',name:'Payment',type:'Starter',expansion:'Base Game'},fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'}};
  const state=createGame(['p1']);state.phase='playing';state.players.p1.hand=['stones','payment','fear','fear'];
  const next=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'stones',activationPaymentCardId:'payment'},{cards,cardEffects:{stones:[{type:'SEQUENCE',effects:[{type:'GAIN_FEAR_CARD',amount:1},expansionEffectPresets.perFear('tablet',3)]}]}});
- assert.equal(next.players.p1.resources.tablet,2);assert.deepEqual(next.players.p1.hand,['fear','fear']);assert.deepEqual(next.players.p1.discard,['fear']);
+ assert.equal(next.players.p1.resources.tablet,3);assert.deepEqual(next.players.p1.hand,['fear','fear']);assert.ok(next.players.p1.playedCards.includes('fear'));
 });
 
 test('Beads of Mourning serializes one resource upgrade for each counted Fear',()=>{
@@ -469,7 +469,9 @@ test('Beads of Mourning serializes one resource upgrade for each counted Fear',(
  state=reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'beads',activationPaymentCardId:'payment'},beadsContext);
  assert.equal(state.pendingRewards.length,1);
  state=resolvePendingChoice(state,'p1',0,{type:'resource',resource:'tablet'},beadsContext);
- assert.equal(state.pendingRewards.length,0);assert.equal(state.players.p1.resources.arrowhead,1);assert.deepEqual(state.players.p1.discard,['fear']);
+ assert.equal(state.pendingRewards.length,1);
+ state=resolvePendingChoice(state,'p1',0,{type:'resource',resource:'tablet'},beadsContext);
+ assert.equal(state.pendingRewards.length,0);assert.equal(state.players.p1.resources.arrowhead,2);assert.ok(state.players.p1.playedCards.includes('fear'));
 });
 
 test('Puppy-style activation accepts only an unoccupied Level I site',()=>{
@@ -493,7 +495,7 @@ test('Rope Ladder uses board-row topology instead of screen coordinates',()=>{
  assert.throws(()=>resolvePendingChoice(pending,'p1',0,{type:'site',siteId:'wrongRow'},context),/directly above/);
  const next=resolvePendingChoice(pending,'p1',0,{type:'site',siteId:'level2'},context);
  assert.equal(next.players.p1.resources.tablet,1);
-  assert.deepEqual(next.players.p1.discard,['fear','fear']);
+  assert.equal(next.players.p1.playedCards.filter((id) => id === 'fear').length,2);
 });
 
 test('leader market primitives exile/refill a chosen row card and exile a discounted purchased Artifact',()=>{

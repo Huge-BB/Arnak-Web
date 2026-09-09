@@ -18,7 +18,7 @@ function drawCards(state: GameState, playerId: PlayerId, amount: number) {
 function gainFearCard(state: GameState, playerId: PlayerId, context: EngineContext) {
   const fear = Object.values(context.cards).find(card => card.type === 'Fear' && card.expansion === 'Base Game');
   if (!fear) throw new Error('No base-game Fear card found');
-  state.players[playerId].discard.push(fear.id);
+  state.players[playerId].playedCards.push(fear.id);
 }
 
 function queueSiteEffect(state: GameState, playerId: PlayerId, sourceId: string, code: string, effect: CardEffect) {
