@@ -1830,6 +1830,26 @@ player = (id) => {
   return playerWithPlayedCards(id).replace('</section>', `<div class="player-played-cards" aria-label="played cards">${played}</div></section>`);
 };
 
+// Keep numeric resources out of the illustrated personal board.  The board
+// remains a physical state surface, while this compact strip is an always
+// readable status summary beside it.
+function playerResourceSummary(id: PlayerId) {
+  const playerState = state.players[id], usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
+  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></aside>`;
+}
+function playerDrawDeck(id: PlayerId) {
+  const leader = Boolean(state.players[id].leader);
+  const fallback = leader ? { x: 110, y: 140 } : { x: 610, y: 160 };
+  const mark = leader ? undefined : calibrationMark('player-base', 'player-base-draw-deck');
+  const point = mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328 } : fallback;
+  return `<div class="player-draw-deck ${leader ? 'leader-draw-deck' : ''}" style="${playerPointStyle(point, leader)}" title="牌库剩余 ${state.players[id].deck.length} 张"><img src="${publicAsset('/assets/card-back.jpg')}" alt="牌库"><b>${state.players[id].deck.length}</b></div>`;
+}
+const playerWithExternalResourceSummary = player;
+player = (id: PlayerId) => {
+  const board = playerWithExternalResourceSummary(id).replace(/<div class="player-resources">[\s\S]*?<\/div>/, '').replace('</section>', `${playerDrawDeck(id)}</section>`);
+  return `<div class="player-zone">${board}${playerResourceSummary(id)}</div>`;
+};
+
 // When an effect asks the player to choose from the public assistant supply,
 // the stacks themselves are the choices. Do not duplicate them in a modal.
 const pendingWithDirectAssistantSupply = pending;
