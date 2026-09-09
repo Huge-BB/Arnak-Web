@@ -196,6 +196,19 @@ ensureMainBoardDiscoveryPieces('main-snake');
 // Legacy anonymous Temple tiles are deliberately left alone. Renaming or
 // regrouping them during page load previously made a reviewed triangle appear
 // to revert. The six named defaults above are only used for new layouts.
+function applyTempleTriangle() {
+  if (!(['bird','snake','monkey','lizard'] as string[]).includes(boardId)) return;
+  recordUndo();
+  data[boardId] = marks().map(mark => {
+    const variant = mark.id.match(new RegExp(`^${boardId}-research-temple-tile-(2a|2b|2c|6a|6b|11)$`))?.[1] as keyof typeof RESEARCH_TEMPLE_TILE_COMPONENTS | undefined;
+    if (!variant) return mark;
+    const component = RESEARCH_TEMPLE_TILE_COMPONENTS[variant];
+    return { ...mark, x: component.x / RESEARCH_BOARD_SIZE.width * 100, y: component.y / RESEARCH_BOARD_SIZE.height * 100, width: component.width, height: component.height };
+  });
+  selected = undefined;
+  persist();
+  render();
+}
 const marks=()=>data[boardId]??[],asset=(id:string)=>ASSETS.find(a=>a[0]===id),board=()=>BOARDS.find(b=>b[0]===boardId)??BOARDS[0],persist=()=>localStorage.setItem(key,JSON.stringify(data));
 const snapshot=()=>JSON.parse(JSON.stringify(data)) as Record<string,Mark[]>;
 function recordUndo(){undoHistory=[...undoHistory,snapshot()].slice(-30);localStorage.setItem(undoKey,JSON.stringify(undoHistory));}
@@ -207,7 +220,8 @@ function place(e:MouseEvent|DragEvent,input:Partial<Mark>){recordUndo();const{x,
 function modify(id:string,c:Partial<Mark>){recordUndo();data[boardId]=marks().map(m=>m.id===id?{...m,...c}:m);persist();render()}function move(id:string,e:MouseEvent){const{x,y}=point(e);data[boardId]=marks().map(m=>m.id===id?{...m,x,y}:m);const el=app.querySelector<HTMLElement>(`[data-mark="${id}"]`);el?.style.setProperty('--x',`${x}%`);el?.style.setProperty('--y',`${y}%`)}function test(id:string){const el=app.querySelector<HTMLElement>(`[data-mark="${id}"]`);if(!el)return;el.classList.remove('testing');void el.offsetWidth;el.classList.add('testing');setTimeout(()=>el.classList.remove('testing'),850)}
 function refreshBoardScale(){const plane=app.querySelector<HTMLElement>('.image-plane'),image=app.querySelector<HTMLImageElement>('[data-board-image]');if(!plane||!image||!image.naturalWidth)return;if(boardId.startsWith('main-')){plane.style.width=`${image.getBoundingClientRect().width*2/3}px`;plane.style.overflow='hidden';}else{plane.style.width='';plane.style.overflow='';}const sourceWidth=image.naturalWidth*(boardId.startsWith('main-')?2/3:1);plane.style.setProperty('--board-scale',`${plane.getBoundingClientRect().width/sourceWidth}`);}
 const baseRender=render;render=()=>{baseRender();const image=app.querySelector<HTMLImageElement>('[data-board-image]');if(image){image.addEventListener('load',refreshBoardScale,{once:true});refreshBoardScale();}if(selected){const target=app.querySelector<HTMLElement>('[data-delete]');target?.insertAdjacentHTML('beforebegin','<button data-duplicate>复制组件</button>');}};
-const renderWithUndoButton=render;render=()=>{renderWithUndoButton();app.querySelector('header')?.insertAdjacentHTML('beforeend',`<button data-undo ${undoHistory.length?'':'disabled'}>Undo (${undoHistory.length})</button>`);};
+const renderWithUndoButton=render;render=()=>{renderWithUndoButton();const header=app.querySelector('header');header?.insertAdjacentHTML('beforeend',`<button data-undo ${undoHistory.length?'':'disabled'}>Undo (${undoHistory.length})</button>`);if((['bird','snake','monkey','lizard'] as string[]).includes(boardId))header?.insertAdjacentHTML('beforeend','<button data-apply-temple-triangle>应用神庙三角形</button>');};
+app.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-apply-temple-triangle]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();applyTempleTriangle();},true);
 app.addEventListener('click',e=>{const button=(e.target as HTMLElement).closest<HTMLElement>('[data-duplicate]');if(!button||!selected)return;e.preventDefault();e.stopImmediatePropagation();recordUndo();const source=marks().find(mark=>mark.id===selected);if(!source)return;const copy={...source,id:`${boardId}-${crypto.randomUUID()}`,label:`${source.label} copy`,x:Math.min(99,source.x+2),y:Math.min(99,source.y+2)};data[boardId]=[...marks(),copy];selected=copy.id;persist();render();},true);
 app.addEventListener('mousedown',e=>{const handle=(e.target as HTMLElement).closest<HTMLElement>('[data-resize]');if(!handle)return;const id=handle.dataset.resize!,mark=marks().find(candidate=>candidate.id===id);if(!mark)return;e.preventDefault();e.stopImmediatePropagation();recordUndo();selected=id;resizing=id;resizeStart={x:e.clientX,y:e.clientY,width:mark.width,height:mark.height};},true);
 app.addEventListener('mousedown',e=>{const target=e.target as HTMLElement;if(!target.closest<HTMLElement>('[data-resize]')&&target.closest<HTMLElement>('[data-mark]'))recordUndo();},true);
