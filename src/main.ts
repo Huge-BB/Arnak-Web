@@ -2063,7 +2063,8 @@ function deckViewer() {
   const playerState = state.players[deckViewerPlayerId];
   if (!playerState) return '';
   const cards = shuffleWithSeed(playerState.deck, `deck-view:${deckViewerPlayerId}:${state.round}:${playerState.deck.join('|')}`);
-  return `<section class="deck-viewer" role="dialog" aria-modal="true" aria-label="查看牌库"><div class="deck-viewer-panel"><div class="deck-viewer-title">牌库 <span>${cards.length} 张 · 随机展示，不代表抽牌顺序</span><button data-deck-viewer-close title="关闭">×</button></div><div class="deck-viewer-cards">${cards.map((cardId) => `<i class="card" title="${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></i>`).join('') || '<span>牌库为空</span>'}</div></div></section>`;
+  const points = cards.reduce((total, cardId) => total + (context.cards[cardId]?.points ?? 0), 0);
+  return `<section class="deck-viewer" role="dialog" aria-modal="true" aria-label="查看牌库"><div class="deck-viewer-panel"><div class="deck-viewer-title">牌库 <strong>${points} 分</strong><span>${cards.length} 张 · 随机展示，不代表抽牌顺序</span><button data-deck-viewer-close title="关闭">×</button></div><div class="deck-viewer-cards">${cards.map((cardId) => `<i class="card" title="${context.cards[cardId]?.name ?? cardId} · ${context.cards[cardId]?.points ?? 0} 分"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></i>`).join('') || '<span>牌库为空</span>'}</div></div></section>`;
 }
 const renderWithDeckViewer = render;
 render = () => { renderWithDeckViewer(); app.insertAdjacentHTML('beforeend', deckViewer()); };
