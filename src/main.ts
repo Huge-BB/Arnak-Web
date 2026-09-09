@@ -1931,27 +1931,25 @@ render();
 // give every non-card choice a human-readable label at the final render edge.
 // This catches legacy and expansion prompts alike instead of relying on each
 // individual feature to remember its own presentation layer.
-const choiceResourceName: Record<string, string> = { coin: '金币', compass: '罗盘', tablet: '石板', arrowhead: '箭头', jewel: '宝石' };
-const choiceTravelName: Record<string, string> = { boot: '靴子', car: '车', boat: '船', plane: '飞机' };
-function choiceBundle(value: unknown) {
+function choiceBundleArtwork(value: unknown) {
   if (!value || typeof value !== 'object') return '';
   return Object.entries(value as Record<string, unknown>)
     .filter(([, amount]) => Number(amount) > 0)
-    .map(([kind, amount]) => `${Number(amount)} ${choiceResourceName[kind] ?? choiceTravelName[kind] ?? kind}`)
-    .join(' + ');
+    .map(([kind, amount]) => paymentIconArtwork(kind, Number(amount))).join('');
 }
+function gainChoice(kind: string, amount = 1) { return `获得 <span class="pending-choice-icons">${choiceBundleArtwork({ [kind]: amount })}</span>`; }
 function describeChoiceEffect(value: unknown): string {
   if (!value || typeof value !== 'object') return '执行此效果';
   const effect = value as Record<string, unknown>;
   switch (effect.type) {
-    case 'GAIN_RESOURCES': return `获得 ${choiceBundle(effect.resources)}`;
-    case 'GAIN_RESOURCE': return `获得 ${effect.amount ?? 1} ${choiceResourceName[String(effect.resource)] ?? String(effect.resource)}`;
-    case 'GAIN_TRAVEL': return `获得 ${choiceBundle(effect.travel)}`;
+    case 'GAIN_RESOURCES': return `获得 <span class="pending-choice-icons">${choiceBundleArtwork(effect.resources)}</span>`;
+    case 'GAIN_RESOURCE': return gainChoice(String(effect.resource), Number(effect.amount ?? 1));
+    case 'GAIN_TRAVEL': return `获得 <span class="pending-choice-icons">${choiceBundleArtwork(effect.travel)}</span>`;
     case 'DRAW_CARD': return `抽 ${effect.amount ?? 1} 张牌`;
     case 'EXILE_OWN_CARD': return '放逐自己的一张牌';
     case 'UPGRADE_RESOURCE': return '升级一种资源';
     case 'SEQUENCE': return Array.isArray(effect.effects) ? effect.effects.map(describeChoiceEffect).join('，然后') : '执行连续效果';
-    case 'PAY_RESOURCE_CHOOSE': return `支付 ${choiceBundle(effect.cost)} 后选择效果`;
+    case 'PAY_RESOURCE_CHOOSE': return `支付 <span class="pending-choice-icons">${choiceBundleArtwork(effect.cost)}</span> 后选择效果`;
     case 'BUY_WITH_DISCOUNT': return `折扣购买（物品 -${effect.itemDiscount ?? 0} 金币；神器 -${effect.artifactDiscount ?? 0} 罗盘）`;
     default: return `执行效果：${String(effect.type ?? '未知')}`;
   }
@@ -1960,7 +1958,7 @@ function choiceLabel(button: HTMLButtonElement, queued: GameState['pendingReward
   if (button.dataset.leaderCardChoice) {
     try {
       const choice = JSON.parse(decodeURIComponent(button.dataset.leaderCardChoice)) as { choice?: string; snackId?: string };
-      const labels: Record<string, string> = { coin: '获得 1 金币', compass: '获得 1 罗盘', tablets: '获得 1 石板', draw: '抽 1 张牌', eagle: '推进猎鹰', exile: '放逐自己的一张牌', refreshAssistant: '重置一名助手', upgradeResource: '升级一种资源', suitcaseCompass: '在公文包中放入 1 罗盘', suitcaseTablet: '在公文包中放入 1 石板', payCoinForPlanes: '支付 1 金币，获得 2 飞机', payCoinsForJewel: '支付 2 金币，获得 1 宝石', activateSite: `使用${choice.snackId ?? ''}零食，激活营地`, activateFaceupIdol: `使用${choice.snackId ?? ''}零食，激活正面神像` };
+      const labels: Record<string, string> = { coin: gainChoice('coin'), compass: gainChoice('compass'), tablets: gainChoice('tablet'), draw: '抽 1 张牌', eagle: '推进猎鹰', exile: '放逐自己的一张牌', refreshAssistant: '重置一名助手', upgradeResource: '升级一种资源', suitcaseCompass: `在公文包中放入 <span class="pending-choice-icons">${choiceBundleArtwork({ compass: 1 })}</span>`, suitcaseTablet: `在公文包中放入 <span class="pending-choice-icons">${choiceBundleArtwork({ tablet: 1 })}</span>`, payCoinForPlanes: `支付 <span class="pending-choice-icons">${choiceBundleArtwork({ coin: 1 })}</span>，获得 <span class="pending-choice-icons">${choiceBundleArtwork({ plane: 2 })}</span>`, payCoinsForJewel: `支付 <span class="pending-choice-icons">${choiceBundleArtwork({ coin: 2 })}</span>，获得 <span class="pending-choice-icons">${choiceBundleArtwork({ jewel: 1 })}</span>`, activateSite: `使用${choice.snackId ?? ''}零食，激活营地`, activateFaceupIdol: `使用${choice.snackId ?? ''}零食，激活正面神像` };
       return labels[choice.choice ?? ''];
     } catch { return undefined; }
   }
@@ -1992,7 +1990,7 @@ function choiceLabel(button: HTMLButtonElement, queued: GameState['pendingReward
       const payload = (queued?.payload ?? {}) as Record<string, unknown>;
       const effect = (payload.effect ?? context.assistantEffects?.[String(payload.assistantId)]?.[payload.level as 'silver' | 'gold']) as Record<string, unknown> | undefined;
       const option = Array.isArray(effect?.options) ? effect.options[Number(choice.optionIndex)] : undefined;
-      const prefix = effect?.type === 'PAY_RESOURCE_CHOOSE' ? `支付 ${choiceBundle(effect.cost)}：` : '';
+      const prefix = effect?.type === 'PAY_RESOURCE_CHOOSE' ? `支付 <span class="pending-choice-icons">${choiceBundleArtwork(effect.cost)}</span>：` : '';
       return `${prefix}${describeChoiceEffect(option)}`;
     }
     if (choice.type === 'card-option') {
@@ -2005,7 +2003,7 @@ function choiceLabel(button: HTMLButtonElement, queued: GameState['pendingReward
       return `选择助手 ${context.assistants[assistantId]?.name ?? assistantId}${owned ? `（${owned.level === 'gold' ? '金色' : '银色'}）` : ''}`;
     }
     if (choice.type === 'assistant-stack') return `选择助手供应第 ${Number(choice.stackIndex) + 1} 堆`;
-    if (choice.type === 'assistant-resource' || choice.type === 'resource') return `选择 ${choiceResourceName[String(choice.resource)] ?? String(choice.resource)}`;
+    if (choice.type === 'assistant-resource' || choice.type === 'resource') return `选择 <span class="pending-choice-icons">${choiceBundleArtwork({ [String(choice.resource)]: 1 })}</span>`;
     if (choice.type === 'card') return `选择卡牌：${context.cards[String(choice.cardId)]?.name ?? String(choice.cardId)}`;
     if (choice.type === 'site') { const site = state.sites[String(choice.siteId)]; return `选择地点：${site?.id ?? String(choice.siteId)}${site ? `（${site.level} 级）` : ''}`; }
     if (choice.type === 'guardian') return `选择守卫：${String(choice.guardianId)}`;
@@ -2024,8 +2022,8 @@ function makePendingChoicesReadable() {
     if (button.classList.contains('card')) return;
     const label = choiceLabel(button, queued);
     if (label && (isGlyphOnly(button.textContent ?? '') || button.dataset.leaderCardChoice !== undefined)) {
-      button.replaceChildren(document.createTextNode(label));
-      button.title = label;
+      button.innerHTML = label;
+      button.title = button.textContent ?? '';
       button.classList.add('pending-readable-choice');
     }
   });
