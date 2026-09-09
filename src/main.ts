@@ -1478,7 +1478,7 @@ function isAssistantSupplyChoice(queued = state.pendingRewards[0]) {
     || ['CLAIM_AVAILABLE_SILVER_ASSISTANT', 'ACTIVATE_AVAILABLE_ASSISTANT'].includes(String(nested?.type ?? ''));
 }
 function supplyBoard(){
-  const selectable=isAssistantSupplyChoice()||captainSpecialistDraft===state.currentPlayer;
+  const selectable=captainSpecialistDraft===state.currentPlayer;
   const component=(id:string,fallback:{x:number;y:number;width:number;height:number})=>{const mark=calibrationMark('supply-board',id);const source=mark?{x:mark.x/100*SUPPLY_BOARD_SIZE.width,y:mark.y/100*SUPPLY_BOARD_SIZE.height,width:mark.width,height:mark.height}:fallback;return`--supply-x:${source.x/SUPPLY_BOARD_SIZE.width*100}%;--supply-y:${source.y/SUPPLY_BOARD_SIZE.height*100}%;--supply-w:${source.width/SUPPLY_BOARD_SIZE.width*100}%;--supply-h:${source.height/SUPPLY_BOARD_SIZE.height*100}%;`;};
   const assistants=state.assistants.stacks.slice(0,3).map((stack,index)=>{const assistantId=stack[0],asset=assistantId?assistantAsset(assistantId,'silver'):undefined,style=component(`supply-assistant-${index}`,SUPPLY_BOARD_COMPONENTS.assistants[index]!),tag=selectable?'button':'span',choice=selectable&&stack.length?` data-supply-assistant-stack="${index}"`:'';return`<${tag} class="supply-assistant-stack ${selectable?'selectable':''}" style="${style}" title="assistant supply ${index+1}: ${stack.length}" ${!stack.length&&selectable?'disabled':''}${choice}>${assistantId?`<i style="${sprite(asset)}"></i>`:''}<b>${stack.length}</b></${tag}>`;}).join('');
   const resources=(['coin','compass','tablet','arrowhead','jewel'] as const).map(resource=>{const style=component(`supply-resource-${resource}`,SUPPLY_BOARD_COMPONENTS.resources[resource]);return`<img class="supply-resource-pile" style="${style}" src="${publicAsset(`/assets/resource-${resource}.png`)}" alt="${resource} supply" title="${resource} supply">`;}).join('');
@@ -1849,10 +1849,22 @@ player = (id: PlayerId) => {
   return `<div class="player-zone">${board}${playerResourceSummary(id)}</div>`;
 };
 
-// When an effect asks the player to choose from the public assistant supply,
-// the stacks themselves are the choices. Do not duplicate them in a modal.
-const pendingWithDirectAssistantSupply = pending;
-pending = () => isAssistantSupplyChoice() ? '' : pendingWithDirectAssistantSupply();
+// Assistant acquisition uses the actual visible component faces. Snake rescue
+// is a different pool: those assistants were removed to the research track at
+// setup and must never be offered as one of the three public supply stacks.
+const pendingBeforeAssistantAcquisition = pending;
+pending = () => {
+  const queued=state.pendingRewards[0],payload=(queued?.payload??{}) as Record<string,unknown>;
+  if(queued&&String(payload.type)==='CLAIM_SNAKE_RESCUE_ASSISTANT'){
+    const choices=state.assistants.specialStack.map(assistantId=>`<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'snake-rescue-assistant',assistantId}))}"><i style="${sprite(assistantAsset(assistantId,'silver'))}"></i><span>${context.assistants[assistantId]?.name??assistantId}<small>蛇庙研究轨助手</small></span></button>`).join('');
+    return `<section class="pending-panel assistant-acquisition-panel"><span>选择研究轨上的助手</span><div>${choices||'<span class="pending-unsupported">研究轨上没有可获得的助手</span>'}</div></section>`;
+  }
+  if(queued&&isAssistantSupplyChoice(queued)){
+    const choices=state.assistants.stacks.slice(0,3).map((stack,stackIndex)=>{const assistantId=stack[0];return assistantId?`<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'assistant-stack',stackIndex}))}"><i style="${sprite(assistantAsset(assistantId,'silver'))}"></i><span>${context.assistants[assistantId]?.name??assistantId}<small>供应堆 ${stackIndex+1} · 剩余 ${stack.length}</small></span></button>`:'';}).join('');
+    return `<section class="pending-panel assistant-acquisition-panel"><span>选择助手供应堆</span><div>${choices||'<span class="pending-unsupported">助手供应已空</span>'}</div></section>`;
+  }
+  return pendingBeforeAssistantAcquisition();
+};
 const pendingWithArtworkAssistantChoices = pending;
 pending = () => {
   const queued = state.pendingRewards[0];
@@ -1866,11 +1878,6 @@ pending = () => {
   }).join('');
   return `<section class="pending-panel"><span>Choose assistant</span><div>${choices}</div></section>`;
 };
-app.addEventListener('click', (event) => {
-  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-supply-assistant-stack]');
-  if (!button || button.disabled || !isAssistantSupplyChoice()) return;
-  choose({ type: 'assistant-stack', stackIndex: Number(button.dataset.supplyAssistantStack) });
-});
 render();
 
 // The laboratory deliberately uses the normal game renderer and reducer; it
