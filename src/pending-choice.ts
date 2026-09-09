@@ -23,6 +23,7 @@ import {
 import { resolvePendingAssistantEffect, type AssistantEffectChoice } from "./assistant-effects.ts";
 import { resolvePendingCardEffect } from './card-effect-actions.ts';
 import { reduceWithLeaders } from './engine-with-leaders.ts';
+import { resolveRewardCode } from './site-rewards.ts';
 import type { CardId, EngineContext, GameState, PlayerId, SpendableResource } from "./types.ts";
 
 /** Serializable choice contract exposed to a web client. */
@@ -270,10 +271,19 @@ export function resolvePendingChoice(
   context: EngineContext,
 ): GameState {
   const pending = pendingAt(state, playerId, pendingIndex);
-  const isMainAction = (pending.payload as Record<string, unknown> | undefined)?.mainAction === true;
+  const pendingPayload = (pending.payload ?? {}) as Record<string, unknown>;
+  const isMainAction = pendingPayload.mainAction === true;
   if (isMainAction && state.players[playerId].mainActionUsed)
     throw new Error('This player has already used their main action this turn');
   const resolved = resolvePendingChoiceInternal(state, playerId, pendingIndex, choice, context);
+  const afterDiscoverySiteId = typeof pendingPayload.afterDiscoverySiteId === 'string' ? pendingPayload.afterDiscoverySiteId : undefined;
+  if (afterDiscoverySiteId) {
+    const site = resolved.sites[afterDiscoverySiteId];
+    if (!site?.tileId) throw new Error(`Deferred discovery site is unavailable: ${afterDiscoverySiteId}`);
+    const definition = context.sites?.[site.tileId];
+    if (!definition || definition.level !== site.level) throw new Error(`Unknown deferred discovery site tile: ${site.tileId}`);
+    resolveRewardCode(resolved, playerId, site.tileId, definition.rewardCode, context);
+  }
   if (isMainAction) resolved.players[playerId].mainActionUsed = true;
   return resolved;
 }

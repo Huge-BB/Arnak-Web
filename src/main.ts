@@ -1842,7 +1842,7 @@ function playerDrawDeck(id: PlayerId) {
   const fallback = leader ? { x: 110, y: 140 } : { x: 610, y: 160 };
   const mark = leader ? undefined : calibrationMark('player-base', 'player-base-draw-deck');
   const point = mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328 } : fallback;
-  return `<div class="player-draw-deck ${leader ? 'leader-draw-deck' : ''}" style="${playerPointStyle(point, leader)}" title="牌库剩余 ${state.players[id].deck.length} 张"><img src="${publicAsset('/assets/card-back.jpg')}" alt="牌库"><b>${state.players[id].deck.length}</b></div>`;
+  return `<button class="player-draw-deck ${leader ? 'leader-draw-deck' : ''}" style="${playerPointStyle(point, leader)}" data-view-deck="${id}" title="查看牌库（${state.players[id].deck.length} 张，展示顺序随机）"><img src="${publicAsset('/assets/card-back.jpg')}" alt="查看牌库"><b>${state.players[id].deck.length}</b></button>`;
 }
 const playerWithExternalResourceSummary = player;
 player = (id: PlayerId) => {
@@ -2053,4 +2053,24 @@ function makePendingChoicesReadable() {
 }
 const renderWithReadablePendingChoices = render;
 render = () => { renderWithReadablePendingChoices(); makePendingChoicesReadable(); };
+render();
+
+// Inspecting the deck is deliberately informational: the reducer's deck order
+// remains untouched and the gallery uses a separate deterministic shuffle.
+let deckViewerPlayerId: PlayerId | undefined;
+function deckViewer() {
+  if (!deckViewerPlayerId) return '';
+  const playerState = state.players[deckViewerPlayerId];
+  if (!playerState) return '';
+  const cards = shuffleWithSeed(playerState.deck, `deck-view:${deckViewerPlayerId}:${state.round}:${playerState.deck.join('|')}`);
+  return `<section class="deck-viewer" role="dialog" aria-modal="true" aria-label="查看牌库"><div class="deck-viewer-panel"><div class="deck-viewer-title">牌库 <span>${cards.length} 张 · 随机展示，不代表抽牌顺序</span><button data-deck-viewer-close title="关闭">×</button></div><div class="deck-viewer-cards">${cards.map((cardId) => `<i class="card" title="${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></i>`).join('') || '<span>牌库为空</span>'}</div></div></section>`;
+}
+const renderWithDeckViewer = render;
+render = () => { renderWithDeckViewer(); app.insertAdjacentHTML('beforeend', deckViewer()); };
+app.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button) return;
+  if (button.dataset.viewDeck) { deckViewerPlayerId = button.dataset.viewDeck as PlayerId; render(); }
+  if (button.dataset.deckViewerClose !== undefined) { deckViewerPlayerId = undefined; render(); }
+});
 render();

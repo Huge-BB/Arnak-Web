@@ -397,11 +397,21 @@ function discoverSite(
   spendResource(s, a.playerId, "compass", Math.max(0,DISCOVERY_COMPASS_COST[site.level]-(s.players[a.playerId].nextDiscoveryCompassDiscount??0)-(forced?.discoveryCompassDiscount??0)));
   if (consumesWorker) s.players[a.playerId].availableWorkers -= 1;
   site.occupiedBy = a.playerId;
+  const pendingBeforeIdol = s.pendingRewards.length;
   takeIdol(s, a.playerId, true, c);
   if (site.level === 2) takeIdol(s, a.playerId, false, c);
   site.tileId = deck.shift()!;
-  resolveSite(s, a.playerId, a.siteId, c);
   site.guardian = s.discovery.guardianDeck.shift()!;
+  // Choice-based idol rewards must finish before the newly discovered site's
+  // effect.  Attach the site activation to the final idol prompt instead of
+  // allowing an immediate draw (or other site effect) to jump the queue.
+  const idolPending = s.pendingRewards.slice(pendingBeforeIdol);
+  if (idolPending.length) {
+    const last = idolPending.at(-1)!;
+    last.payload = { ...(last.payload ?? {}), afterDiscoverySiteId: a.siteId };
+  } else {
+    resolveSite(s, a.playerId, a.siteId, c);
+  }
   consumeSiteActionDiscount(s,a.playerId);
 }
 function buyCard(
