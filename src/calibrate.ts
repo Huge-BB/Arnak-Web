@@ -30,7 +30,7 @@ const research=(id:keyof typeof RESEARCH_LANES)=>{
     ...[0,1,2,3].map(index=>({id:`${id}-research-temple-bonus-${index}`,kind:'token' as const,asset:`research-bonus-${index%4+1}`,label:`temple bonus tile ${index+1}`,x:(625+index*72)/RESEARCH_BOARD_SIZE.width*100,y:205/RESEARCH_BOARD_SIZE.height*100,width:120,height:120,rotation:0})),
   ];
   const setupPieces:Mark[] = id==='snake'
-    ? [{id:'snake-research-rescue-assistants',kind:'token',asset:'assistant-silver',label:'Snake research rescue assistants',x:50,y:64,width:170,height:170,rotation:0}]
+    ? [{id:'snake-research-rescue-assistants',kind:'token',asset:'assistant-silver',label:'Snake research rescue assistants',x:50,y:64,width:170,height:170,rotation:90}]
     : id==='monkey'
       ? [{id:'monkey-research-track-artifact',kind:'token',asset:'card-back',label:'Monkey research cost-3 artifact',x:27,y:63,width:150,height:215,rotation:0}]
       : id==='lizard'
@@ -72,6 +72,9 @@ for(const id of ['bird','snake','monkey','lizard'])data[id]=(data[id]??[]).map(m
   return trackBonus||templeBonus?{...mark,kind:'token' as const,asset:`research-bonus-${index%4+1}`,width:120,height:120}:mark;
 });
 for(const id of ['bird','snake','monkey','lizard'])data[id]=(data[id]??[]).filter(mark=>!new RegExp(`^${id}-research-start-(?:magnifying|journal)$`).test(mark.id));
+// Snake rescue assistants are physically exhausted both during setup and
+// after rescue. Keep the collector preview consistent with the runtime tile.
+data.snake=(data.snake??[]).map(mark=>mark.id==='snake-research-rescue-assistants'?{...mark,rotation:90}:mark);
 const supplyBoardDefaults=()=>[
   ...SUPPLY_BOARD_COMPONENTS.assistants.map((component,index)=>hotspot(`supply-assistant-${index}`,`supply board · assistant stack ${index+1}`,component.x/SUPPLY_BOARD_SIZE.width*100,component.y/SUPPLY_BOARD_SIZE.height*100,component.width,component.height)),
   ...(['coin','compass','tablet','arrowhead','jewel'] as const).map(resource=>{const component=SUPPLY_BOARD_COMPONENTS.resources[resource];return{id:`supply-resource-${resource}`,kind:'token' as const,asset:resource,label:`supply board · ${resource}`,x:component.x/SUPPLY_BOARD_SIZE.width*100,y:component.y/SUPPLY_BOARD_SIZE.height*100,width:component.width,height:component.height,rotation:0};}),

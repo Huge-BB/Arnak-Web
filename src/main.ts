@@ -1449,7 +1449,9 @@ research = () => {
     ? `<button class="research-setup-piece research-track-guardian" style="${researchComponentStyle(guardianComponent)};${guardianStyle}" ${lizard.revealed ? 'data-lizard-guardian' : 'disabled'} title="${lizard.revealed ? 'overcome Lizard track guardian' : 'unrevealed Lizard track guardian'}"></button>` : '';
   const snakeAssistants = state.research.board==='snake' ? state.assistants.specialStack : [];
   const assistantComponent = calibratedResearchComponent('snake', 'research-rescue-assistants', { x:475,y:1731,width:170,height:170 });
-  const assistantSupply = snakeAssistants.length ? `<span class="research-setup-piece research-rescue-assistants" style="${researchComponentStyle(assistantComponent)}" title="Snake rescue assistants">${snakeAssistants.map((assistantId,index)=>`<i style="--stack-index:${index};${sprite(assistantAsset(assistantId,'silver'))}"></i>`).join('')}<b>${snakeAssistants.length}</b></span>` : '';
+  // The rescued assistants form one exhausted, face-up stack: only its top
+  // identity is public until a player reaches the rescue row and inspects it.
+  const assistantSupply = snakeAssistants.length ? `<span class="research-setup-piece research-rescue-assistants" style="${researchComponentStyle(assistantComponent)}" title="${snakeAssistants.length} exhausted Snake rescue assistant${snakeAssistants.length===1?'':'s'}"><i style="${sprite(assistantAsset(snakeAssistants[0]!,'silver'))}"></i><b>${snakeAssistants.length}</b></span>` : '';
   const temple = ([
     ['bronze', 2, '2a'], ['bronze', 2, '2b'], ['bronze', 2, '2c'],
     ['silver', 6, '6a'], ['silver', 6, '6b'], ['gold', 11, '11'],
