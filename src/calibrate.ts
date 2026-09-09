@@ -1,6 +1,6 @@
 import './calibrate.css';
 import { BASE_BOARD_INTERACTION_SPOTS } from './base-board-setup.ts';
-import { BASE_IDOL_EFFECTS, BASE_IDOL_SLOTS, LEADER_IDOL_EFFECT_LAYOUT, LEADER_LAYOUT, RESEARCH_LANES, RESEARCH_BOARD_SIZE, SUPPLY_BOARD_COMPONENTS, SUPPLY_BOARD_SIZE } from './board-layout.ts';
+import { BASE_IDOL_EFFECTS, BASE_IDOL_SLOTS, LEADER_IDOL_EFFECT_LAYOUT, LEADER_LAYOUT, RESEARCH_LANES, RESEARCH_BOARD_SIZE, RESEARCH_TEMPLE_TILE_COMPONENTS, SUPPLY_BOARD_COMPONENTS, SUPPLY_BOARD_SIZE } from './board-layout.ts';
 import { calibrationStorageKey } from './board-calibration.ts';
 import generatedTracks from './generated/research-tracks.json';
 
@@ -26,7 +26,7 @@ const research=(id:keyof typeof RESEARCH_LANES)=>{
   const bonusSlots=generated.flatMap(node=>node.metadata?.bonusSlot?[node]:[]).flatMap(node=>Array.from({length:Math.max(1,node.metadata?.bonusSlotMinimums?.length??1)},(_,index)=>{const p=point(node);return{id:`${id}-research-bonus-${suffix(node.id)}-${index}`,kind:'token' as const,asset:`research-bonus-${index%4+1}`,label:`research bonus tile ${node.id} ${index+1}`,x:p.x,y:p.y,width:120,height:120,rotation:0};}));
   const temple=[
     hotspot(`${id}-research-temple-entry`,'research temple entry',795/RESEARCH_BOARD_SIZE.width*100,150/RESEARCH_BOARD_SIZE.height*100,100,90),
-    ...[['2a',185],['2b',250],['2c',315],['6a',380],['6b',445],['11',510]].map(([variant,y])=>({id:`${id}-research-temple-tile-${variant}`,kind:'token' as const,asset:`temple-${variant}`,label:`temple tile · ${variant.toUpperCase()}`,x:165/RESEARCH_BOARD_SIZE.width*100,y:Number(y)/RESEARCH_BOARD_SIZE.height*100,width:210,height:94,rotation:0})),
+    ...(['2a','2b','2c','6a','6b','11'] as const).map(variant=>{const component=RESEARCH_TEMPLE_TILE_COMPONENTS[variant];return{id:`${id}-research-temple-tile-${variant}`,kind:'token' as const,asset:`temple-${variant}`,label:`temple tile · ${variant.toUpperCase()}`,x:component.x/RESEARCH_BOARD_SIZE.width*100,y:component.y/RESEARCH_BOARD_SIZE.height*100,width:component.width,height:component.height,rotation:0};}),
     ...[0,1,2,3].map(index=>({id:`${id}-research-temple-bonus-${index}`,kind:'token' as const,asset:`research-bonus-${index%4+1}`,label:`temple bonus tile ${index+1}`,x:(625+index*72)/RESEARCH_BOARD_SIZE.width*100,y:205/RESEARCH_BOARD_SIZE.height*100,width:120,height:120,rotation:0})),
   ];
   return [...cells,...bonusSlots,...temple];
@@ -188,71 +188,18 @@ function normalizeBirdTempleTiles() {
   }
   data.bird = [...unique.values()];
 }
-synchronizeMainBoardGuardians('main-bird');
-copyDiscoveryCalibrationToSnake();
+// Existing calibration is user-owned. Loading the collector may add a newly
+// introduced named component, but must never copy coordinates between boards
+// or recompute a manually positioned guardian/site pair.
 ensureMainBoardDiscoveryPieces('main-bird');
 ensureMainBoardDiscoveryPieces('main-snake');
-synchronizeMainBoardGuardians('main-snake');
-// Repair only the three records that were absent in older Snake layouts (and
-// the matching Bird guardian).  Do not recalculate or touch any other board
-// component the user has calibrated.
-function restoreNamedDiscoveryPiece(board: 'main-bird' | 'main-snake', suffix: string) {
-  const expected = mainBoardPieceDefaults(board).find(mark => mark.id === `${board}-${suffix}`);
-  if (!expected) return;
-  const existing = (data[board] ?? []).find(mark => mark.id === expected.id);
-  if (existing?.kind === 'token' && existing.asset === expected.asset) return;
-  data[board] = [...(data[board] ?? []).filter(mark => mark.id !== expected.id), existing
-    ? { ...expected, x: existing.x, y: existing.y, width: existing.width, height: existing.height, rotation: existing.rotation }
-    : expected];
-}
-restoreNamedDiscoveryPiece('main-bird', 'level1-4-guardian');
-restoreNamedDiscoveryPiece('main-snake', 'level1-4-site');
-restoreNamedDiscoveryPiece('main-snake', 'level1-4-guardian');
-// The public level1-4 hotspot was manually confirmed as the correct anchor.
-// Use it for the missing site card, then retain each board's calibrated 1-1
-// site-to-guardian offset.  This fixes only L1-4 and cannot move other tiles.
-function alignLevel14ToConfirmedHotspot(board: 'main-bird' | 'main-snake') {
-  const marks = data[board] ?? [];
-  const anchor = marks.find(mark => mark.id === `${board}-level1-4` && mark.kind === 'hotspot');
-  const referenceSite = marks.find(mark => mark.id === `${board}-level1-1-site`);
-  const referenceGuardian = marks.find(mark => mark.id === `${board}-level1-1-guardian`);
-  const site = marks.find(mark => mark.id === `${board}-level1-4-site`);
-  const guardian = marks.find(mark => mark.id === `${board}-level1-4-guardian`);
-  if (!anchor || !site || !guardian || !referenceSite || !referenceGuardian) return;
-  const deltaX = referenceGuardian.x - referenceSite.x, deltaY = referenceGuardian.y - referenceSite.y;
-  const replacement = new Map(marks.map(mark => [mark.id, mark]));
-  replacement.set(site.id, { ...site, x: anchor.x, y: anchor.y });
-  replacement.set(guardian.id, { ...guardian, x: anchor.x + deltaX, y: anchor.y + deltaY, width: referenceGuardian.width, height: referenceGuardian.height, rotation: referenceGuardian.rotation });
-  data[board] = [...replacement.values()];
-}
-normalizeBirdTempleTiles();
+// Legacy anonymous Temple tiles are deliberately left alone. Renaming or
+// regrouping them during page load previously made a reviewed triangle appear
+// to revert. The six named defaults above are only used for new layouts.
 const marks=()=>data[boardId]??[],asset=(id:string)=>ASSETS.find(a=>a[0]===id),board=()=>BOARDS.find(b=>b[0]===boardId)??BOARDS[0],persist=()=>localStorage.setItem(key,JSON.stringify(data));
 const snapshot=()=>JSON.parse(JSON.stringify(data)) as Record<string,Mark[]>;
 function recordUndo(){undoHistory=[...undoHistory,snapshot()].slice(-30);localStorage.setItem(undoKey,JSON.stringify(undoHistory));}
 function undo(){const previous=undoHistory.pop();if(!previous)return;data=previous;selected=undefined;localStorage.setItem(undoKey,JSON.stringify(undoHistory));persist();render();}
-// Explicit recovery, authorised after the two L1-3/L1-4 pairs on both main
-// boards were corrupted.  Each card returns to its own printed hotspot; its
-// guardian keeps the already-calibrated L1-1 offset from the same board.
-// This does not copy coordinates between Bird and Snake.
-const discoveryPairRecoveryKey='arnak.board-calibrator.v2.rebuild-main-l1-3-4';
-if(!localStorage.getItem(discoveryPairRecoveryKey)){
-  recordUndo();
-  for(const board of ['main-bird','main-snake'] as const){
-    const marks=data[board]??[],next=new Map(marks.map(mark=>[mark.id,mark]));
-    const byId=(id:string)=>[...marks].reverse().find(mark=>mark.id===id);
-    const referenceSite=byId(`${board}-level1-1-site`),referenceGuardian=byId(`${board}-level1-1-guardian`);
-    for(const level of ['level1-3','level1-4']){
-      const spot=BASE_BOARD_INTERACTION_SPOTS.find(candidate=>candidate.id===level);
-      const anchor=byId(`${board}-${level}`);
-      const site=next.get(`${board}-${level}-site`),guardian=next.get(`${board}-${level}-guardian`);
-      const x=anchor?.x??(spot?.left??0)*3/2,y=anchor?.y??spot?.top??0;
-      if(site)next.set(site.id,{...site,x,y,width:referenceSite?.width??150,height:referenceSite?.height??150,rotation:referenceSite?.rotation??0});
-      if(guardian&&referenceSite&&referenceGuardian)next.set(guardian.id,{...guardian,x:x+(referenceGuardian.x-referenceSite.x),y:y+(referenceGuardian.y-referenceSite.y),width:referenceGuardian.width,height:referenceGuardian.height,rotation:referenceGuardian.rotation});
-    }
-    data[board]=[...next.values()];
-  }
-  localStorage.setItem(discoveryPairRecoveryKey,'1');
-}
 const marker=(m:Mark)=>m.kind==='hotspot'?`<button class="mark hotspot ${m.id===selected?'selected':''}" style="--x:${m.x}%;--y:${m.y}%;--w:${m.width};--h:${m.height};--rot:${m.rotation}deg" data-mark="${m.id}" title="${m.label}"><span>${m.label||'互动'}</span><i class="resize-handle" data-resize="${m.id}"></i></button>`:`<button class="mark token ${m.id===selected?'selected':''}" style="--x:${m.x}%;--y:${m.y}%;--w:${m.width};--h:${m.height};--rot:${m.rotation}deg" data-mark="${m.id}" title="${m.label}"><img src="${publicAsset(asset(m.asset)?.[2]||'')}" alt="${m.label}"><i class="resize-handle" data-resize="${m.id}"></i></button>`;
 function render(){const b=board(),m=marks().find(x=>x.id===selected);app.innerHTML=`<main><header><strong>版图坐标采集器</strong><span>拖入贴图；互动点可与贴图重叠。坐标相对原图保存。</span><a href="${import.meta.env.BASE_URL}">游戏</a></header><section class="layout"><aside><label>版图<select data-board>${BOARDS.map(x=>`<option value="${x[0]}" ${x[0]===boardId?'selected':''}>${x[1]}</option>`).join('')}</select></label><div class="mode"><button data-mode="token" class="${mode==='token'?'active':''}">贴图 token</button><button data-mode="hotspot" class="${mode==='hotspot'?'active':''}">互动热区</button></div><p>互动热区：切换后点击空白处新增；拖动移动；右侧可调宽、高。</p><h2>可拖动贴图</h2><div class="palette">${ASSETS.map(x=>`<button draggable="true" data-asset="${x[0]}" class="${x[0]===assetId?'selected':''}"><img src="${publicAsset(x[2])}" alt=""><small>${x[1]}</small></button>`).join('')}</div></aside><section class="canvas-wrap"><div class="canvas" data-canvas><div class="image-plane" data-board-plane><img data-board-image src="${publicAsset(b[2])}" alt="${b[1]}">${marks().map(marker).join('')}</div></div></section><aside><h2>选中项</h2>${m?`<label>名称<input data-field="label" value="${m.label}"></label><label>宽度 px<input type="number" min="4" data-field="width" value="${m.width}"></label><label>高度 px<input type="number" min="4" data-field="height" value="${m.height}"></label><label>角度<input type="number" data-field="rotation" value="${m.rotation}"></label><code>x ${m.x}% · y ${m.y}%</code>${m.kind==='hotspot'?'<button data-test>测试点击动画</button>':''}<button data-delete>删除</button>`:'<p>选中/拖入标记后可命名、调整长宽和旋转。主板和研究轨已预录入现有互动点，可直接微调。</p>'}<h2>导出</h2><button data-copy>复制 JSON</button><button data-download>下载 JSON</button><textarea readonly>${JSON.stringify({version:2,boards:data},null,2)}</textarea></aside></section></main>`}
 function point(e:MouseEvent|DragEvent){const r=app.querySelector<HTMLElement>('[data-board-plane]')!.getBoundingClientRect();return{x:Math.round((e.clientX-r.left)/r.width*10000)/100,y:Math.round((e.clientY-r.top)/r.height*10000)/100}}

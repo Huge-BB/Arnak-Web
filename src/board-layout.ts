@@ -10,6 +10,17 @@ export type BoardSize = Readonly<{ width: number; height: number }>;
 
 export const MAIN_BOARD_SIZE: BoardSize = { width: 1000, height: 1030 };
 export const RESEARCH_BOARD_SIZE: BoardSize = { width: 950, height: 2705 };
+/** Physical Temple-tile supply anchors. All clients consume this one triangle
+ * instead of carrying divergent vertical fallback layouts. The collector may
+ * still override every named piece. */
+export const RESEARCH_TEMPLE_TILE_COMPONENTS = {
+  '11': { x: 226, y: 195, width: 210, height: 94 },
+  '6a': { x: 166, y: 302, width: 210, height: 94 },
+  '6b': { x: 286, y: 302, width: 210, height: 94 },
+  '2a': { x: 106, y: 409, width: 210, height: 94 },
+  '2b': { x: 226, y: 409, width: 210, height: 94 },
+  '2c': { x: 346, y: 409, width: 210, height: 94 },
+} as const;
 /** Native pixel space of the full Supply Board export. */
 export const SUPPLY_BOARD_SIZE: BoardSize = { width: 3906, height: 1507 };
 /**
