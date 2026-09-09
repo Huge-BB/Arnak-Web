@@ -34,5 +34,6 @@ test('Monkey track Artifact activation is queued only on its configured node', (
 
 test('START_GAME places the Monkey track Artifact when a card catalog is available', () => {
   const state = reduce(createGame(['p1', 'p2']), { type: 'START_GAME', seed: 'track-artifact', researchBoard: 'monkey' }, { cards });
-  assert.ok(monkeyTrackArtifact(state));
+  const artifact=monkeyTrackArtifact(state);assert.ok(artifact);
+  assert.equal([...state.market.artifacts,...state.market.artifactDeck].includes(artifact.artifactId),false);
 });

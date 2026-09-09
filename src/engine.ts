@@ -35,7 +35,7 @@ import { claimTempleResearchBonus, setupResearchBonusTiles } from './research-bo
 import { baseTempleTileSupply, buyTempleTile } from './temple-tiles.ts';
 import { activateGuardianBoon, overcomeGuardian, overcomeLizardTrackGuardian } from './guardian-actions.ts';
 import { LIZARD_TRACK_GUARDIAN_NODE, lizardTrackGuardians, placeLizardTrackGuardian } from './temples/lizard-state.ts';
-import { setupMonkeyTrackArtifact } from './temples/monkey-state.ts';
+import { monkeyTrackArtifact, setupMonkeyTrackArtifact } from './temples/monkey-state.ts';
 import { MONKEY_TRACK_ARTIFACT_NODE } from './temples/monkey-topology.ts';
 import { setupAssignedSiteIdols } from './site-idols.ts';
 import { createBaseBoardSites, resolveBaseBoardPlacementSite } from './base-board-setup.ts';
@@ -608,6 +608,14 @@ export function reduce(
           action.marketExpansions ?? ['Base Game'],
         );
         next.market = setup.market;
+        // The Monkey track Artifact is a physical card reserved from the same
+        // Artifact pool. It cannot also remain visible or hidden in market.
+        const trackArtifact=next.research.board==='monkey'?monkeyTrackArtifact(next):undefined;
+        if(trackArtifact){
+          const visibleIndex=next.market.artifacts.indexOf(trackArtifact.artifactId),deckIndex=next.market.artifactDeck.indexOf(trackArtifact.artifactId);
+          if(visibleIndex>=0){next.market.artifacts.splice(visibleIndex,1);const refill=next.market.artifactDeck.shift();if(refill)next.market.artifacts.unshift(refill);}
+          else if(deckIndex>=0)next.market.artifactDeck.splice(deckIndex,1);
+        }
         next.playerOrder.forEach((id, i) => {
           next.players[id].color = setup.playerDecks[i].color;
           next.players[id].hand = setup.playerDecks[i].hand;
