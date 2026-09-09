@@ -179,7 +179,11 @@ pending = () => {
   if (payload.type === 'ACTIVATE_ASSISTANT_EFFECT') {
     const effect = (payload.effect ?? context.assistantEffects?.[String(payload.assistantId)]?.[payload.level as 'silver' | 'gold']) as Record<string, unknown> | undefined;
     if (!effect) return basePendingPanel();
-    if ((effect.type === 'CHOOSE' || effect.type === 'PAY_RESOURCE_CHOOSE') && Array.isArray(effect.options)) return panel(effect.options.map((_, optionIndex) => pendingButton(String(optionIndex + 1), { type: 'assistant-option', optionIndex })).join(''));
+    if ((effect.type === 'CHOOSE' || effect.type === 'PAY_RESOURCE_CHOOSE') && Array.isArray(effect.options)) return panel(effect.options.map((option, optionIndex) => {
+      const value=option as Record<string,unknown>,bundle=value.type==='GAIN_RESOURCES'?value.resources:value.type==='GAIN_TRAVEL'?value.travel:undefined;
+      const label=bundle?`${value.type==='GAIN_TRAVEL'?'获得临时交通':'获得资源'} ${Object.entries(bundle as Record<string,number>).filter(([,amount])=>amount>0).map(([kind,amount])=>`${kind} ×${amount}`).join(' + ')}`:`选择效果 ${optionIndex+1}`;
+      return pendingButton(label,{type:'assistant-option',optionIndex});
+    }).join(''));
     if (effect.type === 'UPGRADE_RESOURCE') return panel((['tablet', 'arrowhead'] as const).filter((resource) => player.resources[resource] > 0).map((resource) => pendingButton(resource === 'tablet' ? '▰' : '▲', { type: 'assistant-resource', resource })).join(''));
     if (effect.type === 'DRAW_THEN_DISCARD') return panel(player.hand.map((id) => pendingButton('▣', { type: 'card', cardId: id })).join(''));
     if (effect.type === 'EXILE_OWN_CARD') return panel(`${[...player.hand, ...player.playedCards].map((id) => pendingButton('▣', { type: 'card', cardId: id })).join('')}${pendingButton('×', { type: 'skip' })}`);
@@ -1132,7 +1136,7 @@ app.addEventListener('click', (event) => {
 });
 render();
 
-type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; discardCardId?: string; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
+type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; discardCardId?: string; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
 let researchPayment: PaymentDraft | undefined;
 type ResearchCostChoice = { action:'research'|'pending-research'; destinationId:string; researchToken:'magnifying'|'journal'; costs:Record<string,unknown>[]; discount:Record<string,number>; bonusTileId?:string };
 let researchCostChoice: ResearchCostChoice | undefined;
@@ -1185,9 +1189,11 @@ render = () => {
   const player = state.players[state.currentPlayer];
   const selected = new Set(researchPayment.cardIndexes);
   const cards = player.hand.map((id,index) => `<button class="card ${selected.has(index) ? 'selected-choice' : ''} ${researchPayment.discardCardId === id ? 'discard-choice' : ''}" data-payment-card-index="${index}" title="${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
+  const temporaryPool=state.actionWindow?.playerId===state.currentPlayer?state.actionWindow.temporaryTravel:{};
+  const temporary=(researchPayment.action==='site'||researchPayment.action==='discover')?(['boot','car','boat','plane'] as const).flatMap(kind=>Array.from({length:temporaryPool[kind]??0},(_,index)=>`<button class="payment-temporary ${index<(researchPayment!.temporaryTravel?.[kind]??0)?'selected-choice':''}" data-payment-temporary="${kind}" title="临时${kind}（点击选择）">${paymentIconArtwork(kind,1)}</button>`)).join(''):'';
   const discard = Number(researchPayment.cost.discardCard ?? 0) ? `<div class="payment-discard"><span>↷</span>${player.hand.map((id) => `<button class="card ${researchPayment.discardCardId === id ? 'selected-choice' : ''}" data-payment-discard-card="${id}" title="discard ${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('')}</div>` : '';
   if (discard) app.insertAdjacentHTML('beforeend', `<section class="payment-panel payment-discard-panel">${discard}</section>`);
-  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div><div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
+  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
 };
 const renderWithPaymentTitle = render;
 render = () => {
@@ -1317,6 +1323,11 @@ app.addEventListener('click', (event) => {
     return;
   }
   if (!researchPayment) return;
+  if (button.dataset.paymentTemporary) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    const kind=button.dataset.paymentTemporary as 'boot'|'car'|'boat'|'plane',available=state.actionWindow?.playerId===state.currentPlayer?(state.actionWindow.temporaryTravel[kind]??0):0,current=researchPayment.temporaryTravel?.[kind]??0;
+    researchPayment.temporaryTravel={...(researchPayment.temporaryTravel??{}),[kind]:current>=available?0:current+1};render();return;
+  }
   if (button.dataset.paymentCardIndex !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation();
     const index = Number(button.dataset.paymentCardIndex);
@@ -1357,7 +1368,7 @@ app.addEventListener('click', (event) => {
           ? { type: 'OVERCOME_GUARDIAN', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, discardCardId: researchPayment.discardCardId }
           : researchPayment.action === 'lizard-guardian'
             ? { type: 'OVERCOME_LIZARD_TRACK_GUARDIAN', playerId: state.currentPlayer, paymentCardIds: researchPayment.cardIds, discardCardId: researchPayment.discardCardId }
-            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, discardCardId: researchPayment.discardCardId };
+            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, discardCardId: researchPayment.discardCardId };
       state = applyEngineCommand(state, { type: 'action', action }, context);
       researchPayment = undefined; message = '';
       recordReducerEvent(action, 'accepted');
@@ -1841,7 +1852,9 @@ player = (id) => {
 // readable status summary beside it.
 function playerResourceSummary(id: PlayerId) {
   const playerState = state.players[id], usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
-  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></aside>`;
+  const temporary=state.actionWindow?.playerId===id?state.actionWindow.temporaryTravel:{};
+  const temporaryIcons=(['boot','car','boat','plane'] as const).map(kind=>paymentIconArtwork(kind,temporary[kind]??0)).join('');
+  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span>${temporaryIcons?`<span class="temporary-travel-summary"><strong>临时交通</strong>${temporaryIcons}</span>`:''}</aside>`;
 }
 function playerDrawDeck(id: PlayerId) {
   const leader = Boolean(state.players[id].leader);

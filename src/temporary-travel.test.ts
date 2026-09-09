@@ -25,3 +25,11 @@ test('temporary travel is consumed according to normal substitution hierarchy',(
  payTravel(s,'p1',{boot:1},[],context);assert.equal(s.actionWindow?.temporaryTravel.car,0);
  let s2=grantTemporaryTravel(state(),'p1',{car:1});assert.throws(()=>payTravel(s2,'p1',{boat:1},[],context),/does not satisfy/);
 });
+
+test('an explicit temporary-travel selection is authoritative',()=>{
+ let s=state();s.players.p1.hand=['car'];s=grantTemporaryTravel(s,'p1',{plane:2});
+ payTravel(s,'p1',{car:1},['car'],context,'Site travel',{});
+ assert.deepEqual(s.players.p1.playedCards,['car']);
+ assert.equal(s.actionWindow?.temporaryTravel.plane,2);
+ assert.throws(()=>payTravel(s,'p1',{plane:1},[],context,'Site travel',{}),/does not satisfy/);
+});

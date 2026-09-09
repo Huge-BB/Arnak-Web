@@ -391,7 +391,7 @@ function discoverSite(
   const idols = site.level === 2 ? 2 : 1;
   if (s.discovery.idolDeck.length < idols)
     throw new Error("Not enough idols to discover site");
-  payTravel(s,a.playerId,discountedSiteTravelCost(s,a.playerId,site.travelCost??{}),a.paymentCardIds??[],c,'Site travel');
+  payTravel(s,a.playerId,discountedSiteTravelCost(s,a.playerId,site.travelCost??{}),a.paymentCardIds??[],c,'Site travel',a.temporaryTravel);
   const forced=forcedSiteAction(s,a.playerId,'discover');
   spendResource(s, a.playerId, "compass", Math.max(0,DISCOVERY_COMPASS_COST[site.level]-(s.players[a.playerId].nextDiscoveryCompassDiscount??0)-(forced?.discoveryCompassDiscount??0)));
   if (consumesWorker) s.players[a.playerId].availableWorkers -= 1;
@@ -711,7 +711,7 @@ export function reduce(
       payDiscardedHandCard(next,resolvedAction.playerId,site.discardCardCost,resolvedAction.discardCardId,'Site');
       const consumesWorker = prepareWorkerForSiteAction(next, resolvedAction);
       site = next.sites[resolvedAction.siteId];
-      payTravel(next,resolvedAction.playerId,discountedSiteTravelCost(next,resolvedAction.playerId,site.travelCost??{}),resolvedAction.paymentCardIds??[],context,'Site travel');
+      payTravel(next,resolvedAction.playerId,discountedSiteTravelCost(next,resolvedAction.playerId,site.travelCost??{}),resolvedAction.paymentCardIds??[],context,'Site travel',resolvedAction.temporaryTravel);
       if (consumesWorker) next.players[action.playerId].availableWorkers -= 1;
       site.occupiedBy = action.playerId;
       resolveSite(next, action.playerId, resolvedAction.siteId, context);

@@ -135,8 +135,8 @@ export type GameAction =
  | { type:'END_TURN'; playerId:PlayerId }
  | { type:'PASS'; playerId:PlayerId }
  | { type:'PLAY_CARD'; playerId:PlayerId; cardId:CardId; activationPaymentCardId?:CardId }
- | { type:'PLACE_WORKER'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
- | { type:'DISCOVER_SITE'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
+ | { type:'PLACE_WORKER'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; temporaryTravel?:TravelCost; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
+ | { type:'DISCOVER_SITE'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; temporaryTravel?:TravelCost; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
  | { type:'BEGIN_SITE_ACTION_WINDOW'; playerId:PlayerId; kind:'place'|'discover'; travelDiscount?:TravelCost; discoveryCompassDiscount?:number; consumesMainAction:boolean }
  | { type:'GAIN_RESOURCE'; playerId:PlayerId; resource:Resource; amount:number }
  | { type:'SPEND_RESOURCE'; playerId:PlayerId; resource:Resource; amount:number }

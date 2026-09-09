@@ -17,7 +17,7 @@ export function reduceWithActionWindow(state:GameState,action:GameAction,context
     const site=next.sites[siteId];
     if(!site)throw new Error(`Unknown site: ${siteId}`);
     const cost=site.travelCost??{},discountedCost=discountedSiteTravelCost(next,action.playerId,cost);
-    payTravel(next,action.playerId,discountedCost,action.paymentCardIds??[],context,'Site travel');
+    payTravel(next,action.playerId,discountedCost,action.paymentCardIds??[],context,'Site travel',action.temporaryTravel);
     // Core engine still owns worker/discovery resolution. Travel is already paid here.
     next.sites[siteId]={...site,travelCost:{}};
     const forwarded={...action,siteId,paymentCardIds:[]} as SiteAction;

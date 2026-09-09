@@ -5,7 +5,7 @@ import type { CardId, EngineContext, GameState, PlayerId, TravelIcon } from './t
 const ICONS:TravelIcon[]=['boot','car','boat','plane'];
 
 /** Pay a travel cost using cards plus travel icons produced earlier in the current action window. */
-export function payTravel(state:GameState,playerId:PlayerId,cost:Partial<Record<TravelIcon,number>>,cardIds:CardId[],context:EngineContext,label='Travel'){
+export function payTravel(state:GameState,playerId:PlayerId,cost:Partial<Record<TravelIcon,number>>,cardIds:CardId[],context:EngineContext,label='Travel',temporarySelection?:Partial<Record<TravelIcon,number>>){
   const player=state.players[playerId];if(!player)throw new Error(`Unknown player: ${playerId}`);
   if(!hasTravelCost(cost)){if(cardIds.length)throw new Error(`${label} does not require travel payment`);return;}
   // GameState currently stores a card's definition ID rather than a separate
@@ -14,7 +14,9 @@ export function payTravel(state:GameState,playerId:PlayerId,cost:Partial<Record<
   const required=new Map<CardId,number>();
   for(const cardId of cardIds)required.set(cardId,(required.get(cardId)??0)+1);
   for(const [cardId,count] of required)if(player.hand.filter((id)=>id===cardId).length<count)throw new Error(`${label} card is not in hand: ${cardId}`);
-  const temporary=temporaryTravelFor(state,playerId),temporaryUsed=planTravelPayment(cost,cardIds,context,temporary,{allIconsArePlanes:player.allTravelIconsArePlanesThisRound===true});
+  const availableTemporary=temporaryTravelFor(state,playerId),temporary=temporarySelection===undefined?availableTemporary:temporarySelection;
+  for(const icon of ICONS){const selected=temporary[icon]??0;if(!Number.isInteger(selected)||selected<0||selected>(availableTemporary[icon]??0))throw new Error(`Invalid selected temporary ${icon} travel`);}
+  const temporaryUsed=planTravelPayment(cost,cardIds,context,temporary,{allIconsArePlanes:player.allTravelIconsArePlanesThisRound===true});
   if(!temporaryUsed)throw new Error(label==='Site travel'?'Travel payment does not satisfy site cost':`${label} payment does not satisfy cost`);
   // A submitted card must contribute to satisfying the route. This prevents
   // silently accepting an extra card after the printed cost is already paid.
