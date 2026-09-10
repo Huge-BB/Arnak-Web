@@ -1629,7 +1629,7 @@ render = () => {
   market.classList.add('market-above-board', `market-${mainBoard}`);
   market.style.setProperty('--artifact-count', String(Math.max(1, state.market.artifacts.length)));
   market.style.setProperty('--item-count', String(Math.max(1, state.market.items.length)));
-  market.innerHTML = `<div class="market-group market-artifacts">${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--moon-step:${Math.max(0, Math.min(4, state.round - 1))}" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"><i class="moon-staff-marker"></i></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}</div>`;
+  market.innerHTML = `<div class="market-group market-artifacts">${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--staff-x:${state.round / 6 * 100}%" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}</div>`;
   const combined = document.createElement('section');
   combined.className = `market-combined-board market-combined-${mainBoard}`;
   combined.innerHTML = marketPileBoard();
