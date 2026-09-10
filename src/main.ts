@@ -1610,14 +1610,15 @@ function marketPileBoard() {
   const back = publicAsset('/assets/card-back.jpg');
   const exiledArtifacts = state.market.exiled.filter((id) => context.cards[id]?.type === 'Artifact');
   const exiledItems = state.market.exiled.filter((id) => context.cards[id]?.type === 'Item');
+  const fear = Object.values(context.cards).find((entry) => entry.type === 'Fear')?.id;
   const piles = [
-    ['artifact-deck', '神器市场供应堆', state.market.artifactDeck.length, ''],
-    ['exiled-artifacts', '已移除神器', exiledArtifacts.length, ' horizontal'],
-    ['fear', '恐惧牌', Object.values(context.cards).filter((entry) => entry.type === 'Fear').length, ''],
-    ['exiled-items', '已移除物品', exiledItems.length, ' horizontal'],
-    ['item-deck', '物品市场供应堆', state.market.itemDeck.length, ''],
+    ['artifact-deck', '神器市场供应堆', state.market.artifactDeck.length, '', undefined],
+    ['exiled-artifacts', '已移除神器', exiledArtifacts.length, ' horizontal', exiledArtifacts.at(-1)],
+    ['fear', '恐惧牌', '∞', '', fear],
+    ['exiled-items', '已移除物品', exiledItems.length, ' horizontal', exiledItems.at(-1)],
+    ['item-deck', '物品市场供应堆', state.market.itemDeck.length, '', undefined],
   ] as const;
-  return `<aside class="market-pile-board" aria-label="市场牌堆"><img src="${publicAsset('/assets/boards/card-board.png')}" alt="市场牌堆板">${piles.map(([id,label,count,variant],index) => `<button class="market-pile market-pile-${index}${variant}" data-market-pile="${id}" title="${label}：${count} 张"><img src="${back}" alt="${label}"><b>${count}</b></button>`).join('')}</aside>`;
+  return `<aside class="market-pile-board" aria-label="市场牌堆">${piles.map(([id,label,count,variant,faceId],index) => `<button class="market-pile market-pile-${index}${variant}" data-market-pile="${id}" title="${label}${id==='fear'?'：不限量':`：${count} 张`}">${faceId ? `<i style="${sprite(assets[`card:${faceId}:face`])}"></i>` : Number(count) > 0 ? `<img src="${back}" alt="${label}">` : ''}<b>${count}</b></button>`).join('')}</aside>`;
 }
 render = () => {
   finalRenderWithMoonStaffMarket();
@@ -1629,8 +1630,11 @@ render = () => {
   market.style.setProperty('--artifact-count', String(Math.max(1, state.market.artifacts.length)));
   market.style.setProperty('--item-count', String(Math.max(1, state.market.items.length)));
   market.innerHTML = `<div class="market-group market-artifacts">${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--moon-step:${Math.max(0, Math.min(4, state.round - 1))}" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"><i class="moon-staff-marker"></i></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}</div>`;
-  market.insertAdjacentHTML('beforebegin', marketPileBoard());
-  boardElement.before(market);
+  const combined = document.createElement('section');
+  combined.className = `market-combined-board market-combined-${mainBoard}`;
+  combined.innerHTML = marketPileBoard();
+  boardElement.before(combined);
+  combined.append(market);
 };
 render();
 
@@ -1647,7 +1651,7 @@ function marketPileViewer() {
   if (!marketPileViewerId) return '';
   const labels: Record<MarketPileId,string> = { 'artifact-deck':'神器市场供应堆', 'exiled-artifacts':'已移除神器', fear:'恐惧牌', 'exiled-items':'已移除物品', 'item-deck':'物品市场供应堆' };
   const pile = marketPileCards(marketPileViewerId);
-  return `<section class="deck-viewer" role="dialog" aria-modal="true" aria-label="${labels[marketPileViewerId]}"><div class="deck-viewer-panel"><div class="deck-viewer-title">${labels[marketPileViewerId]} <span>${pile.length} 张</span><button data-market-pile-close title="关闭">×</button></div><div class="deck-viewer-cards">${pile.map((cardId) => `<i class="card" title="${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></i>`).join('') || '<span>牌堆为空</span>'}</div></div></section>`;
+  return `<section class="deck-viewer" role="dialog" aria-modal="true" aria-label="${labels[marketPileViewerId]}"><div class="deck-viewer-panel"><div class="deck-viewer-title">${labels[marketPileViewerId]} <span>${marketPileViewerId==='fear'?'不限量':`${pile.length} 张`}</span><button data-market-pile-close title="关闭">×</button></div><div class="deck-viewer-cards">${pile.map((cardId) => `<i class="card" title="${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></i>`).join('') || '<span>牌堆为空</span>'}</div></div></section>`;
 }
 const renderWithMarketPileViewer = render;
 render = () => { renderWithMarketPileViewer(); app.insertAdjacentHTML('beforeend', marketPileViewer()); };
