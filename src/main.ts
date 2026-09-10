@@ -1606,18 +1606,57 @@ app.addEventListener('change', (event) => {
 });
 
 const finalRenderWithMoonStaffMarket = render;
+function marketPileBoard() {
+  const back = publicAsset('/assets/card-back.jpg');
+  const exiledArtifacts = state.market.exiled.filter((id) => context.cards[id]?.type === 'Artifact');
+  const exiledItems = state.market.exiled.filter((id) => context.cards[id]?.type === 'Item');
+  const piles = [
+    ['artifact-deck', '神器市场供应堆', state.market.artifactDeck.length, ''],
+    ['exiled-artifacts', '已移除神器', exiledArtifacts.length, ' horizontal'],
+    ['fear', '恐惧牌', Object.values(context.cards).filter((entry) => entry.type === 'Fear').length, ''],
+    ['exiled-items', '已移除物品', exiledItems.length, ' horizontal'],
+    ['item-deck', '物品市场供应堆', state.market.itemDeck.length, ''],
+  ] as const;
+  return `<aside class="market-pile-board" aria-label="市场牌堆"><img src="${publicAsset('/assets/boards/card-board.png')}" alt="市场牌堆板">${piles.map(([id,label,count,variant],index) => `<button class="market-pile market-pile-${index}${variant}" data-market-pile="${id}" title="${label}：${count} 张"><img src="${back}" alt="${label}"><b>${count}</b></button>`).join('')}</aside>`;
+}
 render = () => {
   finalRenderWithMoonStaffMarket();
   if (screen !== 'game') return;
   const market = app.querySelector<HTMLElement>('.play-surface > .market');
   const boardElement = app.querySelector<HTMLElement>('.play-surface > .map-board');
   if (!market || !boardElement) return;
-  market.classList.add('market-above-board');
-  const deckBack = publicAsset('/assets/card-back.jpg');
-  const roundMarkers = [1, 2, 3, 4, 5].map((round) => `<i class="market-round ${state.round === round ? 'current' : ''}">${['I','II','III','IV','V'][round-1]}</i>`).join('');
-  market.innerHTML = `<div class="market-summary"><span>牌库：${state.market.artifactDeck.length + state.market.itemDeck.length}</span><span>移除：${state.market.exiled.length}</span></div><div class="market-rounds">${roundMarkers}</div><div class="market-group market-artifacts"><span class="market-deck artifact-deck" title="神器牌库：${state.market.artifactDeck.length} 张"><img src="${deckBack}" alt="神器牌库"><b>${state.market.artifactDeck.length}</b></span>${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--moon-step:${Math.max(0, Math.min(4, state.round - 1))}" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"><i class="moon-staff-marker"></i></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}<span class="market-deck item-deck" title="物品牌库：${state.market.itemDeck.length} 张"><img src="${deckBack}" alt="物品牌库"><b>${state.market.itemDeck.length}</b></span></div>`;
+  market.classList.add('market-above-board', `market-${mainBoard}`);
+  market.style.setProperty('--artifact-count', String(Math.max(1, state.market.artifacts.length)));
+  market.style.setProperty('--item-count', String(Math.max(1, state.market.items.length)));
+  market.innerHTML = `<div class="market-group market-artifacts">${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--moon-step:${Math.max(0, Math.min(4, state.round - 1))}" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"><i class="moon-staff-marker"></i></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}</div>`;
+  market.insertAdjacentHTML('beforebegin', marketPileBoard());
   boardElement.before(market);
 };
+render();
+
+type MarketPileId = 'artifact-deck'|'exiled-artifacts'|'fear'|'exiled-items'|'item-deck';
+let marketPileViewerId: MarketPileId | undefined;
+function marketPileCards(id: MarketPileId): string[] {
+  if (id === 'artifact-deck') return state.market.artifactDeck;
+  if (id === 'item-deck') return state.market.itemDeck;
+  if (id === 'exiled-artifacts') return state.market.exiled.filter((cardId) => context.cards[cardId]?.type === 'Artifact');
+  if (id === 'exiled-items') return state.market.exiled.filter((cardId) => context.cards[cardId]?.type === 'Item');
+  return Object.values(context.cards).filter((entry) => entry.type === 'Fear').map((entry) => entry.id);
+}
+function marketPileViewer() {
+  if (!marketPileViewerId) return '';
+  const labels: Record<MarketPileId,string> = { 'artifact-deck':'神器市场供应堆', 'exiled-artifacts':'已移除神器', fear:'恐惧牌', 'exiled-items':'已移除物品', 'item-deck':'物品市场供应堆' };
+  const pile = marketPileCards(marketPileViewerId);
+  return `<section class="deck-viewer" role="dialog" aria-modal="true" aria-label="${labels[marketPileViewerId]}"><div class="deck-viewer-panel"><div class="deck-viewer-title">${labels[marketPileViewerId]} <span>${pile.length} 张</span><button data-market-pile-close title="关闭">×</button></div><div class="deck-viewer-cards">${pile.map((cardId) => `<i class="card" title="${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></i>`).join('') || '<span>牌堆为空</span>'}</div></div></section>`;
+}
+const renderWithMarketPileViewer = render;
+render = () => { renderWithMarketPileViewer(); app.insertAdjacentHTML('beforeend', marketPileViewer()); };
+app.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button) return;
+  if (button.dataset.marketPile) { marketPileViewerId = button.dataset.marketPile as MarketPileId; render(); }
+  if (button.dataset.marketPileClose !== undefined) { marketPileViewerId = undefined; render(); }
+});
 render();
 
 // Keep the LAN screen guard outermost: the file intentionally layers several
