@@ -101,11 +101,9 @@ function sprite(a?:Asset){if(!a)return'';if(a.url)return`background-image:url('$
 function assistantAsset(id:string,level:'silver'|'gold'):Asset|undefined{const local=assets[`assistant:${id}:${level}`];if(local)return local;const image=assistants[id]?.image;if(!image)return undefined;return{sheetUrl:level==='silver'?image.silverUrl:image.goldUrl,sheetWidth:image.sheetWidth,sheetHeight:image.sheetHeight,cardIndex:image.cardIndex};}
 function researchBonusFace(tileId: string) {
   const kind = tileId.replace(/:\d+$/, '').replace('base:', '');
-  const source: Record<string, string> = { compass:'research-bonus-1.png', coin:'research-bonus-2.png', exile:'research-bonus-3.png', tablet:'research-bonus-4.png', draw:'research-bonus-coin.png' };
+  const source: Record<string, string> = { compass:'research-bonus-1.png', coin:'research-bonus-2.png', exile:'research-bonus-3.png', tablet:'research-bonus-4.png', draw:'research-bonus-coin.png', upgrade:'research-bonus-upgrade.png' };
   const label: Record<string, string> = { compass:'gain 1 compass', coin:'gain 1 coin', tablet:'gain 1 tablet', draw:'draw 1 card', exile:'exile 1 card', upgrade:'upgrade 1 resource' };
-  const html = kind === 'upgrade'
-    ? `<span class="research-upgrade-face" aria-hidden="true"><img src="${publicAsset('/assets/resource-tablet.png')}" alt=""><b>→</b><img src="${publicAsset('/assets/resource-arrowhead.png')}" alt=""><b>→</b><img src="${publicAsset('/assets/resource-jewel.png')}" alt=""></span>`
-    : `<img src="${publicAsset(`/assets/${source[kind] ?? 'research-bonus-1.png'}`)}" alt="${label[kind] ?? kind}">`;
+  const html = `<img src="${publicAsset(`/assets/${source[kind] ?? 'research-bonus-1.png'}`)}" alt="${label[kind] ?? kind}">`;
   return { kind, label: label[kind] ?? kind, html };
 }
 function card(id:string,action:'play'|'buy'){const d=context.cards[id],fear=d?.type==='Fear';return`<button class="card ${fear?'fear':''}" ${fear?'disabled':''} data-card-id="${id}" data-card-action="${action}" title="${cardHoverText(id,d?.name??id)}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`}
