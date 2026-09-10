@@ -1887,7 +1887,7 @@ pending = () => {
   if (!isExile) return pendingFinalWithCardArtworkExile();
   const player = state.players[queued.playerId];
   const group = (label: string, zone: 'hand'|'played', cardIds: string[]) => `<section class="exile-zone-group"><strong>${label}</strong><div>${cardIds.map((cardId) => `<button class="card exile-card-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({ type: 'card', cardId, zone }))}" title="从${label}放逐：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('') || '<span class="pending-unsupported">无</span>'}</div></section>`;
-  return `<section class="pending-panel exile-card-panel"><span>选择要放逐的牌</span><div class="exile-zone-groups">${group('手牌','hand',player.hand)}${group('打出 / 弃置区','played',player.playedCards)}</div></section>`;
+  return `<section class="pending-panel exile-card-panel"><span>选择要放逐的牌</span><div class="exile-zone-groups">${group('手牌','hand',player.hand)}${group('已打出','played',player.playedCards)}</div></section>`;
 };
 render();
 
@@ -1908,8 +1908,8 @@ player = (id) => {
 // the personal board rather than existing only in reducer state.
 const playerWithPlayedCards = player;
 player = (id) => {
-  const played = state.players[id].playedCards.map((cardId) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])}" title="打出/弃置：${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
-  return `${playerWithPlayedCards(id)}<aside class="player-played-zone" aria-label="${id} 打出和弃置区"><strong>打出 / 弃置区</strong><div class="player-played-cards">${played || '<span>暂无卡牌</span>'}</div></aside>`;
+  const played = state.players[id].playedCards.map((cardId) => `<i class="player-played-card" style="${sprite(assets[`card:${cardId}:face`])}" title="已打出：${context.cards[cardId]?.name ?? cardId}"></i>`).join('');
+  return `${playerWithPlayedCards(id)}<aside class="player-played-zone" aria-label="${id} 已打出"><strong>已打出</strong><div class="player-played-cards">${played || '<span>暂无卡牌</span>'}</div></aside>`;
 };
 
 // Keep numeric resources out of the illustrated personal board.  The board
@@ -1917,16 +1917,17 @@ player = (id) => {
 // readable status summary beside it.
 function playerResourceSummary(id: PlayerId) {
   const playerState = state.players[id];
-  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}</aside>`;
+  const usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
+  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></aside>`;
 }
 function playerComponentTray(id: PlayerId) {
   const playerState = state.players[id];
-  const usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
   const temporary = state.actionWindow?.playerId === id ? state.actionWindow.temporaryTravel : {};
   const temporaryIcons = (['boot','car','boat','plane'] as const).map((kind) => paymentIconArtwork(kind, temporary[kind] ?? 0)).join('');
-  const availableGuardians = playerState.defeatedGuardians.filter((guardianId) => !playerState.usedGuardianBoons.includes(guardianId)).map((guardianId) => `<button class="player-guardian-card" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${id === state.currentPlayer ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="使用守卫能力"></button>`).join('');
-  const usedGuardians = playerState.defeatedGuardians.filter((guardianId) => playerState.usedGuardianBoons.includes(guardianId)).map(() => `<button class="player-guardian-card used" style="background-image:url('${publicAsset('/assets/guardian-back.jpg')}')" disabled title="守卫能力已使用，可被效果重置"></button>`).join('');
-  return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-usable-idols"><strong>可用神像</strong><span><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></section><section class="player-component-group player-available-guardians"><strong>可用守卫</strong><div>${availableGuardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-used-guardians"><strong>已用守卫</strong><div>${usedGuardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>本回合临时交通</strong><div>${temporaryIcons || '<small>暂无</small>'}</div></section></aside>`;
+  const guardians = playerState.defeatedGuardians.map((guardianId) => playerState.usedGuardianBoons.includes(guardianId)
+    ? `<button class="player-guardian-card used" style="background-image:url('${publicAsset('/assets/guardian-back.jpg')}')" disabled title="守卫能力已使用，可被效果重置"></button>`
+    : `<button class="player-guardian-card" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${id === state.currentPlayer ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="使用守卫能力"></button>`).join('');
+  return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-guardians"><strong>守卫</strong><div>${guardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>交通工具</strong><div>${temporaryIcons || '<small>暂无</small>'}</div></section></aside>`;
 }
 function playerDrawDeck(id: PlayerId) {
   const leader = Boolean(state.players[id].leader);
