@@ -1900,10 +1900,20 @@ player = (id) => {
 // remains a physical state surface, while this compact strip is an always
 // readable status summary beside it.
 function playerResourceSummary(id: PlayerId) {
-  const playerState = state.players[id], usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
-  const temporary=state.actionWindow?.playerId===id?state.actionWindow.temporaryTravel:{};
-  const temporaryIcons=(['boot','car','boat','plane'] as const).map(kind=>paymentIconArtwork(kind,temporary[kind]??0)).join('');
-  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span>${temporaryIcons?`<span class="temporary-travel-summary"><strong>临时交通</strong>${temporaryIcons}</span>`:''}</aside>`;
+  const playerState = state.players[id];
+  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}</aside>`;
+}
+function playerComponentTray(id: PlayerId) {
+  const playerState = state.players[id];
+  const usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
+  const temporary = state.actionWindow?.playerId === id ? state.actionWindow.temporaryTravel : {};
+  const temporaryIcons = (['boot','car','boat','plane'] as const).map((kind) => paymentIconArtwork(kind, temporary[kind] ?? 0)).join('');
+  const guardianCards = playerState.defeatedGuardians.map((guardianId) => {
+    const used = playerState.usedGuardianBoons.includes(guardianId);
+    const enabled = id === state.currentPlayer && !used;
+    return `<button class="player-guardian-card ${used ? 'used' : ''}" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${enabled ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="${used ? '本轮守卫能力已使用' : '使用守卫能力'}"></button>`;
+  }).join('');
+  return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-usable-idols"><strong>可用神像</strong><span><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></section><section class="player-component-group player-defeated-guardians"><strong>已击败守卫</strong><div>${guardianCards || '<small>暂无</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>本回合临时交通</strong><div>${temporaryIcons || '<small>暂无</small>'}</div></section></aside>`;
 }
 function playerDrawDeck(id: PlayerId) {
   const leader = Boolean(state.players[id].leader);
@@ -1915,8 +1925,8 @@ function playerDrawDeck(id: PlayerId) {
 }
 const playerWithExternalResourceSummary = player;
 player = (id: PlayerId) => {
-  const board = playerWithExternalResourceSummary(id).replace(/<div class="player-resources">[\s\S]*?<\/div>/, '').replace('</section>', `${playerDrawDeck(id)}</section>`);
-  return `<div class="player-zone">${board}${playerResourceSummary(id)}</div>`;
+  const board = playerWithExternalResourceSummary(id).replace(/<div class="player-resources">[\s\S]*?<\/div>/, '').replace(/<div class="guardian-boons">[\s\S]*?<\/div>/, '').replace('</section>', `${playerDrawDeck(id)}</section>`);
+  return `<div class="player-zone">${board}${playerResourceSummary(id)}${playerComponentTray(id)}</div>`;
 };
 
 // Assistant acquisition uses the actual visible component faces. Snake rescue
