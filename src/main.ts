@@ -23,6 +23,13 @@ function calibratedPlayerPoint(id: string, fallback: { x: number; y: number }) {
   const mark = calibrationMark('player-base', id);
   return mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328 } : fallback;
 }
+function calibratedPlayerComponent(id: string, fallback: { x: number; y: number; width: number; height: number }) {
+  const mark = calibrationMark('player-base', id);
+  return mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328, width: mark.width, height: mark.height } : fallback;
+}
+function playerComponentStyle(component: { x: number; y: number; width: number; height: number }) {
+  return `${playerPointStyle(component)};--player-piece-w:${component.width / 1270 * 100}%;--player-piece-h:${component.height / 328 * 100}%`;
+}
 function calibratedLeaderPoint(leader: LeaderId, id: string, fallback: { x: number; y: number }) {
   const mark = calibrationMark(`leader-${leader}`, id);
   return mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328 } : fallback;
@@ -1046,8 +1053,9 @@ player = (id: PlayerId) => {
   const nextSlot = [0, 1, 2, 3].find((slotIndex) => !playerState.idols.some((idol) => idol.inSlot && idol.slotIndex === slotIndex));
   const slots = [0, 1, 2, 3].map((slotIndex) => {
     const idol = playerState.idols.find((candidate) => candidate.inSlot && candidate.slotIndex === slotIndex);
-    const point = calibratedPlayerPoint(`player-base-idol-slot-${slotIndex}`, BASE_IDOL_SLOTS[slotIndex]!);
-    return `<span class="base-idol-slot ${idol ? 'filled' : ''}" style="${playerPointStyle(point)}" title="${idol ? 'used idol' : 'empty idol slot'}">${idol ? `<i style="background-image:url('${publicAsset('/assets/idol-back.jpg')}')"></i>` : ''}</span>`;
+    const fallback = BASE_IDOL_SLOTS[slotIndex]!;
+    const component = calibratedPlayerComponent(`player-base-idol-slot-${slotIndex}`, { ...fallback, width:34, height:42 });
+    return `<span class="base-idol-slot ${idol ? 'filled' : ''}" style="${playerComponentStyle(component)}" title="${idol ? 'used idol' : 'empty idol slot'}">${idol ? `<i style="background-image:url('${publicAsset('/assets/idol-back.jpg')}')"></i>` : ''}</span>`;
   }).join('');
   const canUse = id === state.currentPlayer && playerState.idols.some((candidate) => !candidate.inSlot) && nextSlot !== undefined;
   const effects = BASE_IDOL_EFFECTS.map(({ effect, point }) => `<button class="base-idol-effect" style="${playerPointStyle(calibratedPlayerPoint(`player-base-idol-effect-${effect}`, point))}" ${canUse ? '' : 'disabled'} data-base-idol-direct="${effect}" title="use an idol: ${effect}"></button>`).join('');
@@ -1734,8 +1742,8 @@ function playerIdolReserve(id: PlayerId) {
   const spare = state.players[id].idols.filter((idol) => !idol.inSlot);
   if (!spare.length) return '';
   return `<div class="player-idol-reserve" title="unplaced idols">${spare.map((_, index) => {
-    const point = calibratedPlayerPoint(`player-base-idol-reserve-${index}`, { x: 640 + index * 40, y: 247 });
-    return `<i style="${playerPointStyle(point)}"></i>`;
+    const component = calibratedPlayerComponent(`player-base-idol-reserve-${index}`, { x:640+index*40, y:247, width:34, height:42 });
+    return `<i style="${playerComponentStyle(component)}"></i>`;
   }).join('')}</div>`;
 }
 function leaderComponents(id: PlayerId) {
@@ -1833,8 +1841,8 @@ const playerWithAssistantArtwork = player;
 player = (id) => {
   const p = state.players[id];
   const assistants = p.assistants.map((assistant, index) => {
-    const point = calibratedPlayerPoint(`player-base-assistant-${index}`, { x: 648 + index * 62, y: 285 });
-    return `<button class="assistant player-board-assistant ${assistant.exhausted ? 'exhausted' : ''} ${assistant.level}" style="${playerPointStyle(point)}" ${id !== state.currentPlayer || assistant.exhausted ? 'disabled' : ''} data-assistant="${assistant.id}" title="Activate ${context.assistants[assistant.id]?.name ?? assistant.id}"><i style="${sprite(assistantAsset(assistant.id,assistant.level))}"></i></button>`;
+    const component = calibratedPlayerComponent(`player-base-assistant-${index}`, { x:648+index*62, y:285, width:52, height:52 });
+    return `<button class="assistant player-board-assistant ${assistant.exhausted ? 'exhausted' : ''} ${assistant.level}" style="${playerComponentStyle(component)}" ${id !== state.currentPlayer || assistant.exhausted ? 'disabled' : ''} data-assistant="${assistant.id}" title="Activate ${context.assistants[assistant.id]?.name ?? assistant.id}"><i style="${sprite(assistantAsset(assistant.id,assistant.level))}"></i></button>`;
   }).join('');
   return playerWithAssistantArtwork(id).replace(/<div class="assistants">[\s\S]*?<\/div>/, `<div class="assistants">${assistants}</div>`);
 };
@@ -1861,8 +1869,9 @@ function playerDrawDeck(id: PlayerId) {
   const leader = Boolean(state.players[id].leader);
   const fallback = leader ? { x: 110, y: 140 } : { x: 610, y: 160 };
   const mark = leader ? undefined : calibrationMark('player-base', 'player-base-draw-deck');
-  const point = mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328 } : fallback;
-  return `<button class="player-draw-deck ${leader ? 'leader-draw-deck' : ''}" style="${playerPointStyle(point, leader)}" data-view-deck="${id}" title="查看牌库（${state.players[id].deck.length} 张，展示顺序随机）"><img src="${publicAsset('/assets/card-back.jpg')}" alt="查看牌库"><b>${state.players[id].deck.length}</b></button>`;
+  const component = mark ? { x:mark.x/100*1270, y:mark.y/100*328, width:mark.width, height:mark.height } : { ...fallback,width:150,height:250 };
+  const style = leader ? playerPointStyle(component, true) : playerComponentStyle(component);
+  return `<button class="player-draw-deck ${leader ? 'leader-draw-deck' : ''}" style="${style}" data-view-deck="${id}" title="查看牌库（${state.players[id].deck.length} 张，展示顺序随机）"><img src="${publicAsset('/assets/card-back.jpg')}" alt="查看牌库"><b>${state.players[id].deck.length}</b></button>`;
 }
 const playerWithExternalResourceSummary = player;
 player = (id: PlayerId) => {
