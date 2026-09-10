@@ -1629,7 +1629,9 @@ render = () => {
   market.classList.add('market-above-board', `market-${mainBoard}`);
   market.style.setProperty('--artifact-count', String(Math.max(1, state.market.artifacts.length)));
   market.style.setProperty('--item-count', String(Math.max(1, state.market.items.length)));
-  const staffPositions = [14, 32, 50, 68, 86];
+  // The staff sits exactly halfway between adjacent market-card centers.
+  // These anchors follow the six globally spaced card slots in CSS.
+  const staffPositions = [15.92, 32.96, 50, 67.04, 84.08];
   market.innerHTML = `<div class="market-group market-artifacts">${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--staff-x:${staffPositions[state.round - 1]}%" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}</div>`;
   const combined = document.createElement('section');
   combined.className = `market-combined-board market-combined-${mainBoard}`;
