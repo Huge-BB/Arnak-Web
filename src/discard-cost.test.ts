@@ -16,6 +16,15 @@ test('a printed site discard cost consumes one hand card into this round\'s used
   assert.throws(() => reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp' }), /requires one discarded hand card/);
 });
 
+test('Fear may be discarded from hand to pay a printed discard cost', () => {
+  const state = createGame(['p1']);
+  state.phase = 'playing'; state.currentPlayer = 'p1'; state.players.p1.hand = ['fear'];
+  state.sites.camp = { id: 'camp', level: 1, isTentSite: true, idolSlots: 0, discardCardCost: 1 };
+  const next = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp', discardCardId: 'fear' });
+  assert.deepEqual(next.players.p1.hand, []);
+  assert.deepEqual(next.players.p1.playedCards, ['fear']);
+});
+
 test('research discard costs use the same hand-to-used-area payment', () => {
   const track: ResearchTrackDefinition = {
     id: 'bird', name: 'Bird', rows: [{ magnifyingPoints: 1, journalPoints: 0, grantsAssistant: false, nodes: [{ id: 'bird:r0:p0', rowIndex: 0, pathIndex: 0, researchLevel: 0 }] }],

@@ -1145,7 +1145,7 @@ app.addEventListener('click', (event) => {
 });
 render();
 
-type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; discardCardId?: string; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
+type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; hiredPlanes?:number; discardCardId?: string; discardCardIndex?:number; guardianChoiceIndex?:0|1; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
 let researchPayment: PaymentDraft | undefined;
 type ResearchCostChoice = { action:'research'|'pending-research'; destinationId:string; researchToken:'magnifying'|'journal'; costs:Record<string,unknown>[]; discount:Record<string,number>; bonusTileId?:string };
 let researchCostChoice: ResearchCostChoice | undefined;
@@ -1197,12 +1197,17 @@ render = () => {
   if (!researchPayment) return;
   const player = state.players[state.currentPlayer];
   const selected = new Set(researchPayment.cardIndexes);
-  const cards = player.hand.map((id,index) => `<button class="card ${selected.has(index) ? 'selected-choice' : ''} ${researchPayment.discardCardId === id ? 'discard-choice' : ''}" data-payment-card-index="${index}" title="${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
+  const cards = player.hand.map((id,index) => `<button class="card ${selected.has(index) ? 'selected-choice' : ''} ${researchPayment.discardCardIndex === index ? 'discard-choice' : ''}" data-payment-card-index="${index}" title="${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
   const temporaryPool=state.actionWindow?.playerId===state.currentPlayer?state.actionWindow.temporaryTravel:{};
   const temporary=(researchPayment.action==='site'||researchPayment.action==='discover')?(['boot','car','boat','plane'] as const).flatMap(kind=>Array.from({length:temporaryPool[kind]??0},(_,index)=>`<button class="payment-temporary ${index<(researchPayment!.temporaryTravel?.[kind]??0)?'selected-choice':''}" data-payment-temporary="${kind}" title="临时${kind}（点击选择）">${paymentIconArtwork(kind,1)}</button>`)).join(''):'';
-  const discard = Number(researchPayment.cost.discardCard ?? 0) ? `<div class="payment-discard"><span>↷</span>${player.hand.map((id) => `<button class="card ${researchPayment.discardCardId === id ? 'selected-choice' : ''}" data-payment-discard-card="${id}" title="discard ${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('')}</div>` : '';
+  const discard = Number(researchPayment.cost.discardCard ?? 0) ? `<div class="payment-discard"><span>弃置手牌</span>${player.hand.map((id,index) => `<button class="card ${researchPayment.discardCardIndex === index ? 'selected-choice' : ''}" data-payment-discard-index="${index}" title="弃置 ${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('')}</div>` : '';
+  const tracking = researchPayment.action === 'discover' && player.leader?.id === 'falconer' && player.leader.data.trackingGuardianChoiceThisTurn === true
+    ? `<div class="tracking-choice"><strong>Tracking：选择本次探索出现的守卫</strong><div>${state.discovery.guardianDeck.slice(0,2).map((id,index)=>`<button class="guardian-choice ${researchPayment!.guardianChoiceIndex===index?'selected-choice':''}" data-tracking-guardian="${index}" title="${context.guardians?.[id]?.name??id}" style="${sprite(assets[`guardian:${id}:face`])}"></button>`).join('')}</div></div>` : '';
+  const hasTravel = researchPayment.cost.travel && typeof researchPayment.cost.travel === 'object';
+  const hiredPlanes = researchPayment.hiredPlanes ?? 0;
+  const hirePlane = hasTravel ? `<button class="hire-plane ${hiredPlanes ? 'selected-choice' : ''}" data-hire-plane title="花费2金币租用1架飞机">${paymentIconArtwork('coin',2)}<span>→</span>${paymentIconArtwork('plane',1)}${hiredPlanes ? `<b>×${hiredPlanes}</b>` : ''}</button>` : '';
   if (discard) app.insertAdjacentHTML('beforeend', `<section class="payment-panel payment-discard-panel">${discard}</section>`);
-  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
+  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${tracking}${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
 };
 const renderWithPaymentTitle = render;
 render = () => {
@@ -1345,17 +1350,28 @@ app.addEventListener('click', (event) => {
     researchPayment.cardIds = paymentCardIds(researchPayment);
     render();
     const travel = researchPayment.cost.travel;
-    if (travel && typeof travel === 'object' && canPayTravel(travel as Record<'boot'|'car'|'boat'|'plane',number>, researchPayment.cardIds, context)) queueMicrotask(() => app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
+    if (travel && typeof travel === 'object' && researchPayment.guardianChoiceIndex === undefined && state.players[state.currentPlayer].leader?.data.trackingGuardianChoiceThisTurn !== true && canPayTravel(travel as Record<'boot'|'car'|'boat'|'plane',number>, researchPayment.cardIds, context)) queueMicrotask(() => app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
     return;
   }
-  if (button.dataset.paymentDiscardCard) {
+  if (button.dataset.paymentDiscardIndex !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation();
-    const id = button.dataset.paymentDiscardCard;
-    researchPayment.discardCardId = researchPayment.discardCardId === id ? undefined : id;
-    researchPayment.cardIndexes = researchPayment.cardIndexes.filter((index) => state.players[state.currentPlayer].hand[index] !== id);
+    const index = Number(button.dataset.paymentDiscardIndex), id = state.players[state.currentPlayer].hand[index];
+    const deselect = researchPayment.discardCardIndex === index;
+    researchPayment.discardCardIndex = deselect ? undefined : index;
+    researchPayment.discardCardId = deselect ? undefined : id;
+    researchPayment.cardIndexes = researchPayment.cardIndexes.filter((candidate) => candidate !== index);
     researchPayment.cardIds = paymentCardIds(researchPayment);
     render();
     return;
+  }
+  if (button.dataset.trackingGuardian !== undefined) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    researchPayment.guardianChoiceIndex = Number(button.dataset.trackingGuardian) as 0|1; render(); return;
+  }
+  if (button.dataset.hirePlane !== undefined) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    const maximum=Math.floor(Math.max(0,state.players[state.currentPlayer].resources.coin-Number(researchPayment.cost.coin??0))/2), current=researchPayment.hiredPlanes??0;
+    researchPayment.hiredPlanes=current>=maximum?0:current+1; render(); return;
   }
   if (button.dataset.paymentCancel !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation(); researchPayment = undefined; render(); return;
@@ -1372,12 +1388,12 @@ app.addEventListener('click', (event) => {
       const draft = researchPayment;
       const before = state;
       const action: GameAction = draft.action === 'research'
-        ? { type: 'ADVANCE_RESEARCH', playerId: state.currentPlayer, track: draft.researchToken ?? researchToken, toNodeId: draft.destinationId, paymentCardIds: draft.cardIds, discardCardId: draft.discardCardId, bonusTileId:draft.bonusTileId, costAlternativeIndex:draft.costAlternativeIndex }
+        ? { type: 'ADVANCE_RESEARCH', playerId: state.currentPlayer, track: draft.researchToken ?? researchToken, toNodeId: draft.destinationId, paymentCardIds: draft.cardIds, hiredPlanes:draft.hiredPlanes, discardCardId: draft.discardCardId, bonusTileId:draft.bonusTileId, costAlternativeIndex:draft.costAlternativeIndex }
         : researchPayment.action === 'guardian'
-          ? { type: 'OVERCOME_GUARDIAN', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, discardCardId: researchPayment.discardCardId }
+          ? { type: 'OVERCOME_GUARDIAN', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId }
           : researchPayment.action === 'lizard-guardian'
-            ? { type: 'OVERCOME_LIZARD_TRACK_GUARDIAN', playerId: state.currentPlayer, paymentCardIds: researchPayment.cardIds, discardCardId: researchPayment.discardCardId }
-            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, discardCardId: researchPayment.discardCardId };
+            ? { type: 'OVERCOME_LIZARD_TRACK_GUARDIAN', playerId: state.currentPlayer, paymentCardIds: researchPayment.cardIds, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId }
+            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId, ...(researchPayment.action==='discover'&&researchPayment.guardianChoiceIndex!==undefined?{useTracking:true,guardianChoiceIndex:researchPayment.guardianChoiceIndex}:{}) };
       state = applyEngineCommand(state, { type: 'action', action }, context);
       researchPayment = undefined; message = '';
       recordReducerEvent(action, 'accepted');
@@ -1909,7 +1925,7 @@ function playerComponentTray(id: PlayerId) {
   const temporary = state.actionWindow?.playerId === id ? state.actionWindow.temporaryTravel : {};
   const temporaryIcons = (['boot','car','boat','plane'] as const).map((kind) => paymentIconArtwork(kind, temporary[kind] ?? 0)).join('');
   const availableGuardians = playerState.defeatedGuardians.filter((guardianId) => !playerState.usedGuardianBoons.includes(guardianId)).map((guardianId) => `<button class="player-guardian-card" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${id === state.currentPlayer ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="使用守卫能力"></button>`).join('');
-  const usedGuardians = playerState.defeatedGuardians.filter((guardianId) => playerState.usedGuardianBoons.includes(guardianId)).map((guardianId) => `<button class="player-guardian-card used" style="${sprite(assets[`guardian:${guardianId}:face`])}" disabled title="守卫能力已使用，可被效果重置"></button>`).join('');
+  const usedGuardians = playerState.defeatedGuardians.filter((guardianId) => playerState.usedGuardianBoons.includes(guardianId)).map(() => `<button class="player-guardian-card used" style="background-image:url('${publicAsset('/assets/guardian-back.jpg')}')" disabled title="守卫能力已使用，可被效果重置"></button>`).join('');
   return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-usable-idols"><strong>可用神像</strong><span><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></section><section class="player-component-group player-available-guardians"><strong>可用守卫</strong><div>${availableGuardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-used-guardians"><strong>已用守卫</strong><div>${usedGuardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>本回合临时交通</strong><div>${temporaryIcons || '<small>暂无</small>'}</div></section></aside>`;
 }
 function playerDrawDeck(id: PlayerId) {

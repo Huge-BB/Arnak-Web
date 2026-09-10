@@ -31,6 +31,12 @@ test('Tracking chooses one of top two guardians and bottoms the other',()=>{
   assert.equal(next.sites.slot.guardian,'g2');assert.deepEqual(next.discovery.guardianDeck,['g3','g1']);assert.equal(next.players.p1.leader!.data.trackingGuardianChoiceThisTurn,false);
 });
 
+test('Tracking cannot silently reveal the top guardian without the required choice',()=>{
+  const s=base('falconer');s.players.p1.leader!.data.trackingGuardianChoiceThisTurn=true;
+  assert.throws(()=>reduceWithLeaders(s,{type:'DISCOVER_SITE',playerId:'p1',siteId:'slot'},context),/requires choosing/);
+  assert.equal(s.players.p1.leader!.data.trackingGuardianChoiceThisTurn,true);
+});
+
 test('optional Scouting may be declined and is consumed by that discovery',()=>{
   const s=base('explorer');s.players.p1.leader!.data.scoutingSiteChoiceThisTurn=true;
   const next=reduceWithLeaders(s,{type:'DISCOVER_SITE',playerId:'p1',siteId:'slot'},context);

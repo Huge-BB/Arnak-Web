@@ -391,7 +391,7 @@ function discoverSite(
   const idols = site.level === 2 ? 2 : 1;
   if (s.discovery.idolDeck.length < idols)
     throw new Error("Not enough idols to discover site");
-  payTravel(s,a.playerId,discountedSiteTravelCost(s,a.playerId,site.travelCost??{}),a.paymentCardIds??[],c,'Site travel',a.temporaryTravel);
+  payTravel(s,a.playerId,discountedSiteTravelCost(s,a.playerId,site.travelCost??{}),a.paymentCardIds??[],c,'Site travel',a.temporaryTravel,a.hiredPlanes);
   const forced=forcedSiteAction(s,a.playerId,'discover');
   spendResource(s, a.playerId, "compass", Math.max(0,DISCOVERY_COMPASS_COST[site.level]-(s.players[a.playerId].nextDiscoveryCompassDiscount??0)-(forced?.discoveryCompassDiscount??0)));
   if (consumesWorker) s.players[a.playerId].availableWorkers -= 1;
@@ -464,6 +464,7 @@ function advanceResearch(
         token: a.track,
         toNodeId: a.toNodeId,
         paymentCardIds: a.paymentCardIds,
+        hiredPlanes: a.hiredPlanes,
         discardCardId: a.discardCardId,
         bonusTileId: a.bonusTileId,
         costAlternativeIndex: a.costAlternativeIndex,
@@ -677,14 +678,14 @@ export function reduce(
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
       assertMainActionAvailable(next, action.playerId);
-      overcomeGuardian(next, action.playerId, action.siteId, context, action.paymentCardIds, action.discardCardId);
+      overcomeGuardian(next, action.playerId, action.siteId, context, action.paymentCardIds, action.discardCardId, action.hiredPlanes);
       consumeMainAction(next, action.playerId);
       return next;
     case 'OVERCOME_LIZARD_TRACK_GUARDIAN':
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
       assertMainActionAvailable(next, action.playerId);
-      overcomeLizardTrackGuardian(next, action.playerId, context, action.paymentCardIds, action.discardCardId);
+      overcomeLizardTrackGuardian(next, action.playerId, context, action.paymentCardIds, action.discardCardId, action.hiredPlanes);
       consumeMainAction(next, action.playerId);
       return next;
     case 'ACTIVATE_GUARDIAN_BOON':
@@ -719,7 +720,7 @@ export function reduce(
       payDiscardedHandCard(next,resolvedAction.playerId,site.discardCardCost,resolvedAction.discardCardId,'Site');
       const consumesWorker = prepareWorkerForSiteAction(next, resolvedAction);
       site = next.sites[resolvedAction.siteId];
-      payTravel(next,resolvedAction.playerId,discountedSiteTravelCost(next,resolvedAction.playerId,site.travelCost??{}),resolvedAction.paymentCardIds??[],context,'Site travel',resolvedAction.temporaryTravel);
+      payTravel(next,resolvedAction.playerId,discountedSiteTravelCost(next,resolvedAction.playerId,site.travelCost??{}),resolvedAction.paymentCardIds??[],context,'Site travel',resolvedAction.temporaryTravel,resolvedAction.hiredPlanes);
       if (consumesWorker) next.players[action.playerId].availableWorkers -= 1;
       site.occupiedBy = action.playerId;
       resolveSite(next, action.playerId, resolvedAction.siteId, context);

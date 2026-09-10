@@ -50,6 +50,15 @@ test('PLACE_WORKER consumes travel cards atomically', () => {
   assert.equal(next.sites.temple.occupiedBy, 'p1');
 });
 
+test('a player may spend two coins to hire one plane during travel payment', () => {
+  const state = reduce(createGame(['p1']), { type: 'START_GAME' });
+  state.sites.temple = { id: 'temple', level: 1, tileId: 'templeTile', idolSlots: 0, travelCost: { plane: 1 } };
+  state.players.p1.resources.coin = 2;
+  const next = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'temple', hiredPlanes: 1 }, context);
+  assert.equal(next.players.p1.resources.coin, 0);
+  assert.equal(next.sites.temple.occupiedBy, 'p1');
+});
+
 test('travel payment rejects an unnecessary extra card', () => {
   const state = reduce(createGame(['p1']), { type: 'START_GAME' });
   state.sites.temple = { id: 'temple', level: 1, tileId: 'templeTile', idolSlots: 0, travelCost: { car: 1 } };

@@ -2810,6 +2810,13 @@
         "height": 90,
         "rotation": 0
       }
+    ],
+    "leader-falconer": [
+      { "id": "leader-falconer-eagle-track-0", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 0", "x": 42.83, "y": 65.24, "width": 80, "height": 80, "rotation": 46 },
+      { "id": "leader-falconer-eagle-track-1", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 1", "x": 49.45, "y": 77.74, "width": 80, "height": 80, "rotation": 16 },
+      { "id": "leader-falconer-eagle-track-2", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 2", "x": 56.3, "y": 69.82, "width": 80, "height": 80, "rotation": 326 },
+      { "id": "leader-falconer-eagle-track-3", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 3", "x": 59.61, "y": 47.56, "width": 80, "height": 80, "rotation": 297 },
+      { "id": "leader-falconer-eagle-track-4", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 4", "x": 60.24, "y": 20.12, "width": 80, "height": 80, "rotation": 272 }
     ]
   }
 }

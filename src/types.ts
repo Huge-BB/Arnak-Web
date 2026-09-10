@@ -139,16 +139,16 @@ export type GameAction =
  | { type:'END_TURN'; playerId:PlayerId }
  | { type:'PASS'; playerId:PlayerId }
  | { type:'PLAY_CARD'; playerId:PlayerId; cardId:CardId; activationPaymentCardId?:CardId }
- | { type:'PLACE_WORKER'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; temporaryTravel?:TravelCost; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
- | { type:'DISCOVER_SITE'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; temporaryTravel?:TravelCost; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
+ | { type:'PLACE_WORKER'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; temporaryTravel?:TravelCost; hiredPlanes?:number; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec }
+ | { type:'DISCOVER_SITE'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; temporaryTravel?:TravelCost; hiredPlanes?:number; discardCardId?:CardId; explorerMove?:ExplorerMoveSpec; useTracking?:boolean; guardianChoiceIndex?:0|1; useScouting?:boolean; siteChoiceIndex?:0|1; useBlindsight?:boolean }
  | { type:'BEGIN_SITE_ACTION_WINDOW'; playerId:PlayerId; kind:'place'|'discover'; travelDiscount?:TravelCost; discoveryCompassDiscount?:number; consumesMainAction:boolean }
  | { type:'GAIN_RESOURCE'; playerId:PlayerId; resource:Resource; amount:number }
  | { type:'SPEND_RESOURCE'; playerId:PlayerId; resource:Resource; amount:number }
- | { type:'ADVANCE_RESEARCH'; playerId:PlayerId; track:ResearchToken; toNodeId?:ResearchNodeId; amount?:number; paymentCardIds?:CardId[]; discardCardId?:CardId; bonusTileId?:string; /** Zero-based selected printed bridge cost. Defaults to the primary cost. */ costAlternativeIndex?:number }
+ | { type:'ADVANCE_RESEARCH'; playerId:PlayerId; track:ResearchToken; toNodeId?:ResearchNodeId; amount?:number; paymentCardIds?:CardId[]; hiredPlanes?:number; discardCardId?:CardId; bonusTileId?:string; /** Zero-based selected printed bridge cost. Defaults to the primary cost. */ costAlternativeIndex?:number }
  | { type:'CLAIM_TEMPLE_BONUS'; playerId:PlayerId; tileId:string }
  | { type:'BUY_TEMPLE_TILE'; playerId:PlayerId; tier:'bronze'|'silver'|'gold'; combination?:0|1|2 }
-  | { type:'OVERCOME_GUARDIAN'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; discardCardId?:CardId }
-  | { type:'OVERCOME_LIZARD_TRACK_GUARDIAN'; playerId:PlayerId; paymentCardIds?:CardId[]; discardCardId?:CardId }
+  | { type:'OVERCOME_GUARDIAN'; playerId:PlayerId; siteId:string; paymentCardIds?:CardId[]; hiredPlanes?:number; discardCardId?:CardId }
+  | { type:'OVERCOME_LIZARD_TRACK_GUARDIAN'; playerId:PlayerId; paymentCardIds?:CardId[]; hiredPlanes?:number; discardCardId?:CardId }
  | { type:'ACTIVATE_GUARDIAN_BOON'; playerId:PlayerId; guardianId:string }
  | { type:'CLAIM_ASSISTANT'; playerId:PlayerId; stackIndex:number }
  | { type:'UPGRADE_ASSISTANT'; playerId:PlayerId; assistantId:string }
