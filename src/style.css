@@ -137,9 +137,9 @@
 /* Board-attached pieces must scale in the same coordinate space as their
    calibrated containers. Viewport-sized clamps and pixel nudges made idols
    and market cards drift between desktop and mobile. */
-.map-hotspot .site-idol{left:50%!important;top:70%!important;width:38%;height:auto;aspect-ratio:232/281;background-color:transparent!important;background-size:contain;transform:translate(-50%,-50%)}
-.map-hotspot:has(.site-idol.face-down) .site-idol:not(.face-down){left:30%!important;top:72%!important}
-.map-hotspot .site-idol.face-down{left:70%!important;top:72%!important;width:38%;height:auto;aspect-ratio:232/281;background-color:transparent!important;background-image:url('/assets/idol-back.jpg');background-size:contain;background-repeat:no-repeat}
+.map-hotspot .site-idol{left:50%!important;top:78%!important;width:38%;height:auto;aspect-ratio:232/281;background-color:transparent!important;background-size:contain;transform:translate(-50%,-50%)}
+.map-hotspot:has(.site-idol.face-down) .site-idol:not(.face-down){left:30%!important;top:80%!important}
+.map-hotspot .site-idol.face-down{left:70%!important;top:80%!important;width:38%;height:auto;aspect-ratio:232/281;background-color:transparent!important;background-image:url('/assets/idol-back.jpg');background-size:contain;background-repeat:no-repeat}
 
 .play-surface>.market.market-above-board{display:grid;grid-template-columns:minmax(0,1fr) 7% minmax(0,1fr);align-items:center;gap:1.2%;overflow:visible;padding:1.2% 3%}
 .market-above-board .market-group{display:flex;min-width:0;justify-content:space-evenly;gap:0}

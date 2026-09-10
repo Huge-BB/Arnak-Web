@@ -30,9 +30,9 @@ export const SUPPLY_BOARD_SIZE: BoardSize = { width: 3906, height: 1507 };
  */
 export const SUPPLY_BOARD_COMPONENTS = {
   assistants: [
-    { x: 2929.5, y: 406.89, width: 250, height: 320 },
-    { x: 3281.04, y: 406.89, width: 250, height: 320 },
-    { x: 3671.64, y: 406.89, width: 250, height: 320 },
+    { x: 2806.0, y: 452.85, width: 316, height: 409 },
+    { x: 3157.54, y: 452.85, width: 316, height: 409 },
+    { x: 3548.14, y: 452.85, width: 316, height: 409 },
   ],
   resources: {
     coin: { x: 507.78, y: 1145.32, width: 250, height: 250 },

@@ -2771,10 +2771,10 @@
         "kind": "hotspot",
         "asset": "",
         "label": "supply board · assistant stack 2",
-        "x": 53.3,
-        "y": 25.91,
-        "width": 250,
-        "height": 320,
+        "x": 80.83,
+        "y": 30.05,
+        "width": 316,
+        "height": 409,
         "rotation": 0
       },
       {
@@ -2782,10 +2782,10 @@
         "kind": "hotspot",
         "asset": "",
         "label": "supply board · assistant stack 3",
-        "x": 62.93,
-        "y": 54.37,
-        "width": 250,
-        "height": 320,
+        "x": 90.83,
+        "y": 30.05,
+        "width": 316,
+        "height": 409,
         "rotation": 0
       },
       {
