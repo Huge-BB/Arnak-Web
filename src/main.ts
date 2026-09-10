@@ -1908,12 +1908,9 @@ function playerComponentTray(id: PlayerId) {
   const usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
   const temporary = state.actionWindow?.playerId === id ? state.actionWindow.temporaryTravel : {};
   const temporaryIcons = (['boot','car','boat','plane'] as const).map((kind) => paymentIconArtwork(kind, temporary[kind] ?? 0)).join('');
-  const guardianCards = playerState.defeatedGuardians.map((guardianId) => {
-    const used = playerState.usedGuardianBoons.includes(guardianId);
-    const enabled = id === state.currentPlayer && !used;
-    return `<button class="player-guardian-card ${used ? 'used' : ''}" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${enabled ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="${used ? '本轮守卫能力已使用' : '使用守卫能力'}"></button>`;
-  }).join('');
-  return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-usable-idols"><strong>可用神像</strong><span><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></section><section class="player-component-group player-defeated-guardians"><strong>已击败守卫</strong><div>${guardianCards || '<small>暂无</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>本回合临时交通</strong><div>${temporaryIcons || '<small>暂无</small>'}</div></section></aside>`;
+  const availableGuardians = playerState.defeatedGuardians.filter((guardianId) => !playerState.usedGuardianBoons.includes(guardianId)).map((guardianId) => `<button class="player-guardian-card" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${id === state.currentPlayer ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="使用守卫能力"></button>`).join('');
+  const usedGuardians = playerState.defeatedGuardians.filter((guardianId) => playerState.usedGuardianBoons.includes(guardianId)).map((guardianId) => `<button class="player-guardian-card used" style="${sprite(assets[`guardian:${guardianId}:face`])}" disabled title="守卫能力已使用，可被效果重置"></button>`).join('');
+  return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-usable-idols"><strong>可用神像</strong><span><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span></section><section class="player-component-group player-available-guardians"><strong>可用守卫</strong><div>${availableGuardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-used-guardians"><strong>已用守卫</strong><div>${usedGuardians || '<small>暂无</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>本回合临时交通</strong><div>${temporaryIcons || '<small>暂无</small>'}</div></section></aside>`;
 }
 function playerDrawDeck(id: PlayerId) {
   const leader = Boolean(state.players[id].leader);
