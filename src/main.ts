@@ -1786,14 +1786,6 @@ player = (id: PlayerId) => {
   return playerWithGlyphResources(id).replace(/<div class="player-resources">[\s\S]*?<\/div>/, resources);
 };
 const playerWithPhysicalComponents = player;
-function playerIdolReserve(id: PlayerId) {
-  const spare = state.players[id].idols.filter((idol) => !idol.inSlot);
-  if (!spare.length) return '';
-  return `<div class="player-idol-reserve" title="unplaced idols">${spare.map((_, index) => {
-    const component = calibratedPlayerComponent(`player-base-idol-reserve-${index}`, { x:640+index*40, y:247, width:34, height:42 });
-    return `<i style="${playerComponentStyle(component)}"></i>`;
-  }).join('')}</div>`;
-}
 function leaderComponents(id: PlayerId) {
   const playerState = state.players[id];
   const leader = playerState.leader;
@@ -1823,7 +1815,7 @@ function leaderComponents(id: PlayerId) {
   }
   return '';
 }
-player = (id: PlayerId) => playerWithPhysicalComponents(id).replace('</section>', `<div class="physical-components">${playerIdolReserve(id)}${leaderComponents(id)}</div></section>`);
+player = (id: PlayerId) => playerWithPhysicalComponents(id).replace('</section>', `<div class="physical-components">${leaderComponents(id)}</div></section>`);
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-falcon-return]');
   if (!button || button.disabled) return;
