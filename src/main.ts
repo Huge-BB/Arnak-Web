@@ -1613,7 +1613,9 @@ render = () => {
   const boardElement = app.querySelector<HTMLElement>('.play-surface > .map-board');
   if (!market || !boardElement) return;
   market.classList.add('market-above-board');
-  market.innerHTML = `<div class="market-group market-artifacts">${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--moon-step:${Math.max(0, Math.min(4, state.round - 1))}" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"><i class="moon-staff-marker"></i></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}</div>`;
+  const deckBack = publicAsset('/assets/card-back.jpg');
+  const roundMarkers = [1, 2, 3, 4, 5].map((round) => `<i class="market-round ${state.round === round ? 'current' : ''}">${['I','II','III','IV','V'][round-1]}</i>`).join('');
+  market.innerHTML = `<div class="market-summary"><span>牌库：${state.market.artifactDeck.length + state.market.itemDeck.length}</span><span>移除：${state.market.exiled.length}</span></div><div class="market-rounds">${roundMarkers}</div><div class="market-group market-artifacts"><span class="market-deck artifact-deck" title="神器牌库：${state.market.artifactDeck.length} 张"><img src="${deckBack}" alt="神器牌库"><b>${state.market.artifactDeck.length}</b></span>${state.market.artifacts.map((id) => card(id, 'buy')).join('')}</div><div class="moon-staff ${state.moonStaff}" style="--moon-step:${Math.max(0, Math.min(4, state.round - 1))}" title="${state.moonStaff} moon staff"><img src="${publicAsset(`/assets/moon-staff-${state.moonStaff}.png`)}" alt="${state.moonStaff} moon staff"><i class="moon-staff-marker"></i></div><div class="market-group market-items">${state.market.items.map((id) => card(id, 'buy')).join('')}<span class="market-deck item-deck" title="物品牌库：${state.market.itemDeck.length} 张"><img src="${deckBack}" alt="物品牌库"><b>${state.market.itemDeck.length}</b></span></div>`;
   boardElement.before(market);
 };
 render();
