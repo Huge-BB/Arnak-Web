@@ -13,9 +13,12 @@ whether tiles are face up or face down, and the Lost Temple bonus supply.
   is no greater than the seated-player count.
 - Lost Temple receives one private face-down bonus tile per player. It is not
   shown to players before they reach the Temple.
-- Ordinary research-space bonus tiles are currently face up in state. The
-  board view must use the assigned tile ID rather than a fixed decorative
-  image; incomplete matching source art is tracked below.
+- Ordinary research-space bonus tiles are face up in state. The board view
+  uses the assigned tile ID rather than a fixed decorative image.
+- Five localized faces are identified: compass, coin, tablet, draw (card with
+  green plus), and exile (card with red cross). The resource-upgrade face is
+  the only source image still missing; the UI uses an explicit
+  tablet-to-arrowhead-to-jewel representation until it is localized.
 
 ## Common bonus-tile pool: audit inventory
 
@@ -56,8 +59,7 @@ separate physical slots on that same printed space.
 2. Confirm the six common tile faces and the listed three-copy count for each
    face (18 tiles total).
 3. Confirm which Temple/track bonus tiles are private face down versus public
-   face up, and supply the missing face art for tablet and draw if the current
-   source assets do not cover them.
+   face up, and supply the missing resource-upgrade face art.
 
 ## Implementation map
 

@@ -110,7 +110,11 @@ export interface AssistantSupplyState { stacks:string[][]; specialStack:string[]
 export type MoonStaffVariant = 'blue' | 'red';
 export interface MarketState { items:CardId[]; artifacts:CardId[]; itemDeck:CardId[]; artifactDeck:CardId[]; exiled:CardId[]; }
 export interface TempleTileSupply {
+  /** Total remaining 2-point tiles across the three physical stacks. */
   bronze:number;
+  bronzeA:number;
+  bronzeB:number;
+  bronzeC:number;
   /** Total remaining 6-point tiles, retained for the existing UI. */
   silver:number;
   /** The two physical 6-point stacks. Their identity matters to the solo rival

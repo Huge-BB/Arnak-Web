@@ -101,9 +101,12 @@ function sprite(a?:Asset){if(!a)return'';if(a.url)return`background-image:url('$
 function assistantAsset(id:string,level:'silver'|'gold'):Asset|undefined{const local=assets[`assistant:${id}:${level}`];if(local)return local;const image=assistants[id]?.image;if(!image)return undefined;return{sheetUrl:level==='silver'?image.silverUrl:image.goldUrl,sheetWidth:image.sheetWidth,sheetHeight:image.sheetHeight,cardIndex:image.cardIndex};}
 function researchBonusFace(tileId: string) {
   const kind = tileId.replace(/:\d+$/, '').replace('base:', '');
-  const source: Record<string, string> = { compass:'research-bonus-1.png', coin:'research-bonus-2.png', exile:'research-bonus-3.png', tablet:'research-bonus-4.png', upgrade:'research-bonus-coin.png', draw:'card-back.jpg' };
+  const source: Record<string, string> = { compass:'research-bonus-1.png', coin:'research-bonus-2.png', exile:'research-bonus-3.png', tablet:'research-bonus-4.png', draw:'research-bonus-coin.png' };
   const label: Record<string, string> = { compass:'gain 1 compass', coin:'gain 1 coin', tablet:'gain 1 tablet', draw:'draw 1 card', exile:'exile 1 card', upgrade:'upgrade 1 resource' };
-  return { kind, label: label[kind] ?? kind, html: `<img src="${publicAsset(`/assets/${source[kind] ?? 'card-back.jpg'}`)}" alt="${label[kind] ?? kind}">` };
+  const html = kind === 'upgrade'
+    ? `<span class="research-upgrade-face" aria-hidden="true"><img src="${publicAsset('/assets/resource-tablet.png')}" alt=""><b>→</b><img src="${publicAsset('/assets/resource-arrowhead.png')}" alt=""><b>→</b><img src="${publicAsset('/assets/resource-jewel.png')}" alt=""></span>`
+    : `<img src="${publicAsset(`/assets/${source[kind] ?? 'research-bonus-1.png'}`)}" alt="${label[kind] ?? kind}">`;
+  return { kind, label: label[kind] ?? kind, html };
 }
 function card(id:string,action:'play'|'buy'){const d=context.cards[id],fear=d?.type==='Fear';return`<button class="card ${fear?'fear':''}" ${fear?'disabled':''} data-card-id="${id}" data-card-action="${action}" title="${cardHoverText(id,d?.name??id)}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`}
 function board(){return`<section class="map-board"><img src="${publicAsset(`/assets/boards/main-${mainBoard}.jpg`)}" alt="main board">${spots.map(s=>{const site=state.sites[s.id];if(!site)return'';const ready=!!(s.rewardCode||site.tileId),status=site.blocked?'blocked':site.occupiedBy?'occupied':site.tileId?'discovered':'';return`<button class="map-hotspot ${status}" style="--site-x:${s.left}%;--site-y:${s.top}%" ${site.blocked?'disabled ':''}${ready?'data-site':'data-discover'}="${s.id}" title="${site.blocked?'blocked camp':s.rewardCode?'camp':`level ${s.level}`}"></button>`}).join('')}${research()}</section>`}
@@ -1467,10 +1470,11 @@ research = () => {
     ['bronze', 2, '2a'], ['bronze', 2, '2b'], ['bronze', 2, '2c'],
     ['silver', 6, '6a'], ['silver', 6, '6b'], ['gold', 11, '11'],
   ] as const).map(([tier, points, variant], index) => {
-    const available = tier==='silver' ? (variant==='6b'?state.templeTiles.silverRight:state.templeTiles.silverLeft)>0 : state.templeTiles[tier] > 0;
+    const bronzeStack = variant==='2b' ? 'bronzeB' : variant==='2c' ? 'bronzeC' : 'bronzeA';
+    const available = tier==='bronze' ? state.templeTiles[bronzeStack]>0 : tier==='silver' ? (variant==='6b'?state.templeTiles.silverRight:state.templeTiles.silverLeft)>0 : state.templeTiles.gold > 0;
     const eligible = available && canBuyTempleTile(state, state.currentPlayer, tier, track);
     const component = calibratedResearchComponent(state.research.board, `research-temple-tile-${variant}`, RESEARCH_TEMPLE_TILE_COMPONENTS[variant]);
-    const remaining=tier==='silver'?(variant==='6b'?state.templeTiles.silverRight:state.templeTiles.silverLeft):state.templeTiles[tier];
+    const remaining=tier==='bronze'?state.templeTiles[bronzeStack]:tier==='silver'?(variant==='6b'?state.templeTiles.silverRight:state.templeTiles.silverLeft):state.templeTiles.gold;
     return `<button class="research-temple-tile ${tier}" style="${researchComponentStyle(component)}" ${eligible ? 'data-temple-shop' : 'disabled'} title="${eligible ? `buy ${variant.toUpperCase()} temple tile` : `${variant.toUpperCase()} temple tile unavailable`}"><img src="${publicAsset(`/assets/temple-tile-${variant}.png`)}" alt="${variant} temple tile"><b>${remaining}</b></button>`;
   }).join('');
   const templeBonuses = state.research.templeArrivals.includes(state.currentPlayer) ? state.research.templeBonusTiles.map((tileId, index) => {
