@@ -133,3 +133,16 @@
 .base-idol-slot{width:var(--player-piece-w)!important;height:var(--player-piece-h)!important}.player .assistant.player-board-assistant{width:var(--player-piece-w)!important;height:var(--player-piece-h)!important;background:transparent}.player-board-assistant i{background-size:contain;background-repeat:no-repeat;filter:drop-shadow(0 1px 2px #0009)}.player-idol-reserve i{width:var(--player-piece-w)!important;height:var(--player-piece-h)!important;background-size:contain;background-repeat:no-repeat}.player-draw-deck:not(.leader-draw-deck){width:var(--player-piece-w);height:var(--player-piece-h);aspect-ratio:auto}
 .map-site-piece,.map-hotspot .site-tile{border:0;background-color:transparent;background-size:contain;background-repeat:no-repeat;box-shadow:none;filter:drop-shadow(0 2px 3px #0009)}.map-hotspot .site-idol{border:0;background-color:transparent;background-size:contain;background-repeat:no-repeat;box-shadow:none;filter:drop-shadow(0 1px 2px #0009)}
 .map-hotspot .archaeologist-base{display:none}.map-hotspot .archaeologist-token{width:46%;height:auto;aspect-ratio:1;background-image:url('/assets/archaeologists-wooden-sprite.webp')!important;background-size:200% 200%;background-repeat:no-repeat;mix-blend-mode:normal;filter:drop-shadow(0 3px 2px #0008);transform:translate(-50%,-68%)}.map-hotspot .archaeologist-token::before,.map-hotspot .archaeologist-token::after{display:none}.map-hotspot .archaeologist-token.yellow{background-position:0 0}.map-hotspot .archaeologist-token.blue{background-position:100% 0}.map-hotspot .archaeologist-token.green{background-position:0 100%}.map-hotspot .archaeologist-token.red{background-position:100% 100%}
+
+/* Board-attached pieces must scale in the same coordinate space as their
+   calibrated containers. Viewport-sized clamps and pixel nudges made idols
+   and market cards drift between desktop and mobile. */
+.map-hotspot .site-idol{left:50%!important;top:58%!important;width:34%;height:auto;aspect-ratio:232/281;background-color:transparent!important;background-size:contain;transform:translate(-50%,-50%)}
+.map-hotspot:has(.site-idol.face-down) .site-idol:not(.face-down){left:43%!important;top:57%!important}
+.map-hotspot .site-idol.face-down{left:59%!important;top:64%!important;width:34%;height:auto;aspect-ratio:232/281;background-color:transparent!important;background-image:url('/assets/idol-back.jpg');background-size:contain;background-repeat:no-repeat}
+
+.play-surface>.market.market-above-board{display:grid;grid-template-columns:minmax(0,1fr) 7% minmax(0,1fr);align-items:center;gap:1.2%;overflow:visible;padding:1.2% 3%}
+.market-above-board .market-group{display:flex;min-width:0;justify-content:space-evenly;gap:0}
+.market-above-board .card{flex:0 0 22%;width:22%;min-width:0;height:auto;aspect-ratio:12/17;scroll-snap-align:none}
+.market-above-board .moon-staff{width:100%;height:auto;aspect-ratio:13/24;min-width:0;flex:none}
+@media(max-width:850px){.play-surface>.market.market-above-board{display:grid;grid-template-columns:minmax(0,1fr) 7% minmax(0,1fr);gap:1.2%;overflow:visible;padding:1.2% 3%}.market-above-board .market-group{display:flex;flex:initial;gap:0}.market-above-board .card{flex-basis:22%;width:22%;min-width:0;height:auto}.market-above-board .moon-staff{width:100%;height:auto;flex:none}}
