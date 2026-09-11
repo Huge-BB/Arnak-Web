@@ -2239,12 +2239,17 @@ function applyTurnFocusedPlayerLayout() {
   if (!zones.length) return;
   const overview = document.createElement('section');
   overview.className = 'player-resource-overview';
+  const firstIndex = Math.max(0, state.playerOrder.indexOf(state.firstPlayer));
+  const nextFirstIndex = (firstIndex + 1) % state.playerOrder.length;
   zones.forEach((zone, index) => {
     const summary = zone.querySelector<HTMLElement>('.player-resource-summary');
     if (!summary) return;
     const playerId = state.playerOrder[index], playerState = playerId ? state.players[playerId] : undefined, leader = playerState?.leader?.id;
+    const roundOrder = (index - firstIndex + state.playerOrder.length) % state.playerOrder.length + 1;
+    const nextRoundOrder = (index - nextFirstIndex + state.playerOrder.length) % state.playerOrder.length + 1;
     summary.dataset.playerId = playerId ?? '';
-    summary.insertAdjacentHTML('afterbegin', `<span class="player-summary-identity ${playerState?.color.toLowerCase() ?? ''}">${leader ? `<i class="player-leader-avatar" style="background-image:url('${publicAsset(`/assets/boards/leader-${leader}.jpg`)}')" title="${leader}"></i>` : ''}<b>玩家 ${index + 1}</b>${leader ? `<small>${leader}</small>` : ''}</span>`);
+    zone.querySelector('.first-player-marker')?.remove();
+    summary.insertAdjacentHTML('afterbegin', `<span class="player-summary-identity ${playerState?.color.toLowerCase() ?? ''}">${playerId === state.firstPlayer ? `<i class="summary-first-player" title="本轮起始玩家"><img src="${publicAsset('/assets/starting-player-marker.png')}" alt="起始玩家"></i>` : ''}${leader ? `<i class="player-leader-avatar" style="background-image:url('${publicAsset(`/assets/boards/leader-${leader}.jpg`)}')" title="${leader}"></i>` : ''}<span><b>玩家 ${index + 1}</b>${leader ? `<small>${leader}</small>` : ''}</span><em>本轮 ${roundOrder} · 下轮 ${nextRoundOrder}</em></span>`);
     if (zone.querySelector('.player.current')) summary.classList.add('current');
     overview.append(summary);
   });
