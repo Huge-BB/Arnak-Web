@@ -2046,11 +2046,11 @@ const pendingBeforeAssistantAcquisition = pending;
 pending = () => {
   const queued=state.pendingRewards[0],payload=(queued?.payload??{}) as Record<string,unknown>;
   if(queued&&String(payload.type)==='CLAIM_SNAKE_RESCUE_ASSISTANT'){
-    const choices=state.assistants.specialStack.map(assistantId=>`<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'snake-rescue-assistant',assistantId}))}"><i style="${sprite(assistantAsset(assistantId,'silver'))}"></i><span>${context.assistants[assistantId]?.name??assistantId}<small>蛇庙研究轨助手</small></span></button>`).join('');
+    const choices=state.assistants.specialStack.map(assistantId=>`<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'snake-rescue-assistant',assistantId}))}"><i style="${sprite(assistantAsset(assistantId,'silver'))}"></i><span>银色助手<small>蛇庙研究轨助手</small></span></button>`).join('');
     return `<section class="pending-panel assistant-acquisition-panel"><span>选择研究轨上的助手</span><div>${choices||'<span class="pending-unsupported">研究轨上没有可获得的助手</span>'}</div></section>`;
   }
   if(queued&&isAssistantSupplyChoice(queued)){
-    const choices=state.assistants.stacks.slice(0,3).map((stack,stackIndex)=>{const assistantId=stack[0];return assistantId?`<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'assistant-stack',stackIndex}))}"><i style="${sprite(assistantAsset(assistantId,'silver'))}"></i><span>${context.assistants[assistantId]?.name??assistantId}<small>供应堆 ${stackIndex+1} · 剩余 ${stack.length}</small></span></button>`:'';}).join('');
+    const choices=state.assistants.stacks.slice(0,3).map((stack,stackIndex)=>{const assistantId=stack[0];return assistantId?`<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'assistant-stack',stackIndex}))}"><i style="${sprite(assistantAsset(assistantId,'silver'))}"></i><span>银色助手<small>供应堆 ${stackIndex+1} · 剩余 ${stack.length}</small></span></button>`:'';}).join('');
     return `<section class="pending-panel assistant-acquisition-panel"><span>选择助手供应堆</span><div>${choices||'<span class="pending-unsupported">助手供应已空</span>'}</div></section>`;
   }
   return pendingBeforeAssistantAcquisition();
@@ -2064,7 +2064,7 @@ pending = () => {
   const player = state.players[queued.playerId];
   const choices = player.assistants.map((assistant) => {
     const definition = context.assistants[assistant.id];
-    return `<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({ type:'assistant', assistantId: assistant.id }))}"><i style="${sprite(assistantAsset(assistant.id, assistant.level))}"></i><span>${definition?.name ?? assistant.id}<small>${assistant.level}</small></span></button>`;
+    return `<button class="pending-button pending-assistant-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({ type:'assistant', assistantId: assistant.id }))}"><i style="${sprite(assistantAsset(assistant.id, assistant.level))}"></i><span>${definition?.name ?? (assistant.level==='gold'?'金色助手':'银色助手')}<small>${assistant.level==='gold'?'金色面':'银色面'}</small></span></button>`;
   }).join('');
   return `<section class="pending-panel"><span>Choose assistant</span><div>${choices}</div></section>`;
 };
@@ -2334,4 +2334,26 @@ function detailedActivityLog(){const items=[...debugTimeline].slice(-10).reverse
 const renderBeforeUndoPolicy=render;
 render=()=>{renderBeforeUndoPolicy();if(screen!=='game')return;app.querySelector('.activity-log')?.remove();app.querySelector('header')?.insertAdjacentHTML('afterend',detailedActivityLog());app.querySelectorAll('.debug-timeline details,.debug-current-code,.debug-current-actions,.debug-timeline>p').forEach(node=>node.remove());const canUndo=roomSession?Boolean(roomSnapshot?.viewer.canUndoTurn):Boolean(turnStartCode&&!localTurnUndoLocked&&turnStartOwner===state.currentPlayer);app.querySelector('.header-actions')?.insertAdjacentHTML('afterbegin',`<button data-undo-turn ${canUndo?'':'disabled'} title="撤回到当前玩家回合开始">撤回本回合</button>`);if(pendingRevealAction||pendingRevealChoice)app.insertAdjacentHTML('beforeend',`<section class="reveal-confirm" role="dialog" aria-modal="true"><div><h2>将揭示新信息</h2><p>此操作会抽牌、翻开未知组件或查看牌库顶。确认后，本回合将不能撤回。</p><div><button data-reveal-cancel>取消</button><button class="confirm" data-reveal-confirm>确认执行</button></div></div></section>`);};
 app.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');if(!button)return;if(button.dataset.undoTurn!==undefined){if(roomSession)void undoLanTurn();else if(turnStartCode&&!localTurnUndoLocked){state=decodeStateCode(turnStartCode);researchBoard=state.research.board;message='已撤回到本回合开始。';recordReducerEvent({type:'UNDO_TURN'},'checkpoint');render();}return;}if(button.dataset.revealCancel!==undefined){pendingRevealAction=undefined;pendingRevealChoice=undefined;render();return;}if(button.dataset.revealConfirm!==undefined){const action=pendingRevealAction,choice=pendingRevealChoice;pendingRevealAction=undefined;pendingRevealChoice=undefined;if(action){const before=state;eventBeforeState=before;runBeforeUndoPolicy(action);eventBeforeState=undefined;if(!roomSession&&state!==before&&!message)localTurnUndoLocked=true;}else if(choice){const before=state;eventBeforeState=before;chooseBeforeUndoPolicy(choice);eventBeforeState=undefined;if(!roomSession&&state!==before&&!message)localTurnUndoLocked=true;}return;}});
+render();
+
+// The solo rival has a dedicated grey expedition surface. Its action tiles
+// are the rival's actual hand/state, so keep both piles visible instead of
+// presenting it as a second human player board.
+function soloRivalBoard() {
+  const solo=state.solo;if(!solo)return'';
+  const rival=state.players[solo.rivalPlayerId];
+  const current=solo.lastAction?`<i class="solo-rival-tile latest" style="background-image:url('${publicAsset(`/assets/solo-actions/${solo.lastAction.tileId}.webp`)}')" title="${solo.lastAction.tileId}"></i><small>${solo.lastAction.description}</small>`:'<span>尚未揭示行动牌</span>';
+  return `<section class="solo-rival-board" aria-label="自动机版图"><div class="solo-rival-heading"><span><b>对手远征队</b><small>灰色自动机版图 · 难度 ${solo.difficulty}</small></span><strong>${solo.actionDeck.length} 张未揭示</strong></div><div class="solo-rival-table"><div class="solo-rival-deck"><i class="solo-rival-tile-back">?</i><b>${solo.actionDeck.length}</b><small>行动牌堆</small></div><div class="solo-rival-used">${current}</div></div><div class="solo-rival-score"><span>考古学家 <b>${rival.availableWorkers}/${rival.workers}</b></span><span>神像 <b>${rival.idols.length}</b></span><span>守卫 <b>${rival.defeatedGuardians.length}</b></span><span>市场牌 <b>${rival.playedCards.length}</b></span><span>神庙奖励 <b>${rival.templeTiles.reduce((sum,value)=>sum+value,0)}</b></span></div></section>`;
+}
+function applySoloRivalBoard(){if(!state.solo||screen!=='game')return;const rival=app.querySelector<HTMLElement>(`.player[data-feedback-player="${state.solo.rivalPlayerId}"]`),zone=rival?.closest<HTMLElement>('.player-zone');if(zone)zone.innerHTML=soloRivalBoard();}
+
+const LOCAL_GAME_SAVE_KEY='arnak.local-game.v2';
+type LocalGameSave={state:GameState;mainBoard:'bird'|'snake';researchBoard:ResearchBoardId;researchLab:boolean;turnStartCode:string;turnStartOwner?:PlayerId;turnUndoLocked:boolean;debugTimeline:DebugTimelineEntry[];savedAt:string};
+function readLocalGameSave():LocalGameSave|undefined{try{const value=JSON.parse(localStorage.getItem(LOCAL_GAME_SAVE_KEY)||'null') as LocalGameSave|null;return value?.state?.version===1&&value.state.phase?value:undefined;}catch{return undefined;}}
+function writeLocalGameSave(){if(roomSession||screen!=='game')return;const value:LocalGameSave={state,mainBoard,researchBoard,researchLab,turnStartCode,turnStartOwner,turnUndoLocked:localTurnUndoLocked,debugTimeline,savedAt:new Date().toISOString()};localStorage.setItem(LOCAL_GAME_SAVE_KEY,JSON.stringify(value));}
+const savedLocalGame=roomSession?undefined:readLocalGameSave();
+if(savedLocalGame){state=savedLocalGame.state;mainBoard=savedLocalGame.mainBoard;researchBoard=savedLocalGame.researchBoard;researchLab=savedLocalGame.researchLab;turnStartCode=savedLocalGame.turnStartCode;turnStartOwner=savedLocalGame.turnStartOwner;localTurnUndoLocked=savedLocalGame.turnUndoLocked;debugTimeline=savedLocalGame.debugTimeline??[];screen='game';message='已恢复上次本地对局。';}
+const renderWithSoloBoardAndLocalSave=render;
+render=()=>{renderWithSoloBoardAndLocalSave();applySoloRivalBoard();if(screen==='game'&&!roomSession){app.querySelector('.header-actions')?.insertAdjacentHTML('beforeend','<button data-local-game-exit title="清除本地存档并返回设置">返回设置</button>');writeLocalGameSave();}};
+app.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');if(button?.dataset.localGameExit===undefined)return;localStorage.removeItem(LOCAL_GAME_SAVE_KEY);screen='setup';researchLab=false;turnStartCode='';turnStartOwner=undefined;localTurnUndoLocked=false;debugTimeline=[];message='';render();});
 render();
