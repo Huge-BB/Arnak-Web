@@ -2018,10 +2018,10 @@ function playerComponentTray(id: PlayerId) {
 function playerDrawDeck(id: PlayerId) {
   const playerState=state.players[id], leaderId=playerState.leader?.id;
   const leader = Boolean(leaderId);
-  const leaderX:Record<string,number>={captain:96,falconer:96,baroness:96,professor:96,explorer:96,mystic:387};
+  const leaderX:Record<string,number>={captain:104,falconer:104,baroness:104,professor:104,explorer:104,mystic:397};
   const leftCrop=playerState.color==='Blue'||playerState.color==='Green';
   const component=leader
-    ? {x:leaderX[leaderId!]??96,y:158,width:170,height:244}
+    ? {x:leaderX[leaderId!]??104,y:158,width:190,height:270}
     : {x:leftCrop?107:610,y:161,width:174,height:246};
   const style=leader
     ? playerComponentStyle(component,true)
@@ -2292,7 +2292,7 @@ function applyTurnFocusedPlayerLayout() {
     const nextRoundOrder = (index - nextFirstIndex + state.playerOrder.length) % state.playerOrder.length + 1;
     summary.dataset.playerId = playerId ?? '';
     zone.querySelector('.first-player-marker')?.remove();
-    summary.insertAdjacentHTML('afterbegin', `<span class="player-summary-identity ${playerState?.color.toLowerCase() ?? ''}">${playerId === state.firstPlayer ? `<i class="summary-first-player" title="本轮起始玩家"><img src="${publicAsset('/assets/starting-player-marker.png')}" alt="起始玩家"></i>` : ''}${leader ? `<i class="player-leader-avatar" style="background-image:url('${publicAsset(`/assets/boards/leader-${leader}.jpg`)}')" title="${leader}"></i>` : ''}<span><b>玩家 ${index + 1}</b>${leader ? `<small>${leader}</small>` : ''}</span><em>本轮 ${roundOrder} · 下轮 ${nextRoundOrder}</em></span>`);
+    summary.insertAdjacentHTML('afterbegin', `<span class="player-summary-identity ${playerState?.color.toLowerCase() ?? ''}">${playerId === state.firstPlayer ? `<i class="summary-first-player" title="本轮起始玩家"><img src="${publicAsset('/assets/starting-player-marker.png')}" alt="起始玩家"></i>` : ''}${leader ? `<i class="player-leader-avatar avatar-${leader}" style="background-image:url('${publicAsset(`/assets/boards/leader-${leader}.jpg`)}')" title="${leader}"></i>` : ''}<span><b>玩家 ${index + 1}</b>${leader ? `<small>${leader}</small>` : ''}</span><em>本轮 ${roundOrder} · 下轮 ${nextRoundOrder}</em></span>`);
     if (zone.querySelector('.player.current')) summary.classList.add('current');
     overview.append(summary);
   });
