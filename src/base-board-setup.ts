@@ -19,7 +19,7 @@ export type BaseBoardSpot = {
 
 /** One visible interaction area per camp; its two internal worker slots stay server-side. */
 export const BASE_BOARD_INTERACTION_SPOTS: BaseBoardSpot[] = [
-  ...[[1,11.26,89.79,114,184],[2,30.94,87.56,120,184],[3,50.47,85.54,122,174],[4,70,87.87,118,180],[5,89.99,90.29,110,174]].map(([n,left,top,width,height])=>({id:`camp-${n}`,level:1 as const,mapRow:0,left:Number(left)*2/3,top:Number(top),width:Number(width)*2/3,height:Number(height),rewardCode:'camp'})),
+  ...[[1,11.26,89.79,136,184],[2,30.94,87.56,136,184],[3,50.47,85.54,136,174],[4,70,87.87,136,180],[5,89.99,90.29,136,174]].map(([n,left,top,width,height])=>({id:`camp-${n}`,level:1 as const,mapRow:0,left:Number(left)*2/3,top:Number(top),width:Number(width)*2/3,height:Number(height),rewardCode:'camp'})),
   ...[[1,12.98,64.11,132,204],[2,38.75,60.77,140,190],[3,63.28,62.89,128,190],[4,87.49,64.71,130,176],[5,12.51,40.85,134,182],[6,37.81,39.43,128,186],[7,61.4,41.86,126,192],[8,87.81,42.67,134,190]].map(([n,left,top,width,height])=>({id:`level1-${n}`,level:1 as const,mapRow:n! <= 4 ? 1 : 2,left:Number(left)*2/3,top:Number(top),width:Number(width)*2/3,height:Number(height)})),
   ...[[1,13.91,14.26,160,160],[2,38.13,12.44,150,156],[3,62.34,12.13,160,160],[4,87.18,15.07,152,146]].map(([n,left,top,width,height])=>({id:`level2-${n}`,level:2 as const,mapRow:3,left:Number(left)*2/3,top:Number(top),width:Number(width)*2/3,height:Number(height)})),
 ];

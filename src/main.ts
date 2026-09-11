@@ -361,7 +361,7 @@ pending = () => {
   if (queued?.code !== 'site:DISCARD_AFTER_PLACEMENT') return pendingBeforeCampFiveDiscard();
   const player = state.players[queued.playerId];
   const cards = player.hand.map((cardId, index) => `<button class="card" data-camp-five-discard="${index}" title="弃置：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('');
-  return `<section class="pending-panel camp-five-discard"><span>营地 5：弃置 1 张手牌</span><div class="camp-five-discard-cards">${cards}</div></section>`;
+  return `<section class="pending-panel camp-five-discard"><span>弃置手牌</span><div class="camp-five-discard-cards">${cards}</div></section>`;
 };
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-camp-five-discard]');
@@ -1151,6 +1151,18 @@ type ResearchCostChoice = { action:'research'|'pending-research'; destinationId:
 let researchCostChoice: ResearchCostChoice | undefined;
 const paymentCardIds = (draft: PaymentDraft) => draft.cardIndexes.map((index) => state.players[state.currentPlayer].hand[index]).filter((id): id is string => Boolean(id));
 
+function mainActionAvailableBeforePayment() {
+  const player = state.players[state.currentPlayer];
+  return !player.mainActionUsed || (player.extraMainActions ?? 0) > 0;
+}
+function rejectUnavailableMainActionBeforePayment(event: Event) {
+  if (mainActionAvailableBeforePayment()) return false;
+  event.preventDefault(); event.stopImmediatePropagation();
+  message = '本回合的主行动已经使用';
+  render();
+  return true;
+}
+
 const componentIconAsset = (kind: string) => publicAsset(
   ['coin', 'compass', 'tablet', 'arrowhead', 'jewel'].includes(kind)
     ? `/assets/resource-${kind}.png`
@@ -1253,6 +1265,7 @@ app.addEventListener('click', (event) => {
   }
   const requestedResearch = button.dataset.research ?? button.dataset.pendingResearch;
   if (requestedResearch) {
+    if (!button.dataset.pendingResearch && rejectUnavailableMainActionBeforePayment(event)) return;
     if (button.dataset.researchChoice) {
       event.preventDefault(); event.stopImmediatePropagation();
       researchMoveChoice = { destination: requestedResearch, tokens: button.dataset.researchChoice.split(',') as ('magnifying'|'journal')[] };
@@ -1290,6 +1303,7 @@ app.addEventListener('click', (event) => {
   const siteId = button.dataset.site ?? button.dataset.discover;
   const guardianSiteId = button.dataset.guardianSite;
   if (guardianSiteId) {
+    if (rejectUnavailableMainActionBeforePayment(event)) return;
     const site = state.sites[guardianSiteId];
     const guardian = site?.guardian ? context.guardians?.[site.guardian] : undefined;
     if (!site?.guardian || site.occupiedBy !== state.currentPlayer || !guardian?.cost) {
@@ -1300,6 +1314,8 @@ app.addEventListener('click', (event) => {
     render(); return;
   }
   if (siteId) {
+    const forcedSiteAction = state.actionWindow?.playerId === state.currentPlayer ? state.actionWindow.forcedSiteAction : undefined;
+    if (!forcedSiteAction && rejectUnavailableMainActionBeforePayment(event)) return;
     // Camps are intentionally a single visible target.  Pick the first
     // server-eligible internal slot only to display its payment; the reducer
     // resolves it again atomically when the action is submitted.
@@ -1328,6 +1344,7 @@ app.addEventListener('click', (event) => {
     return;
   }
   if (button.dataset.lizardGuardian !== undefined) {
+    if (rejectUnavailableMainActionBeforePayment(event)) return;
     const guardian = ((state.research.templeData?.lizardGuardians as { id: string; revealed: boolean; defeated: boolean }[] | undefined) ?? []).find((entry) => entry.revealed && !entry.defeated);
     const definition = guardian ? context.guardians?.[guardian.id] : undefined;
     if (!guardian || !definition?.cost) { message = 'Lizard guardian is not available'; render(); return; }
@@ -1889,7 +1906,7 @@ pending = () => {
   if (queued?.code !== 'site:DISCARD_AFTER_PLACEMENT') return pendingFinalBeforeCampFiveDiscard();
   const player = state.players[queued.playerId];
   const cards = player.hand.map((cardId, index) => `<button class="card" data-camp-five-discard="${index}" title="弃置：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('');
-  return `<section class="pending-panel camp-five-discard"><span>营地 5：弃置 1 张手牌</span><div class="camp-five-discard-cards">${cards}</div></section>`;
+  return `<section class="pending-panel camp-five-discard"><span>弃置手牌</span><div class="camp-five-discard-cards">${cards}</div></section>`;
 };
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-camp-five-discard]');
