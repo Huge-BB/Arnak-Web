@@ -1151,20 +1151,21 @@ type ResearchCostChoice = { action:'research'|'pending-research'; destinationId:
 let researchCostChoice: ResearchCostChoice | undefined;
 const paymentCardIds = (draft: PaymentDraft) => draft.cardIndexes.map((index) => state.players[state.currentPlayer].hand[index]).filter((id): id is string => Boolean(id));
 
-const paymentIcon = (kind: string, amount: number) => {
-  const icon: Record<string, string> = { coin: '●', compass: '◌', tablet: '▤', arrowhead: '◆', jewel: '♦', usableIdol: '◉', boot: '◒', car: '▰', boat: '◓', plane: '▲' };
-  return Array.from({ length: amount }, () => `<i class="payment-icon payment-${kind}" title="${kind}">${icon[kind] ?? '•'}</i>`).join('');
-};
+const componentIconAsset = (kind: string) => publicAsset(
+  ['coin', 'compass', 'tablet', 'arrowhead', 'jewel'].includes(kind)
+    ? `/assets/resource-${kind}.png`
+    : `/assets/travel-${kind}.png`,
+);
 const paymentIconArtwork = (kind: string, amount: number) => {
   if (!Number.isFinite(amount) || amount <= 0) return '';
   const resource = ['coin', 'compass', 'tablet', 'arrowhead', 'jewel'].includes(kind);
   const special: Record<string, string> = { usableIdol: publicAsset('/assets/idol-back.jpg'), discardCard: publicAsset('/assets/card-back.jpg') };
   const amountBadge = amount > 1 ? `<b class="payment-amount">${amount}</b>` : '';
   return resource
-    ? `<i class="payment-icon payment-${kind}" title="${kind} ×${amount}"><img src="${publicAsset(`/assets/resource-${kind}.png`)}" alt="${kind}">${amountBadge}</i>`
+    ? `<i class="payment-icon payment-component payment-${kind}" title="${kind} ×${amount}"><img src="${componentIconAsset(kind)}" alt="${kind}">${amountBadge}</i>`
     : special[kind]
       ? `<i class="payment-icon payment-${kind}" title="${kind} ×${amount}"><img src="${special[kind]}" alt="${kind}">${amountBadge}</i>`
-      : `<i class="payment-icon payment-travel payment-${kind}" title="${kind} ×${amount}" aria-label="${kind} ×${amount}">${amountBadge}</i>`;
+      : `<i class="payment-icon payment-component payment-travel payment-${kind}" title="${kind} ×${amount}" aria-label="${kind} ×${amount}"><img src="${componentIconAsset(kind)}" alt="${kind}">${amountBadge}</i>`;
 };
 const paymentCost = (cost: Record<string, unknown>) => {
   const resources = ['coin', 'compass', 'tablet', 'arrowhead', 'jewel', 'usableIdol', 'discardCard']
@@ -1318,7 +1319,6 @@ app.addEventListener('click', (event) => {
     // click path from obscuring the real 3/6-compass requirement.
     const cost = site ? {
       ...(site.travelCost ? { travel: site.travelCost } : {}),
-      ...(site.discardCardCost ? { discardCard: site.discardCardCost } : {}),
       ...(button.dataset.discover ? { compass: site.level === 1 ? 3 : 6 } : {}),
     } : {};
     if (!Object.keys(cost).length) return;
@@ -1511,10 +1511,15 @@ const workerAnchor = (spot: Spot, physicalSiteId = spot.id) => {
   const number = Number(spot.id.split('-').at(-1));
   if (spot.id.startsWith('camp-')) {
     const slotOffset = physicalSiteId.endsWith('-a') ? -1.7 : physicalSiteId.endsWith('-b') ? 1.7 : 0;
-    return { x: [7, 20.5, 34, 47.5, 60][number - 1] + slotOffset, y: 96 };
+    return {
+      x: [7.51, 20.63, 33.65, 46.67, 59.99][number - 1] + slotOffset,
+      y: [97.4, 95.3, 93.5, 95.6, 97.8][number - 1],
+    };
   }
-  if (spot.id.startsWith('level1-')) return { x: [8, 25, 42, 59][(number - 1) % 4], y: number <= 4 ? 70 : [45, 44, 48, 48][(number - 1) % 4] };
-  return { x: [8, 25, 42, 59][number - 1], y: 20 };
+  if (spot.id.startsWith('level1-')) return number <= 4
+    ? { x: [8.65, 25.83, 42.19, 58.33][number - 1], y: [72.5, 68.5, 70.6, 71.8][number - 1] }
+    : { x: [8.34, 25.21, 40.93, 58.54][number - 5], y: [48.2, 47, 49.7, 50.4][number - 5] };
+  return { x: [9.27, 25.42, 41.56, 58.12][number - 1], y: [21, 19, 18.9, 21.2][number - 1] };
 };
 function isAssistantSupplyChoice(queued = state.pendingRewards[0]) {
   if (!queued) return false;
@@ -1813,7 +1818,7 @@ render = () => {
   if (screen === 'game') app.querySelectorAll<HTMLElement>('.players .player').forEach((playerElement, index) => { playerElement.dataset.feedbackPlayer = state.playerOrder[index] || ''; });
 };
 const playerWithGlyphResources = player;
-const resourceArtwork = (resource: 'coin' | 'compass' | 'tablet' | 'arrowhead' | 'jewel', amount: number) => `<span class="resource-chip" title="${resource}"><img src="${publicAsset(`/assets/resource-${resource}.png`)}" alt="${resource}"><b>${amount}</b></span>`;
+const resourceArtwork = (resource: 'coin' | 'compass' | 'tablet' | 'arrowhead' | 'jewel', amount: number) => `<span class="resource-chip" title="${resource}"><img src="${componentIconAsset(resource)}" alt="${resource}"><b>${amount}</b></span>`;
 player = (id: PlayerId) => {
   const playerState = state.players[id];
   const usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
@@ -1872,7 +1877,7 @@ render = () => {
   if (screen !== 'game') return;
   const picker = app.querySelector<HTMLElement>('.idol-picker');
   if (!picker) return;
-  picker.innerHTML = `<button data-base-idol-effect="coinToJewel" title="pay 1 coin: gain 1 jewel"><img src="${publicAsset('/assets/resource-coin.png')}" alt="coin"><span>→</span><img src="${publicAsset('/assets/resource-jewel.png')}" alt="jewel"></button><button data-base-idol-effect="tablets" title="gain 2 tablets"><img src="${publicAsset('/assets/resource-tablet.png')}" alt="tablet"><img src="${publicAsset('/assets/resource-tablet.png')}" alt="tablet"></button><button data-base-idol-effect="arrowhead" title="gain 1 arrowhead"><img src="${publicAsset('/assets/resource-arrowhead.png')}" alt="arrowhead"></button><button data-base-idol-effect="coinCompass" title="gain 1 coin and 1 compass"><img src="${publicAsset('/assets/resource-coin.png')}" alt="coin"><img src="${publicAsset('/assets/resource-compass.png')}" alt="compass"></button><button data-base-idol-effect="draw" class="idol-draw" title="draw 1 card"></button><button data-base-idol-cancel title="cancel">×</button>`;
+  picker.innerHTML = `<button data-base-idol-effect="coinToJewel" title="pay 1 coin: gain 1 jewel"><img src="${componentIconAsset('coin')}" alt="coin"><span>→</span><img src="${componentIconAsset('jewel')}" alt="jewel"></button><button data-base-idol-effect="tablets" title="gain 2 tablets"><img src="${componentIconAsset('tablet')}" alt="tablet"><img src="${componentIconAsset('tablet')}" alt="tablet"></button><button data-base-idol-effect="arrowhead" title="gain 1 arrowhead"><img src="${componentIconAsset('arrowhead')}" alt="arrowhead"></button><button data-base-idol-effect="coinCompass" title="gain 1 coin and 1 compass"><img src="${componentIconAsset('coin')}" alt="coin"><img src="${componentIconAsset('compass')}" alt="compass"></button><button data-base-idol-effect="draw" class="idol-draw" title="draw 1 card"></button><button data-base-idol-cancel title="cancel">×</button>`;
 };
 render();
 

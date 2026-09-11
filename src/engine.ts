@@ -715,15 +715,23 @@ export function reduce(
       if (!site) throw new Error(`Unknown site: ${resolvedAction.siteId}`);
       if (site.blocked) throw new Error('Site is blocked for this player count');
       if (site.occupiedBy) throw new Error("Site is occupied");
-      // Camp 5's discard is a printed site cost. It must be paid before the
-      // worker is placed and before its jewel reward can be collected.
-      payDiscardedHandCard(next,resolvedAction.playerId,site.discardCardCost,resolvedAction.discardCardId,'Site');
+      // Camp 5 resolves visibly in two stages: travel/placement, then its
+      // mandatory discard. Reject before paying travel only when the player
+      // cannot possibly satisfy that deferred cost.
+      if ((site.discardCardCost ?? 0) > next.players[resolvedAction.playerId].hand.length) throw new Error('Site requires one discarded hand card');
       const consumesWorker = prepareWorkerForSiteAction(next, resolvedAction);
       site = next.sites[resolvedAction.siteId];
       payTravel(next,resolvedAction.playerId,discountedSiteTravelCost(next,resolvedAction.playerId,site.travelCost??{}),resolvedAction.paymentCardIds??[],context,'Site travel',resolvedAction.temporaryTravel,resolvedAction.hiredPlanes);
       if (consumesWorker) next.players[action.playerId].availableWorkers -= 1;
       site.occupiedBy = action.playerId;
-      resolveSite(next, action.playerId, resolvedAction.siteId, context);
+      if (site.discardCardCost) {
+        next.pendingRewards.push({
+          playerId: action.playerId,
+          sourceId: resolvedAction.siteId,
+          code: 'site:DISCARD_AFTER_PLACEMENT',
+          payload: { type: 'SITE_DISCARD_COST', siteId: resolvedAction.siteId },
+        });
+      } else resolveSite(next, action.playerId, resolvedAction.siteId, context);
       consumeSiteActionDiscount(next,action.playerId);
       finishSiteAction(next,action.playerId,forced);
       return next;

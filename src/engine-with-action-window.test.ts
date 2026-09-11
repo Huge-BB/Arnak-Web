@@ -35,16 +35,17 @@ test('a public camp target resolves before the action-window travel wrapper',()=
   assert.equal(s.sites['camp-3-a'].occupiedBy,'p1');
 });
 
-test('Camp 5 requires a hand discard as a cost before granting its jewel',()=>{
+test('Camp 5 places after travel, then requires a hand discard before granting its jewel',()=>{
   const ctx:EngineContext={...context,cards:{boot:{id:'boot',name:'Boot',type:'Starter',expansion:'Base Game',travel:{boot:1}},other:{id:'other',name:'Other',type:'Starter',expansion:'Base Game'}}};
   let s=playing();s.sites=createBaseBoardSites(4,'camp-five');s.players.p1.hand=['boot','other'];
-  assert.throws(()=>reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp-5',paymentCardIds:['boot']},ctx),/requires one discarded hand card/);
-  s=reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp-5',paymentCardIds:['boot'],discardCardId:'other'},ctx);
+  s=reduceWithActionWindow(s,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp-5',paymentCardIds:['boot']},ctx);
   assert.equal(s.sites['camp-5-a'].occupiedBy,'p1');
-  assert.deepEqual(s.players.p1.hand,[]);
-  assert.deepEqual(s.players.p1.playedCards,['boot','other']);
-  assert.equal(s.pendingRewards.length,0);
-  assert.equal(s.players.p1.resources.jewel,1);
+  assert.deepEqual(s.players.p1.hand,['other']);
+  assert.deepEqual(s.players.p1.playedCards,['boot']);
+  assert.equal(s.pendingRewards[0]?.code,'site:DISCARD_AFTER_PLACEMENT');
+  assert.equal(s.players.p1.resources.jewel,0);
+  s=resolvePendingChoice(s,'p1',0,{type:'card',cardId:'other'},ctx);
+  assert.deepEqual(s.players.p1.hand,[]);assert.deepEqual(s.players.p1.playedCards,['boot','other']);assert.equal(s.pendingRewards.length,0);assert.equal(s.players.p1.resources.jewel,1);
 });
 
 test('END_TURN clears unspent temporary travel before next player',()=>{

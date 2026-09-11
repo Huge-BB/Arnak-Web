@@ -15,6 +15,18 @@ function researchRewardPayload(payload: unknown): ResearchReward { if (!payload 
 function assertPendingOwner(state: GameState, playerId: PlayerId, index: number) { const pending=pendingAt(state,index); if(pending.playerId!==playerId) throw new Error(`Pending reward belongs to ${pending.playerId}`); return pending; }
 function consumePending(state: GameState, index: number): GameState { const next=structuredClone(state); next.pendingRewards.splice(index,1); return next; }
 
+/** Finish a printed site action whose discard cost is selected only after
+ * travel has been paid and the archaeologist is visibly on the board. */
+export function resolvePendingSiteDiscard(state:GameState,playerId:PlayerId,pendingIndex:number,cardId:CardId,context:EngineContext):GameState{
+ const pending=assertPendingOwner(state,playerId,pendingIndex),payload=(pending.payload??{}) as Record<string,unknown>;
+ if(pending.code!=='site:DISCARD_AFTER_PLACEMENT'||payload.type!=='SITE_DISCARD_COST'||typeof payload.siteId!=='string')throw new Error('Pending reward is not a site discard cost');
+ const next=structuredClone(state),player=next.players[playerId],cardIndex=player.hand.indexOf(cardId);
+ if(cardIndex<0)throw new Error('Site discard cost requires a card from hand');
+ player.hand.splice(cardIndex,1);player.playedCards.push(cardId);next.pendingRewards.splice(pendingIndex,1);
+ const site=next.sites[payload.siteId];if(!site?.rewardCode)throw new Error('Site discard cost has no deferred reward');
+ resolveRewardCode(next,playerId,site.id,site.rewardCode,context);return next;
+}
+
 export function resolvePendingAssistantReward(state:GameState,playerId:PlayerId,pendingIndex:number,choice:{stackIndex?:number;assistantId?:string}):GameState{
  const pending=assertPendingOwner(state,playerId,pendingIndex),reward=researchRewardPayload(pending.payload);let resolved:GameState;
  if(reward.type==='CLAIM_ASSISTANT'){if(reward.level!=='silver')throw new Error('CLAIM_ASSISTANT research reward must grant a silver assistant');if(!Number.isInteger(choice.stackIndex))throw new Error('CLAIM_ASSISTANT requires a stackIndex choice');resolved=claimAssistant(state,playerId,choice.stackIndex!);}

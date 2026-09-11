@@ -19,6 +19,7 @@ import {
   resolvePendingVisibleSilverAssistant,
   resolvePendingBonusTile,
   resolvePendingBonusUpgrade,
+  resolvePendingSiteDiscard,
 } from "./pending-rewards.ts";
 import { resolvePendingAssistantEffect, type AssistantEffectChoice } from "./assistant-effects.ts";
 import { resolvePendingCardEffect } from './card-effect-actions.ts';
@@ -172,6 +173,9 @@ function resolvePendingChoiceInternal(
     );
   }
   switch (payloadType) {
+    case 'SITE_DISCARD_COST':
+      if(choice.type!=='card')throw new Error('Site discard cost requires a hand card');
+      return resolvePendingSiteDiscard(state,playerId,pendingIndex,choice.cardId,context);
     case 'BONUS_TILE':
       if (payload.slot === 'EXILE_OWN_CARD') {
         if (choice.type === 'skip') return resolvePendingBonusTile(state, playerId, pendingIndex, undefined, context);

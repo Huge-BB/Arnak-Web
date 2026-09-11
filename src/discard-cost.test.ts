@@ -4,25 +4,39 @@ import { createGame, reduce } from './engine.ts';
 import { advanceResearchByNode } from './research-action.ts';
 import { applyCardEffects } from './effects.ts';
 import { resolvePendingCardEffect } from './card-effect-actions.ts';
+import { resolvePendingChoice } from './pending-choice.ts';
 import type { ResearchTrackDefinition } from './types.ts';
 
-test('a printed site discard cost consumes one hand card into this round\'s used area', () => {
+test('a printed site discard cost is selected after placement and before its reward', () => {
   const state = createGame(['p1']);
   state.phase = 'playing'; state.currentPlayer = 'p1'; state.players.p1.hand = ['fodder'];
-  state.sites.camp = { id: 'camp', level: 1, isTentSite: true, idolSlots: 0, discardCardCost: 1 };
-  const next = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp', discardCardId: 'fodder' });
-  assert.deepEqual(next.players.p1.hand, []);
-  assert.deepEqual(next.players.p1.playedCards, ['fodder']);
-  assert.throws(() => reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp' }), /requires one discarded hand card/);
+  state.sites.camp = { id: 'camp', level: 1, isTentSite: true, idolSlots: 0, discardCardCost: 1, rewardCode: 'j' };
+  const placed = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp' });
+  assert.equal(placed.sites.camp.occupiedBy, 'p1');
+  assert.deepEqual(placed.players.p1.hand, ['fodder']);
+  assert.equal(placed.players.p1.resources.jewel, 0);
+  assert.equal(placed.pendingRewards[0]?.code, 'site:DISCARD_AFTER_PLACEMENT');
+  const resolved = resolvePendingChoice(placed, 'p1', 0, { type: 'card', cardId: 'fodder' }, { cards: {} });
+  assert.deepEqual(resolved.players.p1.hand, []);
+  assert.deepEqual(resolved.players.p1.playedCards, ['fodder']);
+  assert.equal(resolved.players.p1.resources.jewel, 1);
 });
 
 test('Fear may be discarded from hand to pay a printed discard cost', () => {
   const state = createGame(['p1']);
   state.phase = 'playing'; state.currentPlayer = 'p1'; state.players.p1.hand = ['fear'];
-  state.sites.camp = { id: 'camp', level: 1, isTentSite: true, idolSlots: 0, discardCardCost: 1 };
-  const next = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp', discardCardId: 'fear' });
+  state.sites.camp = { id: 'camp', level: 1, isTentSite: true, idolSlots: 0, discardCardCost: 1, rewardCode: 'j' };
+  const placed = reduce(state, { type: 'PLACE_WORKER', playerId: 'p1', siteId: 'camp' });
+  const next = resolvePendingChoice(placed, 'p1', 0, { type: 'card', cardId: 'fear' }, { cards: {} });
   assert.deepEqual(next.players.p1.hand, []);
   assert.deepEqual(next.players.p1.playedCards, ['fear']);
+});
+
+test('a player with no hand card cannot enter a discard-cost site', () => {
+  const state=createGame(['p1']);state.phase='playing';state.currentPlayer='p1';state.players.p1.hand=[];
+  state.sites.camp={id:'camp',level:1,isTentSite:true,idolSlots:0,discardCardCost:1,rewardCode:'j'};
+  assert.throws(()=>reduce(state,{type:'PLACE_WORKER',playerId:'p1',siteId:'camp'}),/requires one discarded hand card/);
+  assert.equal(state.sites.camp.occupiedBy,undefined);assert.equal(state.players.p1.resources.jewel,0);
 });
 
 test('research discard costs use the same hand-to-used-area payment', () => {
