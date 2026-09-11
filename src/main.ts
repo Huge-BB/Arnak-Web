@@ -1471,12 +1471,8 @@ research = () => {
     const peers = state.playerOrder.flatMap((playerId) => (['magnifying','journal'] as const).map((tokenKind) => ({ playerId, tokenKind })))
       .filter((candidate) => state.research[`${candidate.tokenKind}Node`][candidate.playerId] === nodeId);
     const peerIndex = peers.findIndex((candidate) => candidate.playerId === id && candidate.tokenKind === kind);
-    // Four players sharing one space should read as a compact 2x2 group.
-    // If magnifiers and journals all meet, expand that to two rows of four.
-    const columns = peers.length <= 4 ? Math.min(2, Math.max(1, peers.length)) : 4;
-    const column = peerIndex % columns, row = Math.floor(peerIndex / columns);
-    const dx = (column - (Math.min(columns, peers.length) - 1) / 2) * 30;
-    const rows = Math.ceil(peers.length / columns), dy = (row - (rows - 1) / 2) * 30;
+    const dx = (peerIndex - (peers.length - 1) / 2) * 16;
+    const dy = 0;
     return `<i class="track-token ${color}" data-research-token="${id}-${kind}" style="${pointStyle(point, RESEARCH_BOARD_SIZE)};--token-dx:${dx}px;--token-dy:${dy}px"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;
   };
   const playerTokens = state.playerOrder.flatMap((id, index) => [token(id, 'magnifying', index), token(id, 'journal', index)]).join('');
@@ -1559,14 +1555,18 @@ function isAssistantSupplyChoice(queued = state.pendingRewards[0]) {
 function supplyBoard(){
   const selectable=captainSpecialistDraft===state.currentPlayer;
   const cropHeight=760;
-  const component=(id:string,fallback:{x:number;y:number;width:number;height:number})=>{const mark=calibrationMark('supply-board',id);const source=mark?{x:mark.x/100*SUPPLY_BOARD_SIZE.width,y:mark.y/100*SUPPLY_BOARD_SIZE.height,width:mark.width,height:mark.height}:fallback;return`--supply-x:${source.x/SUPPLY_BOARD_SIZE.width*100}%;--supply-y:${source.y/cropHeight*100}%;--supply-w:${source.width/SUPPLY_BOARD_SIZE.width*100}%;--supply-h:${source.height/cropHeight*100}%;`;};
+  const source=(id:string,fallback:{x:number;y:number;width:number;height:number})=>{const mark=calibrationMark('supply-board',id);return mark?{x:mark.x/100*SUPPLY_BOARD_SIZE.width,y:mark.y/100*SUPPLY_BOARD_SIZE.height,width:mark.width,height:mark.height}:fallback;};
+  const component=(id:string,fallback:{x:number;y:number;width:number;height:number})=>{const value=source(id,fallback);return`--supply-x:${value.x/SUPPLY_BOARD_SIZE.width*100}%;--supply-y:${value.y/cropHeight*100}%;--supply-w:${value.width/SUPPLY_BOARD_SIZE.width*100}%;--supply-h:${value.height/cropHeight*100}%;`;};
   const supplyDecks=[
     {label:'一级地点',src:'/assets/site-level1-back.jpg',count:state.discovery.level1Deck.length,x:400,width:390,height:494},
     {label:'二级地点',src:'/assets/site-level2-back.jpg',count:state.discovery.level2Deck.length,x:980,width:430,height:489},
     {label:'守卫',src:'/assets/guardian-back.jpg',count:state.discovery.guardianDeck.length,x:1580,width:450,height:450},
   ].map((deck,index)=>`<span class="supply-deck-stack supply-deck-${index}" style="${component(`supply-deck-${index}`,{x:deck.x,y:430,width:deck.width,height:deck.height})}" title="${deck.label}供应堆：${deck.count}"><img src="${publicAsset(deck.src)}" alt="${deck.label}牌背"><b>${deck.count}</b></span>`).join('');
   const assistants=state.assistants.stacks.slice(0,3).map((stack,index)=>{const assistantId=stack[0],asset=assistantId?assistantAsset(assistantId,'silver'):undefined,style=component(`supply-assistant-${index}`,SUPPLY_BOARD_COMPONENTS.assistants[index]!),tag=selectable?'button':'span',choice=selectable&&stack.length?` data-supply-assistant-stack="${index}"`:'';return`<${tag} class="supply-assistant-stack ${selectable?'selectable':''}" style="${style}" title="assistant supply ${index+1}: ${stack.length}" ${!stack.length&&selectable?'disabled':''}${choice}>${assistantId?`<i style="${sprite(asset)}"></i>`:''}<b>${stack.length}</b></${tag}>`;}).join('');
-  const researchStarts=state.playerOrder.flatMap((id,index)=>(['magnifying','journal'] as const).flatMap(kind=>state.solo?.rivalPlayerId===id&&kind==='journal'?[]:state.research[`${kind}Node`][id]===`${state.research.board}:start`?[{id,kind,index}]:[])).map(({id,kind,index})=>{const base=SUPPLY_BOARD_COMPONENTS.researchStarts[kind],style=component(`supply-research-start-${kind}`,base),column=index%2,row=Math.floor(index/2),dx=(column-.5)*30,dy=(row-.5)*30;const color=state.players[id].color.toLowerCase();return`<i class="supply-research-start" style="${style};--token-dx:${dx}px;--token-dy:${dy}px" title="${id} ${kind} research start"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;}).join('');
+  const startEntries=state.playerOrder.flatMap(id=>(['magnifying','journal'] as const).flatMap(kind=>state.solo?.rivalPlayerId===id&&kind==='journal'?[]:state.research[`${kind}Node`][id]===`${state.research.board}:start`?[{id,kind}]:[]));
+  const magnifyingStart=source('supply-research-start-magnifying',SUPPLY_BOARD_COMPONENTS.researchStarts.magnifying),journalStart=source('supply-research-start-journal',SUPPLY_BOARD_COMPONENTS.researchStarts.journal);
+  const startCenter={x:(magnifyingStart.x+journalStart.x)/2,y:(magnifyingStart.y+journalStart.y)/2,width:16,height:16};
+  const researchStarts=startEntries.map(({id,kind},index)=>{const style=component('supply-research-start-row',startCenter),dx=(index-(startEntries.length-1)/2)*16,color=state.players[id].color.toLowerCase();return`<i class="supply-research-start" style="${style};--token-dx:${dx}px;--token-dy:0px" title="${id} ${kind} research start"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;}).join('');
   return`<aside class="supply-board"><img src="${publicAsset('/assets/boards/supply-board-web.webp')}" alt="supply board"><div class="supply-assistant-stacks">${supplyDecks}${assistants}${researchStarts}</div></aside>`;
 }
 board = () => `<section class="map-board"><img src="${publicAsset(`/assets/boards/main-${mainBoard}.jpg`)}" alt="main board">${calibratedMainSpots().map((spot) => {
