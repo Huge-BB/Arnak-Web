@@ -1507,9 +1507,12 @@ research = () => {
 };
 // Interaction rectangles cover a complete site card.  Archaeologists instead
 // use the printed worker-circle anchor inside that rectangle.
-const workerAnchor = (spot: Spot) => {
+const workerAnchor = (spot: Spot, physicalSiteId = spot.id) => {
   const number = Number(spot.id.split('-').at(-1));
-  if (spot.id.startsWith('camp-')) return { x: [7, 20.5, 34, 47.5, 60][number - 1], y: 96 };
+  if (spot.id.startsWith('camp-')) {
+    const slotOffset = physicalSiteId.endsWith('-a') ? -1.7 : physicalSiteId.endsWith('-b') ? 1.7 : 0;
+    return { x: [7, 20.5, 34, 47.5, 60][number - 1] + slotOffset, y: 96 };
+  }
   if (spot.id.startsWith('level1-')) return { x: [8, 25, 42, 59][(number - 1) % 4], y: number <= 4 ? 70 : [45, 44, 48, 48][(number - 1) % 4] };
   return { x: [8, 25, 42, 59][number - 1], y: 20 };
 };
@@ -1551,9 +1554,19 @@ board = () => `<section class="map-board"><img src="${publicAsset(`/assets/board
   // clips an oversized card, which used to shift every card up-left.
   const tile = site.tileId ? (() => { const piece=calibratedMainPieceRect(spot,'site'); return `<i class="map-site-piece level-${spot.level}" style="--site-piece-x:${piece.x}%;--site-piece-y:${piece.y}%;--site-piece-w:${piece.width}%;--site-piece-h:${piece.height}%;${sprite(assets[`site:${site.tileId}:face`])}" title="discovered site"></i>`; })() : '';
   const guardian = site.guardian ? (() => { const piece=calibratedMainPieceRect(spot,'guardian'),available=site.occupiedBy===state.currentPlayer; return `<button class="map-guardian-hotspot ${available?'available':''}" style="--guardian-x:${piece.x}%;--guardian-y:${piece.y}%;--guardian-w:${piece.width}%;--guardian-h:${piece.height}%;${sprite(assets[`guardian:${site.guardian}:face`])}" data-guardian-site="${spot.id}" ${available?'':'disabled'} title="${available?'overcome guardian':'guardian'}"></button>`; })() : '';
-  const anchor = workerAnchor(spot), siteWidth = spot.width ? spot.width / 10 : 6.2, siteHeight = spot.height ? spot.height / 10.3 : 5.3;
-  const workerLeft = (anchor.x - spot.left) / siteWidth * 100, workerTop = (anchor.y - spot.top) / siteHeight * 100;
-  const archaeologist = occupiedBy ? `<i class="archaeologist-base ${state.players[occupiedBy].color.toLowerCase()}" style="--worker-left:${workerLeft}%;--worker-top:${workerTop}%" aria-hidden="true"></i><i class="archaeologist-token ${state.players[occupiedBy].color.toLowerCase()}" style="--worker-left:${workerLeft}%;--worker-top:${workerTop}%" title="${occupiedBy} archaeologist"></i>` : '';
+  const siteWidth = spot.width ? spot.width / 10 : 6.2, siteHeight = spot.height ? spot.height / 10.3 : 5.3;
+  const workerOccupants = campSlots.length
+    ? campSlots.filter((slot) => slot.occupiedBy).map((slot) => ({ playerId: slot.occupiedBy!, physicalSiteId: slot.id }))
+    : occupiedBy ? [{ playerId: occupiedBy, physicalSiteId: spot.id }] : [];
+  const archaeologist = workerOccupants.map(({ playerId, physicalSiteId }) => {
+    const anchor = workerAnchor(spot, physicalSiteId);
+    // Collector coordinates describe a hotspot by its centre. Child offsets,
+    // however, start at the hotspot's top-left, hence the required half-size.
+    const workerLeft = (anchor.x - spot.left) / siteWidth * 100 + 50;
+    const workerTop = (anchor.y - spot.top) / siteHeight * 100 + 50;
+    const color = state.players[playerId].color.toLowerCase();
+    return `<i class="archaeologist-base ${color}" style="--worker-left:${workerLeft}%;--worker-top:${workerTop}%" aria-hidden="true"></i><i class="archaeologist-token ${color}" style="--worker-left:${workerLeft}%;--worker-top:${workerTop}%" title="${playerId} archaeologist"></i>`;
+  }).join('');
   return `<button class="map-hotspot ${status}" style="--site-x:${spot.left}%;--site-y:${spot.top}%;--site-w:${siteWidth}%;--site-h:${siteHeight}%" ${blocked ? 'disabled ' : ''}${ready ? 'data-site' : 'data-discover'}="${spot.id}" title="${blocked ? 'blocked camp' : spot.rewardCode ? 'camp' : `level ${spot.level}`}">${archaeologist}${idols}</button>${tile}${guardian}`;
 }).join('')}${research()}</section>${supplyBoard()}`;
 render();
