@@ -28,6 +28,15 @@ test('temporary travel can combine with a card on later site action',()=>{
   assert.deepEqual(s.players.p1.hand,[]);assert.ok(s.players.p1.playedCards.includes('boot'));assert.equal(s.actionWindow?.temporaryTravel.plane,0);
 });
 
+test('a hired plane is charged once when the action-window wrapper forwards a discovery',()=>{
+  let s=playing();
+  s.sites.x={id:'x',level:1,idolSlots:1,travelCost:{plane:1}};
+  s.players.p1.resources.coin=2;s.players.p1.resources.compass=3;
+  s.discovery.level1Deck=['tile'];s.discovery.guardianDeck=['guardian'];s.discovery.idolDeck=['idol'];
+  s=reduceWithActionWindow(s,{type:'DISCOVER_SITE',playerId:'p1',siteId:'x',hiredPlanes:1},context);
+  assert.equal(s.sites.x.occupiedBy,'p1');assert.equal(s.players.p1.resources.coin,0);assert.deepEqual(s.sites.x.travelCost,{plane:1});
+});
+
 test('a public camp target resolves before the action-window travel wrapper',()=>{
   const ctx:EngineContext={...context,cards:{boot:{id:'boot',name:'Boot',type:'Starter',expansion:'Base Game',travel:{boot:1}}}};
   let s=playing();s.sites=createBaseBoardSites(4,'camp-wrapper');s.players.p1.hand=['boot'];

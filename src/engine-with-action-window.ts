@@ -20,7 +20,10 @@ export function reduceWithActionWindow(state:GameState,action:GameAction,context
     payTravel(next,action.playerId,discountedCost,action.paymentCardIds??[],context,'Site travel',action.temporaryTravel,action.hiredPlanes);
     // Core engine still owns worker/discovery resolution. Travel is already paid here.
     next.sites[siteId]={...site,travelCost:{}};
-    const forwarded={...action,siteId,paymentCardIds:[]} as SiteAction;
+    // Travel is fully settled above. Do not forward any payment channel to
+    // the core reducer or hired/temporary icons would be charged a second time
+    // against the deliberately cleared site travel cost.
+    const forwarded={...action,siteId,paymentCardIds:[],temporaryTravel:{},hiredPlanes:0} as SiteAction;
     const resolved=reduce(next,forwarded,context);
     resolved.sites[siteId].travelCost=cost;
     return resolved;

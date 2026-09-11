@@ -30,6 +30,10 @@ function calibratedPlayerComponent(id: string, fallback: { x: number; y: number;
 function playerComponentStyle(component: { x: number; y: number; width: number; height: number }) {
   return `${playerPointStyle(component)};--player-piece-w:${component.width / 1270 * 100}%;--player-piece-h:${component.height / 328 * 100}%`;
 }
+function assistantComponentStyle(component: { x: number; y: number; width: number; height: number }, leader: boolean) {
+  const viewportWidth = leader ? 1270 : 766;
+  return `${playerPointStyle(component, leader)};--player-piece-w:${component.width / viewportWidth * 100}%;--player-piece-h:${component.height / 328 * 100}%`;
+}
 function calibratedLeaderPoint(leader: LeaderId, id: string, fallback: { x: number; y: number }) {
   const mark = calibrationMark(`leader-${leader}`, id);
   return mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328 } : fallback;
@@ -1464,10 +1468,16 @@ research = () => {
     const point = nodeId === `${state.research.board}:temple` ? calibratedResearchComponent(state.research.board, 'research-temple-entry', { x:795,y:150,width:100,height:90 })
       : node ? calibratedResearchCellPoint(state.research.board, nodeId, fallback) : fallback;
     const color = state.players[id].color.toLowerCase();
-    const otherKind = kind === 'magnifying' ? 'journal' : 'magnifying';
-    const samePrintedSpace = state.research[`${otherKind}Node`][id] === nodeId;
-    const visualPoint = samePrintedSpace ? { x: point.x + (kind === 'magnifying' ? -23 : 23), y: point.y } : point;
-    return `<i class="track-token ${color}" data-research-token="${id}-${kind}" style="${pointStyle(visualPoint, RESEARCH_BOARD_SIZE)}"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;
+    const peers = state.playerOrder.flatMap((playerId) => (['magnifying','journal'] as const).map((tokenKind) => ({ playerId, tokenKind })))
+      .filter((candidate) => state.research[`${candidate.tokenKind}Node`][candidate.playerId] === nodeId);
+    const peerIndex = peers.findIndex((candidate) => candidate.playerId === id && candidate.tokenKind === kind);
+    // Four players sharing one space should read as a compact 2x2 group.
+    // If magnifiers and journals all meet, expand that to two rows of four.
+    const columns = peers.length <= 4 ? Math.min(2, Math.max(1, peers.length)) : 4;
+    const column = peerIndex % columns, row = Math.floor(peerIndex / columns);
+    const dx = (column - (Math.min(columns, peers.length) - 1) / 2) * 30;
+    const rows = Math.ceil(peers.length / columns), dy = (row - (rows - 1) / 2) * 30;
+    return `<i class="track-token ${color}" data-research-token="${id}-${kind}" style="${pointStyle(point, RESEARCH_BOARD_SIZE)};--token-dx:${dx}px;--token-dy:${dy}px"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;
   };
   const playerTokens = state.playerOrder.flatMap((id, index) => [token(id, 'magnifying', index), token(id, 'journal', index)]).join('');
   // These are setup components, not printed rewards. Render the authoritative
@@ -1556,7 +1566,7 @@ function supplyBoard(){
     {label:'守卫',src:'/assets/guardian-back.jpg',count:state.discovery.guardianDeck.length,x:1580,width:450,height:450},
   ].map((deck,index)=>`<span class="supply-deck-stack supply-deck-${index}" style="${component(`supply-deck-${index}`,{x:deck.x,y:430,width:deck.width,height:deck.height})}" title="${deck.label}供应堆：${deck.count}"><img src="${publicAsset(deck.src)}" alt="${deck.label}牌背"><b>${deck.count}</b></span>`).join('');
   const assistants=state.assistants.stacks.slice(0,3).map((stack,index)=>{const assistantId=stack[0],asset=assistantId?assistantAsset(assistantId,'silver'):undefined,style=component(`supply-assistant-${index}`,SUPPLY_BOARD_COMPONENTS.assistants[index]!),tag=selectable?'button':'span',choice=selectable&&stack.length?` data-supply-assistant-stack="${index}"`:'';return`<${tag} class="supply-assistant-stack ${selectable?'selectable':''}" style="${style}" title="assistant supply ${index+1}: ${stack.length}" ${!stack.length&&selectable?'disabled':''}${choice}>${assistantId?`<i style="${sprite(asset)}"></i>`:''}<b>${stack.length}</b></${tag}>`;}).join('');
-  const researchStarts=state.playerOrder.flatMap((id,index)=>(['magnifying','journal'] as const).flatMap(kind=>state.solo?.rivalPlayerId===id&&kind==='journal'?[]:state.research[`${kind}Node`][id]===`${state.research.board}:start`?[{id,kind,index}]:[])).map(({id,kind,index})=>{const base=SUPPLY_BOARD_COMPONENTS.researchStarts[kind],offset=index*24,style=component(`supply-research-start-${kind}`,{...base,x:base.x+offset});const color=state.players[id].color.toLowerCase();return`<i class="supply-research-start" style="${style}" title="${id} ${kind} research start"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;}).join('');
+  const researchStarts=state.playerOrder.flatMap((id,index)=>(['magnifying','journal'] as const).flatMap(kind=>state.solo?.rivalPlayerId===id&&kind==='journal'?[]:state.research[`${kind}Node`][id]===`${state.research.board}:start`?[{id,kind,index}]:[])).map(({id,kind,index})=>{const base=SUPPLY_BOARD_COMPONENTS.researchStarts[kind],style=component(`supply-research-start-${kind}`,base),column=index%2,row=Math.floor(index/2),dx=(column-.5)*30,dy=(row-.5)*30;const color=state.players[id].color.toLowerCase();return`<i class="supply-research-start" style="${style};--token-dx:${dx}px;--token-dy:${dy}px" title="${id} ${kind} research start"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;}).join('');
   return`<aside class="supply-board"><img src="${publicAsset('/assets/boards/supply-board-web.webp')}" alt="supply board"><div class="supply-assistant-stacks">${supplyDecks}${assistants}${researchStarts}</div></aside>`;
 }
 board = () => `<section class="map-board"><img src="${publicAsset(`/assets/boards/main-${mainBoard}.jpg`)}" alt="main board">${calibratedMainSpots().map((spot) => {
@@ -1938,8 +1948,9 @@ const playerWithAssistantArtwork = player;
 player = (id) => {
   const p = state.players[id];
   const assistants = p.assistants.map((assistant, index) => {
-    const component = calibratedPlayerComponent(`player-base-assistant-${index}`, { x:648+index*62, y:285, width:52, height:52 });
-    return `<button class="assistant player-board-assistant ${assistant.exhausted ? 'exhausted' : ''} ${assistant.level}" style="${playerComponentStyle(component)}" ${id !== state.currentPlayer || assistant.exhausted ? 'disabled' : ''} data-assistant="${assistant.id}" title="Activate ${context.assistants[assistant.id]?.name ?? assistant.id}"><i style="${sprite(assistantAsset(assistant.id,assistant.level))}"></i></button>`;
+    const leader = p.leader?.id, slot = Math.min(index,1), overflow = Math.max(0,index-1);
+    const component = { x:(leader ? 1192 : 1215)-overflow*18, y:(slot ? 238 : 82)-overflow*10, width:88, height:118 };
+    return `<button class="assistant player-board-assistant ${assistant.exhausted ? 'exhausted' : ''} ${assistant.level}" style="${assistantComponentStyle(component,Boolean(leader))}" ${id !== state.currentPlayer || assistant.exhausted ? 'disabled' : ''} data-assistant="${assistant.id}" title="Activate ${context.assistants[assistant.id]?.name ?? assistant.id}"><i style="${sprite(assistantAsset(assistant.id,assistant.level))}"></i></button>`;
   }).join('');
   return playerWithAssistantArtwork(id).replace(/<div class="assistants">[\s\S]*?<\/div>/, `<div class="assistants">${assistants}</div>`);
 };
@@ -1959,7 +1970,8 @@ player = (id) => {
 function playerResourceSummary(id: PlayerId) {
   const playerState = state.players[id];
   const usableIdols = playerState.idols.filter((idol) => !idol.inSlot).length;
-  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span><span class="resource-chip worker-resource" title="可用工人"><span>工人</span><b>${playerState.availableWorkers}/${playerState.workers}</b></span></aside>`;
+  const color=playerState.color.toLowerCase();
+  return `<aside class="player-resource-summary" aria-label="${id} resources"><strong>资源</strong>${resourceArtwork('coin', playerState.resources.coin)}${resourceArtwork('compass', playerState.resources.compass)}${resourceArtwork('tablet', playerState.resources.tablet)}${resourceArtwork('arrowhead', playerState.resources.arrowhead)}${resourceArtwork('jewel', playerState.resources.jewel)}<span class="resource-chip" title="可用神像"><img src="${publicAsset('/assets/idol-back.jpg')}" alt="可用神像"><b>${usableIdols}</b></span><span class="resource-chip worker-resource" title="可用工人"><i class="resource-worker-token ${color}" aria-hidden="true"></i><b>${playerState.availableWorkers}/${playerState.workers}</b></span></aside>`;
 }
 function playerComponentTray(id: PlayerId) {
   const playerState = state.players[id];
