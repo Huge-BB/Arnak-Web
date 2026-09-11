@@ -28,8 +28,9 @@ function calibratedPlayerComponent(id: string, fallback: { x: number; y: number;
   const mark = calibrationMark('player-base', id);
   return mark ? { x: mark.x / 100 * 1270, y: mark.y / 100 * 328, width: mark.width, height: mark.height } : fallback;
 }
-function playerComponentStyle(component: { x: number; y: number; width: number; height: number }) {
-  return `${playerPointStyle(component)};--player-piece-w:${component.width / 1270 * 100}%;--player-piece-h:${component.height / 328 * 100}%`;
+function playerComponentStyle(component: { x: number; y: number; width: number; height: number }, leader = false) {
+  const viewportWidth = leader ? 1270 : 766;
+  return `${playerPointStyle(component, leader)};--player-piece-w:${component.width / viewportWidth * 100}%;--player-piece-h:${component.height / 328 * 100}%`;
 }
 function assistantComponentStyle(component: { x: number; y: number; width: number; height: number }, leader: boolean) {
   const viewportWidth = leader ? 1270 : 766;
@@ -2029,7 +2030,12 @@ function playerDrawDeck(id: PlayerId) {
 }
 const playerWithExternalResourceSummary = player;
 player = (id: PlayerId) => {
-  const board = playerWithExternalResourceSummary(id).replace(/<div class="player-resources">[\s\S]*?<\/div>/, '').replace(/<div class="guardian-boons">[\s\S]*?<\/div>/, '').replace('</section>', `${playerDrawDeck(id)}</section>`);
+  const rendered = playerWithExternalResourceSummary(id).replace(/<div class="player-resources">[\s\S]*?<\/div>/, '').replace(/<div class="guardian-boons">[\s\S]*?<\/div>/, '');
+  // Leader boards contain nested <section> elements for their calibrated
+  // interaction layer. Insert the deck into the outer player board, not the
+  // first nested section (which can clip or cover it completely).
+  const closing = rendered.lastIndexOf('</section>');
+  const board = closing < 0 ? rendered : `${rendered.slice(0, closing)}${playerDrawDeck(id)}${rendered.slice(closing)}`;
   return `<div class="player-zone">${board}${playerResourceSummary(id)}${playerComponentTray(id)}</div>`;
 };
 
