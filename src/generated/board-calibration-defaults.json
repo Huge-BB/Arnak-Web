@@ -1610,8 +1610,8 @@
         "kind": "token",
         "asset": "site-level1-back",
         "label": "level1-3-site",
-        "x": 63.75,
-        "y": 62.79,
+        "x": 63.45,
+        "y": 67.5,
         "width": 150,
         "height": 150,
         "rotation": 0
@@ -1929,8 +1929,8 @@
         "kind": "token",
         "asset": "guardian-back",
         "label": "level1-3-guardian",
-        "x": 63.75,
-        "y": 60.46,
+        "x": 63.45,
+        "y": 65.17,
         "width": 150,
         "height": 150,
         "rotation": 0

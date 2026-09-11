@@ -3,7 +3,7 @@ import { cardHoverText } from './card-effect-summaries.ts';
 import cards from './generated/cards.json';import assistants from './generated/assistants.json';import sites from './generated/sites.json';import idols from './generated/idols.json';import guardians from './generated/guardians.json';import assetsJson from './generated/local-assets.json';import generatedTracks from './generated/research-tracks.json';import manual from '../data/research-manual-data.json';import rewards from '../data/research-rewards-manual.json';
 import {createGame,createSoloGame} from './engine.ts';import {applyEngineCommand} from './engine-api.ts';import type {EngineContext,GameAction,GameState,LeaderId,MoonStaffVariant,PlayerId,ResearchBoardId} from './types.ts';import type {PendingChoice} from './pending-choice.ts';import {withBaseAssistantEffects} from './assistant-effect-data.ts';import {withBaseGuardianEffects} from './guardian-effect-data.ts';import {withBaseCardEffects} from './card-effect-data.ts';import {buildResearchTracks} from './research-data.ts';
 import {scoreFinishedGame} from './final-scoring.ts';
-import {scoreSoloGame} from './solo.ts';
+import {scoreSoloGame,soloTileDirection} from './solo.ts';
 import {canBuyTempleTile,templeTileCost} from './temple-tiles.ts';
 import {canPayTravel} from './travel.ts';
 import {shuffleWithSeed} from './rng.ts';
@@ -163,7 +163,7 @@ function effectOptions(payload:Record<string,unknown>,id:PlayerId){if(payload.ty
 function legacyEffectOptions(payload:Record<string,unknown>,id:PlayerId){if(payload.type!=='CARD_EFFECT'||!payload.effect||typeof payload.effect!=='object')return'';const e=payload.effect as Record<string,unknown>,p=state.players[id],ss=Object.values(state.sites),type=String(e.type);if(['DISCARD_ONE_THEN','EXILE_OWN_CARD'].includes(type))return[...p.hand,...p.playedCards].map(x=>pendingButton('▣',{type:'card',cardId:x})).join('');if(type==='RETURN_SLOTTED_IDOL')return p.idols.filter(x=>pendingButton('◉',{type:'idol',idolId:x.id})).join('');if(type==='USE_STANDARD_IDOL_SLOT_EFFECT')return[['coinToJewel','◆'],['tablets','▰'],['arrowhead','▲'],['coinCompass','●◉'],['draw','▣']].map(([effect,label])=>pendingButton(label,{type:'idol-effect',effect})).join('');if(type==='REFRESH_GUARDIAN_BOON')return p.usedGuardianBoons.map(x=>pendingButton('♞',{type:'guardian',guardianId:x})).join('');if(type==='SPEND_DEFEATED_GUARDIAN_THEN')return p.defeatedGuardians.map(x=>pendingButton('♞',{type:'guardian',guardianId:x})).join('');if(['RETURN_OCCUPIED_WORKER_THEN','ACTIVATE_OWN_OCCUPIED_SITE'].includes(type))return ss.filter(x=>x.occupiedBy===id).map(x=>pendingButton('⌾',{type:'site',siteId:x.id})).join('');if(type==='ACTIVATE_OTHER_PLAYER_OCCUPIED_SITE')return ss.filter(x=>x.occupiedBy&&x.occupiedBy!==id&&(e.level===undefined||x.level===e.level)).map(x=>pendingButton('⌾',{type:'site',siteId:x.id})).join('');if(type==='ACTIVATE_TENT_SITES'){const xs=ss.filter(x=>x.isTentSite&&(!e.requireEmpty||!x.occupiedBy));return multi('sites',xs.map(x=>x.id),Number(e.count),xs.map(_=>'⌾'))}if(type==='CHOOSE_ONE'&&Array.isArray(e.options))return e.options.map((_,i)=>pendingButton(String(i+1),{type:'card-option',optionIndex:i})).join('');if(type==='CHOOSE_DISTINCT'&&Array.isArray(e.options))return multi('options',e.options.map((_,i)=>String(i)),Number(e.count),e.options.map((_,i)=>String(i+1)));if(type==='UPGRADE_RESOURCE_PER'||type==='UPGRADE_RESOURCE_THEN')return(['tablet','arrowhead'] as const).filter(resource=>p.resources[resource]>0).map(resource=>pendingButton(resource==='tablet'?'▰':'▲',{type:'resource',resource})).join('');if(type==='REFRESH_ASSISTANTS_THEN')return multi('assistants',p.assistants.map(x=>x.id),Number(e.amount),p.assistants.map(_=>'♙'));if(type==='ACTIVATE_OWN_ASSISTANTS')return multi('assistants',p.assistants.filter(x=>(e.levels as string[]).includes(x.level)).map(x=>x.id),Array.isArray(e.levels)?e.levels.length:0,p.assistants.filter(x=>(e.levels as string[]).includes(x.level)).map(_=>'♙'));if(type==='UPGRADE_OWN_SILVER_ASSISTANT')return p.assistants.filter(x=>x.level==='silver').map(x=>pendingButton('♙',{type:'assistant-target',ownerId:id,assistantId:x.id})).join('');if(['ACTIVATE_AVAILABLE_ASSISTANT','CLAIM_AVAILABLE_SILVER_ASSISTANT'].includes(type))return state.assistants.stacks.map((_,i)=>pendingButton(`◈ ${i+1}`,{type:'assistant-stack',stackIndex:i})).join('');if(['ACQUIRE_MARKET_ITEM','USE_MARKET_ITEM_EFFECT'].includes(type))return state.market.items.map(x=>pendingButton('◈',{type:'card',cardId:x})).join('');if(type==='BUY_WITH_DISCOUNT')return[...state.market.items,...state.market.artifacts].map(x=>pendingButton('◈',{type:'card',cardId:x})).join('');return''}
 function pending(){const p=state.pendingRewards[0];if(!p)return'';const payload=(p.payload??{}) as Record<string,unknown>,type=String(payload.type??p.code),player=state.players[p.playerId],ss=Object.values(state.sites);let o=effectOptions(payload,p.playerId);if(!o&&(type==='CLAIM_ASSISTANT'||type==='ACTIVATE_VISIBLE_SILVER_ASSISTANT_THEN_BOTTOM'))o=state.assistants.stacks.map((_,i)=>pendingButton(`◈ ${i+1}`,{type:'assistant-stack',stackIndex:i})).join('');else if(!o&&['UPGRADE_ASSISTANT','UPGRADE_AND_REFRESH_ASSISTANT','REFRESH_ASSISTANT'].includes(type))o=player.assistants.map(x=>pendingButton('♙',{type:'assistant',assistantId:x.id})).join('');else if(!o&&type==='REFRESH_ASSISTANTS'&&typeof payload.amount==='number')o=multi('assistants',player.assistants.map(x=>x.id),payload.amount,player.assistants.map(_=>'♙'));else if(!o&&type==='CHOOSE'&&Array.isArray(payload.options)&&payload.count===1)o=payload.options.map((_,i)=>pendingButton(String(i+1),{type:'research-option',optionIndex:i})).join('');else if(!o&&['ACQUIRE_ARTIFACT_FREE','BUY_ARTIFACT_WITH_DISCOUNT'].includes(type))o=state.market.artifacts.map(x=>pendingButton('◆',{type:'artifact',artifactId:x})).join('');else if(!o&&(type==='ACTIVATE_DISCOVERED_LEVEL1_SITE'||type==='BURN_UNOCCUPIED_LEVEL1_SITE_REFILL_IDOL'||p.code.includes('GUARDIAN')))o=ss.map(x=>pendingButton('⌾',{type:'site',siteId:x.id})).join('');if(!o)o='<span class="pending-unsupported">…</span>';return`<section class="pending-panel"><span>⌁</span><div>${o}</div></section>`}
 function artifact(){if(!artifactId)return'';const p=state.players[state.currentPlayer];if(!p.hand.includes(artifactId))return'';return`<section class="pending-panel artifact-panel"><span>◆</span><div>${p.hand.filter(x=>x!==artifactId).map(x=>`<button class="card" data-artifact-payment="${x}"><i style="${sprite(assets[`card:${x}:face`])}"></i></button>`).join('')}<button class="pending-button" data-artifact-cancel>×</button></div></section>`}
-function render(){document.documentElement.dataset.theme='jungle';const active=state.players[state.currentPlayer],boardSelectors=researchLab?'':`<select data-main-board><option value="bird" ${mainBoard==='bird'?'selected':''}>普通</option><option value="snake" ${mainBoard==='snake'?'selected':''}>进阶</option></select><select data-board>${(['bird','snake','monkey','lizard'] as ResearchBoardId[]).map(x=>`<option value="${x}" ${researchBoard===x?'selected':''}>${x}</option>`).join('')}</select>`;app.innerHTML=`<main><header><div class="round">${state.round}</div><div class="turn-dot ${active.color.toLowerCase()}"></div><div class="header-actions">${boardSelectors}<button data-action="end">结束回合</button><button data-action="pass">跳过</button></div></header><section class="play-surface">${board()}<aside class="market"><div class="market-row">${state.market.items.map(x=>card(x,'buy')).join('')}</div><div class="market-row">${state.market.artifacts.map(x=>card(x,'buy')).join('')}</div></aside></section><section class="players">${state.playerOrder.map(player).join('')}</section><section class="hand">${active.hand.map(x=>card(x,'play')).join('')}</section>${artifact()}${pending()}${message?`<div class="message">${message}</div>`:''}</main>`}
+function render(){document.documentElement.dataset.theme='jungle';const active=state.players[state.currentPlayer];app.innerHTML=`<main><header><div class="round">${state.round}</div><div class="turn-dot ${active.color.toLowerCase()}"></div><div class="header-actions"><button data-action="end">结束回合</button><button data-action="pass">跳过</button></div></header><section class="play-surface">${board()}<aside class="market"><div class="market-row">${state.market.items.map(x=>card(x,'buy')).join('')}</div><div class="market-row">${state.market.artifacts.map(x=>card(x,'buy')).join('')}</div></aside></section><section class="players">${state.playerOrder.map(player).join('')}</section><section class="hand">${active.hand.map(x=>card(x,'play')).join('')}</section>${artifact()}${pending()}${message?`<div class="message">${message}</div>`:''}</main>`}
 app.addEventListener('change',e=>{const t=e.target as HTMLSelectElement;if(t.matches('[data-main-board]')){mainBoard=t.value as typeof mainBoard;render()}else if(t.matches('[data-board]')){researchBoard=t.value as ResearchBoardId;start()}});
 app.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b||b.disabled)return;const pid=state.currentPlayer,id=b.dataset.cardId;if(b.dataset.artifactCancel!==undefined){artifactId=undefined;render();return}if(b.dataset.artifactPayment&&artifactId){const action:GameAction={type:'PLAY_CARD',playerId:pid,cardId:artifactId,activationPaymentCardId:b.dataset.artifactPayment};try{state=applyEngineCommand(state,{type:'action',action},context);artifactId=undefined;message='';recordReducerEvent(action,'accepted')}catch(x){message=x instanceof Error?x.message:String(x);recordReducerEvent(action,'rejected',message)}render();return}if(b.dataset.pendingSelect){const x=b.dataset.pendingSelect;pendingSelection=pendingSelection.includes(x)?pendingSelection.filter(y=>y!==x):[...pendingSelection,x];render();return}if(b.dataset.pendingMulti){if(b.dataset.pendingMulti==='assistants')choose({type:'assistants',assistantIds:pendingSelection});else if(b.dataset.pendingMulti==='sites')choose({type:'site-ids',siteIds:pendingSelection});else choose({type:'card-options',optionIndexes:pendingSelection.map(Number)});return}if(b.dataset.pendingChoice){choose(JSON.parse(decodeURIComponent(b.dataset.pendingChoice)) as PendingChoice);return}if(b.dataset.assistant){run({type:'ACTIVATE_ASSISTANT',playerId:pid,assistantId:b.dataset.assistant});return}if(id){if(b.dataset.cardAction==='play'&&isLeaderStartingCard(context,state.players[pid]?.leader?.id,id)){leaderStartingCardId=id;render();return}if(b.dataset.cardAction==='play'&&context.cards[id]?.type==='Artifact'){artifactId=id;render();return}run(b.dataset.cardAction==='buy'?{type:'BUY_CARD',playerId:pid,cardId:id}:{type:'PLAY_CARD',playerId:pid,cardId:id});return}if(b.dataset.site)run({type:'PLACE_WORKER',playerId:pid,siteId:b.dataset.site});else if(b.dataset.discover)run({type:'DISCOVER_SITE',playerId:pid,siteId:b.dataset.discover});else if(b.dataset.research)run({type:'ADVANCE_RESEARCH',playerId:pid,track:researchToken,toNodeId:b.dataset.research});else if(b.dataset.token){researchToken=b.dataset.token as typeof researchToken;render()}else if(b.dataset.action==='end')run({type:'END_TURN',playerId:pid});else if(b.dataset.action==='pass')run({type:'PASS',playerId:pid});else if(b.dataset.action==='reset')start()});
 
@@ -2232,10 +2232,24 @@ function choiceLabel(button: HTMLButtonElement, queued: GameState['pendingReward
   return undefined;
 }
 function isGlyphOnly(text: string) { return !/[\p{L}]/u.test(text.trim()); }
+function marketChoiceHeading(queued: GameState['pendingRewards'][number] | undefined) {
+  const payload = (queued?.payload ?? {}) as Record<string, unknown>;
+  const effect = payload.type === 'CARD_EFFECT' && payload.effect && typeof payload.effect === 'object'
+    ? payload.effect as Record<string, unknown>
+    : payload;
+  const type = String(effect.type ?? payload.type ?? queued?.code ?? '');
+  if (type === 'ACQUIRE_ARTIFACT_FREE') return '免费获得一件神器（获得后立即执行其效果）';
+  if (type === 'ACQUIRE_MARKET_ITEM') return '免费获得一件物品';
+  if (['BUY_ARTIFACT', 'BUY_ARTIFACT_WITH_DISCOUNT', 'BUY_ARTIFACT_WITH_DISCOUNT_THEN_EXILE', 'BUY_ARTIFACT_WITH_DISCOUNT_TO_HAND'].includes(type) || queued?.code === 'leader:MYSTIC_BUY_ARTIFACT_DISCOUNT') return '选择要购买的神器';
+  if (type === 'BUY_ITEM') return '选择要购买的物品';
+  if (type === 'BUY_WITH_DISCOUNT') return '选择要折扣购买的物品或神器';
+  if (type === 'USE_MARKET_ITEM_EFFECT') return '选择要执行效果的市场物品';
+  return undefined;
+}
 function makePendingChoicesReadable() {
   const queued = state.pendingRewards[0];
   app.querySelectorAll<HTMLButtonElement>('.pending-panel button').forEach((button) => {
-    if (button.classList.contains('card')) return;
+    if (button.classList.contains('card') || button.classList.contains('pending-assistant-choice')) return;
     const label = choiceLabel(button, queued);
     if (label && (isGlyphOnly(button.textContent ?? '') || button.dataset.leaderCardChoice !== undefined)) {
       button.innerHTML = label;
@@ -2244,7 +2258,9 @@ function makePendingChoicesReadable() {
     }
   });
   app.querySelectorAll<HTMLElement>('.pending-panel > span').forEach((heading) => {
-    if (isGlyphOnly(heading.textContent ?? '')) heading.textContent = '请选择要执行的效果';
+    const marketHeading = marketChoiceHeading(queued);
+    if (marketHeading) heading.textContent = marketHeading;
+    else if (isGlyphOnly(heading.textContent ?? '')) heading.textContent = '请选择要执行的效果';
   });
 }
 const renderWithReadablePendingChoices = render;
@@ -2343,7 +2359,8 @@ function soloRivalBoard() {
   const solo=state.solo;if(!solo)return'';
   const rival=state.players[solo.rivalPlayerId];
   const current=solo.lastAction?`<i class="solo-rival-tile latest" style="background-image:url('${publicAsset(`/assets/solo-actions/${solo.lastAction.tileId}.webp`)}')" title="${solo.lastAction.tileId}"></i><small>${solo.lastAction.description}</small>`:'<span>尚未揭示行动牌</span>';
-  return `<section class="solo-rival-board" aria-label="自动机版图"><div class="solo-rival-heading"><span><b>对手远征队</b><small>灰色自动机版图 · 难度 ${solo.difficulty}</small></span><strong>${solo.actionDeck.length} 张未揭示</strong></div><div class="solo-rival-table"><div class="solo-rival-deck"><i class="solo-rival-tile-back">?</i><b>${solo.actionDeck.length}</b><small>行动牌堆</small></div><div class="solo-rival-used">${current}</div></div><div class="solo-rival-score"><span>考古学家 <b>${rival.availableWorkers}/${rival.workers}</b></span><span>神像 <b>${rival.idols.length}</b></span><span>守卫 <b>${rival.defeatedGuardians.length}</b></span><span>市场牌 <b>${rival.playedCards.length}</b></span><span>神庙奖励 <b>${rival.templeTiles.reduce((sum,value)=>sum+value,0)}</b></span></div></section>`;
+  const nextDirection=solo.actionDeck[0]?soloTileDirection(solo.actionDeck[0]):undefined;
+  return `<section class="solo-rival-board" aria-label="自动机版图"><div class="solo-rival-heading"><span><b>对手远征队</b><small>灰色自动机版图 · 难度 ${solo.difficulty}</small></span><strong>${solo.actionDeck.length} 张未揭示</strong></div><div class="solo-rival-table"><div class="solo-rival-deck"><i class="solo-rival-tile-back">${nextDirection==='left'?'←':nextDirection==='right'?'→':'—'}</i><b>${solo.actionDeck.length}</b><small>下一张方向</small></div><div class="solo-rival-used">${current}</div></div><div class="solo-rival-score"><span>考古学家 <b>${rival.availableWorkers}/${rival.workers}</b></span><span>神像 <b>${rival.idols.length}</b></span><span>守卫 <b>${rival.defeatedGuardians.length}</b></span><span>市场牌 <b>${rival.playedCards.length}</b></span><span>神庙奖励 <b>${rival.templeTiles.reduce((sum,value)=>sum+value,0)}</b></span></div></section>`;
 }
 function applySoloRivalBoard(){if(!state.solo||screen!=='game')return;const rival=app.querySelector<HTMLElement>(`.player[data-feedback-player="${state.solo.rivalPlayerId}"]`),zone=rival?.closest<HTMLElement>('.player-zone');if(zone)zone.innerHTML=soloRivalBoard();}
 
@@ -2356,4 +2373,50 @@ if(savedLocalGame){state=savedLocalGame.state;mainBoard=savedLocalGame.mainBoard
 const renderWithSoloBoardAndLocalSave=render;
 render=()=>{renderWithSoloBoardAndLocalSave();applySoloRivalBoard();if(screen==='game'&&!roomSession){app.querySelector('.header-actions')?.insertAdjacentHTML('beforeend','<button data-local-game-exit title="清除本地存档并返回设置">返回设置</button>');writeLocalGameSave();}};
 app.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');if(button?.dataset.localGameExit===undefined)return;localStorage.removeItem(LOCAL_GAME_SAVE_KEY);screen='setup';researchLab=false;turnStartCode='';turnStartOwner=undefined;localTurnUndoLocked=false;debugTimeline=[];message='';render();});
+render();
+
+// Choice panels must stay above every board component, but can be tucked away
+// temporarily when a player needs to inspect the board before deciding.
+let choicePanelCollapsed = false;
+let choicePanelSignature = '';
+const minimizableChoicePanels = '.pending-panel,.payment-panel,.payment-discard-panel,.research-bonus-picker,.research-cost-picker,.temple-shop,.idol-picker';
+function enhanceChoicePanels() {
+  const panels = [...app.querySelectorAll<HTMLElement>(minimizableChoicePanels)];
+  if (!panels.length) { choicePanelCollapsed = false; choicePanelSignature = ''; return; }
+  const queued = state.pendingRewards[0];
+  const signature = `${queued?.sourceId ?? ''}:${queued?.code ?? ''}:${panels.map((panel) => [...panel.classList].filter((name) => name !== 'choice-overlay' && name !== 'choice-overlay-collapsed').join('.')).join('|')}`;
+  if (choicePanelSignature && choicePanelSignature !== signature) choicePanelCollapsed = false;
+  choicePanelSignature = signature;
+  panels.forEach((panel) => {
+    panel.classList.add('choice-overlay');
+    panel.classList.toggle('choice-overlay-collapsed', choicePanelCollapsed);
+    if (!panel.querySelector('[data-choice-overlay-toggle]')) {
+      panel.insertAdjacentHTML('afterbegin', `<button class="choice-overlay-toggle" data-choice-overlay-toggle title="${choicePanelCollapsed ? '展开选项' : '收起选项'}" aria-label="${choicePanelCollapsed ? '展开选项' : '收起选项'}">${choicePanelCollapsed ? '展开' : '收起'}</button>`);
+    }
+    const toggle = panel.querySelector<HTMLButtonElement>('[data-choice-overlay-toggle]');
+    if (toggle) {
+      toggle.textContent = choicePanelCollapsed ? '展开' : '收起';
+      toggle.title = choicePanelCollapsed ? '展开选项' : '收起选项';
+      toggle.ariaLabel = toggle.title;
+    }
+  });
+}
+function simplifyRunningLabControls() {
+  if (!researchLab || screen !== 'game') return;
+  const controls = app.querySelector<HTMLElement>('.research-lab-controls');
+  if (!controls) return;
+  controls.querySelectorAll('label,[data-research-lab-restart]').forEach((element) => element.remove());
+  const leader = state.players[state.currentPlayer]?.leader?.id ?? '基础探险家';
+  controls.querySelector('strong')?.insertAdjacentHTML('afterend', `<span class="research-lab-current-config">主板：${mainBoard === 'bird' ? '普通' : '进阶'} · 研究板：${researchBoard} · ${leader}</span>`);
+}
+const renderWithChoiceOverlay = render;
+render = () => { renderWithChoiceOverlay(); simplifyRunningLabControls(); enhanceChoicePanels(); };
+app.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice-overlay-toggle]');
+  if (!button) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  choicePanelCollapsed = !choicePanelCollapsed;
+  enhanceChoicePanels();
+});
 render();

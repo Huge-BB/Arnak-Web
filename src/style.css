@@ -168,3 +168,21 @@
 .solo-action-face{flex-basis:64px!important;width:64px!important;height:64px!important;background-position:center!important;background-size:contain!important}.solo-rival-tile{background-position:center!important;background-size:contain!important}.solo-rival-used{align-items:center}.solo-rival-used small{max-width:260px;color:#e6dec4;font-size:.7rem;line-height:1.35}
 .research-cost-picker .payment-arrowhead img{transform:scale(.62)!important}
 .pending-assistant-choice{grid-template-columns:42px minmax(100px,1fr)}.pending-assistant-choice i{width:42px;height:52px;border-radius:6px;background-size:contain}.assistant-acquisition-panel .pending-assistant-choice{grid-template-columns:78px minmax(110px,1fr)}.assistant-acquisition-panel .pending-assistant-choice i{width:78px;height:98px}@media(max-width:600px){.assistant-acquisition-panel .pending-assistant-choice{grid-template-columns:64px 96px}.assistant-acquisition-panel .pending-assistant-choice i{width:64px;height:80px}}
+.solo-action-face{flex-basis:52px!important;width:52px!important;height:78px!important}.solo-rival-tile{flex-basis:54px;width:54px;height:81px}.solo-rival-tile-back{height:81px}
+.research-cost-picker .payment-tablet img{transform:scale(.72)!important}
+
+/* All decision panels share one top UI layer. */
+.choice-overlay{z-index:150!important}
+.choice-overlay-toggle{position:absolute!important;z-index:2;right:7px;top:7px;width:auto!important;min-width:0!important;min-height:27px!important;height:27px!important;padding:0 8px!important;border:1px solid #c9aa5d!important;border-radius:6px!important;background:#294536!important;color:#f7e8b6!important;font-size:.72rem!important;font-weight:800!important;line-height:25px!important}
+.choice-overlay:not(.choice-overlay-collapsed){padding-top:42px!important}
+.choice-overlay-collapsed{position:fixed!important;left:auto!important;right:10px!important;top:72px!important;bottom:auto!important;width:auto!important;min-width:116px!important;max-width:190px!important;height:42px!important;min-height:0!important;padding:7px 62px 7px 10px!important;overflow:hidden!important;transform:none!important;border-radius:8px!important}
+.choice-overlay-collapsed>*:not(.choice-overlay-toggle){display:none!important}
+.choice-overlay-collapsed .choice-overlay-toggle{right:7px;top:7px}
+
+/* The physical assistant tile is the complete choice label. */
+.pending-assistant-choice{display:block!important;min-width:0!important;padding:4px!important}
+.pending-assistant-choice>span{display:none!important}
+.assistant-acquisition-panel .pending-assistant-choice{flex:0 0 auto!important;width:78px!important}
+.assistant-acquisition-panel .pending-assistant-choice i{width:70px!important;height:88px!important}
+@media(max-width:600px){.choice-overlay-collapsed{right:7px;top:62px}.assistant-acquisition-panel .pending-assistant-choice{width:68px!important}.assistant-acquisition-panel .pending-assistant-choice i{width:60px!important;height:75px!important}}
+.research-lab-current-config{padding:3px 8px;border:1px solid #8e7950;border-radius:6px;background:#182b20;color:#eadba9;font-size:.72rem;white-space:nowrap}

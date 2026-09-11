@@ -22,5 +22,7 @@ for (const [id, sheet] of Object.entries(sheets)) {
 }
 for(const [tileId,[sheetId,index]] of Object.entries(cards)){
   const sheet=source[sheetId],column=index%sheet.columns,row=Math.floor(index/sheet.columns),left=Math.floor(sheet.width/sheet.columns*column),top=Math.floor(sheet.height/sheet.rows*row),width=Math.floor(sheet.width/sheet.columns*(column+1))-left,height=Math.floor(sheet.height/sheet.rows*(row+1))-top;
-  await sheet.image.clone().extract({left,top,width,height}).resize(192,192,{fit:'cover'}).webp({quality:82}).toFile(resolve(directory,`${tileId}.webp`));
+  // Rival tiles are portrait rectangles. Squaring them with `cover` removed
+  // the arrows and most printed information from the localized asset.
+  await sheet.image.clone().extract({left,top,width,height}).resize({width:192}).webp({quality:86}).toFile(resolve(directory,`${tileId}.webp`));
 }

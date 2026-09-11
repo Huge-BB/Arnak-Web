@@ -35,6 +35,7 @@ const tile = (id:string) => {
   if(!result) throw new Error(`Unknown solo rival tile: ${id}`);
   return result;
 };
+export function soloTileDirection(id:string):Direction{return tile(id).direction;}
 const siteX = (siteId:string) => {
   const match=siteId.match(/(?:camp|level[12])-(\d+)/);
   return match ? Number(match[1]) : 0;
