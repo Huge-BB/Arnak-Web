@@ -1565,7 +1565,7 @@ function supplyBoard(){
   const assistants=state.assistants.stacks.slice(0,3).map((stack,index)=>{const assistantId=stack[0],asset=assistantId?assistantAsset(assistantId,'silver'):undefined,style=component(`supply-assistant-${index}`,SUPPLY_BOARD_COMPONENTS.assistants[index]!),tag=selectable?'button':'span',choice=selectable&&stack.length?` data-supply-assistant-stack="${index}"`:'';return`<${tag} class="supply-assistant-stack ${selectable?'selectable':''}" style="${style}" title="assistant supply ${index+1}: ${stack.length}" ${!stack.length&&selectable?'disabled':''}${choice}>${assistantId?`<i style="${sprite(asset)}"></i>`:''}<b>${stack.length}</b></${tag}>`;}).join('');
   const startEntries=state.playerOrder.flatMap(id=>(['magnifying','journal'] as const).flatMap(kind=>state.solo?.rivalPlayerId===id&&kind==='journal'?[]:state.research[`${kind}Node`][id]===`${state.research.board}:start`?[{id,kind}]:[]));
   const magnifyingStart=source('supply-research-start-magnifying',SUPPLY_BOARD_COMPONENTS.researchStarts.magnifying),journalStart=source('supply-research-start-journal',SUPPLY_BOARD_COMPONENTS.researchStarts.journal);
-  const startCenter={x:(magnifyingStart.x+journalStart.x)/2+150,y:(magnifyingStart.y+journalStart.y)/2,width:16,height:16};
+  const startCenter={x:(magnifyingStart.x+journalStart.x)/2+330,y:(magnifyingStart.y+journalStart.y)/2,width:16,height:16};
   const researchStarts=startEntries.map(({id,kind},index)=>{const style=component('supply-research-start-row',startCenter),dx=(index-(startEntries.length-1)/2)*16,color=state.players[id].color.toLowerCase();return`<i class="supply-research-start" style="${style};--token-dx:${dx}px;--token-dy:0px" title="${id} ${kind} research start"><img src="${publicAsset(`/assets/tokens-${color}-${kind}.png`)}" alt="${kind}"></i>`;}).join('');
   return`<aside class="supply-board"><img src="${publicAsset('/assets/boards/supply-board-web.webp')}" alt="supply board"><div class="supply-assistant-stacks">${supplyDecks}${assistants}${researchStarts}</div></aside>`;
 }
@@ -2233,8 +2233,8 @@ render();
 // followed by the active hand and board. Inactive boards remain below it.
 function applyTurnFocusedPlayerLayout() {
   if (screen !== 'game') return;
-  const main = app.querySelector('main'), players = main?.querySelector<HTMLElement>('.players'), hand = main?.querySelector<HTMLElement>('.hand');
-  if (!main || !players || !hand) return;
+  const main = app.querySelector('main'), players = main?.querySelector<HTMLElement>('.players'), hand = main?.querySelector<HTMLElement>('.hand'), surface = main?.querySelector<HTMLElement>('.play-surface');
+  if (!main || !players || !hand || !surface) return;
   const zones = [...players.querySelectorAll<HTMLElement>(':scope > .player-zone')];
   if (!zones.length) return;
   const overview = document.createElement('section');
@@ -2242,18 +2242,21 @@ function applyTurnFocusedPlayerLayout() {
   zones.forEach((zone, index) => {
     const summary = zone.querySelector<HTMLElement>('.player-resource-summary');
     if (!summary) return;
-    summary.dataset.playerId = state.playerOrder[index] ?? '';
+    const playerId = state.playerOrder[index], playerState = playerId ? state.players[playerId] : undefined, leader = playerState?.leader?.id;
+    summary.dataset.playerId = playerId ?? '';
+    summary.insertAdjacentHTML('afterbegin', `<span class="player-summary-identity ${playerState?.color.toLowerCase() ?? ''}">${leader ? `<i class="player-leader-avatar" style="background-image:url('${publicAsset(`/assets/boards/leader-${leader}.jpg`)}')" title="${leader}"></i>` : ''}<b>玩家 ${index + 1}</b>${leader ? `<small>${leader}</small>` : ''}</span>`);
     if (zone.querySelector('.player.current')) summary.classList.add('current');
     overview.append(summary);
   });
   const activeZone = zones.find((zone) => Boolean(zone.querySelector('.player.current')));
-  players.before(overview);
+  surface.before(overview);
   overview.after(hand);
   if (activeZone) {
     activeZone.classList.add('active-player-zone');
     hand.after(activeZone);
-    activeZone.after(players);
-  } else hand.after(players);
+    activeZone.after(surface);
+    surface.after(players);
+  } else hand.after(surface);
   players.classList.add('inactive-players');
 }
 const renderWithTurnFocusedPlayerLayout = render;
