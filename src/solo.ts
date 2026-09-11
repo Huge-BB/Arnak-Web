@@ -207,14 +207,16 @@ export function resetSoloRound(state:GameState) {
   const rival=state.players[solo.rivalPlayerId]; rival.hasPassed=false; rival.availableWorkers=rival.workers;
   state.firstPlayer=solo.rivalPlayerId; state.currentPlayer=solo.rivalPlayerId;
 }
-export interface SoloScore { human:number; rival:number; humanWon:boolean; }
+export interface SoloScoreBreakdown { research:number; templeTiles:number; idols:number; emptyIdolSlots:number; guardians:number; cards:number; total:number; }
+export interface SoloScore { human:number; rival:number; humanWon:boolean; humanBreakdown:SoloScoreBreakdown; rivalBreakdown:SoloScoreBreakdown; }
 export function scoreSoloGame(state:GameState,context:EngineContext):SoloScore {
   if(!state.solo)throw new Error('This is not a solo game');
   const track=context.researchTracks?.[state.research.board]; if(!track)throw new Error('Solo scoring requires the selected research track');
   const solo=state.solo,human=state.players[solo.humanPlayerId],rival=state.players[solo.rivalPlayerId];
   const cards=(player:typeof human)=>cardScore(player,context);
-  const normal=(player:typeof human)=>researchScore(track,player.researchMagnifying,player.researchJournal,state.research.templeArrivalPoints[player.id]??0)+templeTileScore(player)+guardianScore(player)+cards(player);
-  const humanScore=normal(human)+human.idols.length*3+emptyIdolSlotScore(human);
+  const breakdown=(player:typeof human,idols:number,emptyIdolSlots:number):SoloScoreBreakdown=>{const research=researchScore(track,player.researchMagnifying,player.researchJournal,state.research.templeArrivalPoints[player.id]??0),templeTiles=templeTileScore(player),guardians=guardianScore(player),cardPoints=cards(player);return{research,templeTiles,idols,emptyIdolSlots,guardians,cards:cardPoints,total:research+templeTiles+idols+emptyIdolSlots+guardians+cardPoints};};
+  const humanBreakdown=breakdown(human,human.idols.length*3,emptyIdolSlotScore(human));
   const unique=rival.idols.filter(idol=>idol.faceUp).length*3,duplicates=rival.idols.filter(idol=>!idol.faceUp).length*2;
-  return {human:humanScore,rival:normal(rival)+unique+duplicates,humanWon:humanScore>normal(rival)+unique+duplicates};
+  const rivalBreakdown=breakdown(rival,unique+duplicates,0);
+  return {human:humanBreakdown.total,rival:rivalBreakdown.total,humanWon:humanBreakdown.total>rivalBreakdown.total,humanBreakdown,rivalBreakdown};
 }

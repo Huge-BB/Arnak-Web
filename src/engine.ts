@@ -48,6 +48,7 @@ import type {
   PlayerColor,
   CardId,
   PlayerId,
+  LeaderId,
   Resource,
   TravelCost,
 } from "./types.ts";
@@ -173,10 +174,10 @@ export function createGame(playerIds: PlayerId[]): GameState {
 }
 /** Official base-game solo setup. The rival occupies the first seat only so
  * the existing two-player component setup and turn ownership stay canonical. */
-export function createSoloGame(options:{seed:string;difficulty:number;board:'bird'|'snake';researchBoard:string;context:EngineContext}):GameState {
+export function createSoloGame(options:{seed:string;difficulty:number;board:'bird'|'snake';researchBoard:string;leader?:LeaderId;marketExpansions?:string[];context:EngineContext}):GameState {
   let state=createGame([SOLO_RIVAL,SOLO_HUMAN]);
   state.sites=createBaseBoardSites(2,options.seed,options.board);
-  state=reduce(state,{type:'START_GAME',seed:options.seed,researchBoard:options.researchBoard,marketExpansions:['Base Game']},options.context);
+  state=reduce(state,{type:'START_GAME',seed:options.seed,researchBoard:options.researchBoard,leaders:options.leader?{[SOLO_HUMAN]:options.leader}:undefined,marketExpansions:options.marketExpansions??['Base Game']},options.context);
   return configureSoloGame(state,options.difficulty);
 }
 function assertPlaying(s: GameState) {
