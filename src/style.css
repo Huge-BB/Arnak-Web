@@ -156,5 +156,6 @@
 .payment-icon.payment-travel img{border-radius:50%;clip-path:circle(48% at 50% 50%)}
 .track-token{width:16px;height:16px;transform:translate(calc(-50% + var(--token-dx,0px)),calc(-50% + var(--token-dy,0px)))}
 .supply-research-start{z-index:8;width:16px!important;height:16px!important;transform:translate(calc(-50% + var(--token-dx,0px)),calc(-50% + var(--token-dy,0px)))}
-.resource-worker-token{display:block;width:28px;height:28px;background-image:url('/assets/archaeologists-bga-wooden-sprite.webp');background-size:200% 200%;background-repeat:no-repeat;filter:brightness(1.22) saturate(1.22) drop-shadow(0 1px 1px #000)}
-.resource-worker-token.yellow{background-position:0 0}.resource-worker-token.blue{background-position:100% 0}.resource-worker-token.green{background-position:0 100%}.resource-worker-token.red{background-position:100% 100%}
+.player-resource-summary .resource-chip img{width:26px;height:26px}
+.resource-worker-token{display:block;width:28px;height:28px;background-position:center;background-size:contain;background-repeat:no-repeat;filter:brightness(1.12) saturate(1.12) drop-shadow(0 1px 1px #000)}
+.resource-worker-token.yellow{background-image:url('/assets/archaeologist-yellow-wooden.webp')}.resource-worker-token.blue{background-image:url('/assets/archaeologist-blue-wooden.webp')}.resource-worker-token.green{background-image:url('/assets/archaeologist-green-wooden.webp')}.resource-worker-token.red{background-image:url('/assets/archaeologist-red-wooden.webp')}
