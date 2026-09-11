@@ -5,10 +5,11 @@ import { createGame } from './engine.ts';
 import { applyEngineCommand, type EngineCommand } from './engine-api.ts';
 import { InMemoryRoomStore, type RoomStore, type StoredRoom } from './room-store.ts';
 import type { EngineContext, GameState, PlayerId } from './types.ts';
+import { commandRevealsHiddenInformation } from './information-policy.ts';
 
 export type RoomTicket = { roomId: string; token: string; playerId?: PlayerId; role: 'player' | 'spectator' };
 export type RoomSummary = { id: string; name: string; seats: number; occupiedSeats: number; spectatorCount: number; status: 'lobby' | 'playing' | 'finished'; hostPlayerId: PlayerId; visibility: 'public' | 'unlisted' };
-export type RoomSnapshot = { room: RoomSummary; viewer: { playerId?: PlayerId; role: 'player' | 'spectator'; autoPass?: boolean }; state?: ReturnType<typeof projectGameState> };
+export type RoomSnapshot = { room: RoomSummary; viewer: { playerId?: PlayerId; role: 'player' | 'spectator'; autoPass?: boolean; canUndoTurn?:boolean }; state?: ReturnType<typeof projectGameState> };
 type Listener = { token: string; notify: (snapshot: RoomSnapshot) => void };
 
 /** Returns only the private hand belonging to the current room session. */
@@ -68,6 +69,8 @@ export class RoomService {
       const seed = String(options.seed || roomId), state = createGame(playerIds);
       state.sites = createBaseBoardSites(playerIds.length, seed);
       room.state = applyEngineCommand(state, { type: 'action', action: { type: 'START_GAME', seed, ...options } }, this.context);
+      room.turnStartState=structuredClone(room.state);
+      room.turnUndoLocked=false;
       room.version += 1;
       room.events.push({ version: room.version, at: new Date().toISOString(), kind: 'start' });
       room.snapshots.push({ version: room.version, state: structuredClone(room.state) });
@@ -82,7 +85,10 @@ export class RoomService {
       if (!room.state || !member?.playerId) throw new Error('Spectators cannot submit game commands');
       const actor = command.type === 'action' ? ('playerId' in command.action ? command.action.playerId : undefined) : command.playerId;
       if (actor !== member.playerId) throw new Error('A session may only submit commands for its own seat');
-      room.state = applyEngineCommand(room.state, command, this.context);
+      const before=room.state, reveals=commandRevealsHiddenInformation(before,command,this.context);
+      room.state = applyEngineCommand(before, command, this.context);
+      if(reveals) room.turnUndoLocked=true;
+      if(room.state.currentPlayer!==before.currentPlayer){room.turnStartState=structuredClone(room.state);room.turnUndoLocked=false;}
       room.version += 1;
       room.events.push({ version: room.version, at: new Date().toISOString(), kind: 'command', command });
       if (room.version % 20 === 0) room.snapshots.push({ version: room.version, state: structuredClone(room.state) });
@@ -90,6 +96,19 @@ export class RoomService {
     });
     await this.broadcast(roomId);
     return this.snapshot(roomId, token);
+  }
+
+  async undoTurn(roomId:string,token:string):Promise<RoomSnapshot>{
+    await this.store.transact(roomId,room=>{
+      const member=this.member(room,token);
+      if(!room.state||!member?.playerId)throw new Error('Only a seated player may undo');
+      if(room.state.currentPlayer!==member.playerId)throw new Error('Only the current player may undo');
+      if(room.turnUndoLocked)throw new Error('This turn revealed new information and can no longer be undone');
+      if(!room.turnStartState)throw new Error('No turn-start checkpoint is available');
+      room.state=structuredClone(room.turnStartState);room.version+=1;
+      room.events.push({version:room.version,at:new Date().toISOString(),kind:'undo'});
+    });
+    await this.broadcast(roomId);return this.snapshot(roomId,token);
   }
 
   /** Reserve one automatic PASS for the member's next legal turn this round. */
@@ -107,7 +126,7 @@ export class RoomService {
     const room = await this.store.read(roomId), member = this.member(room, token);
     if (!member) throw new Error('Unknown room session');
     member.lastSeenAt = new Date().toISOString();
-    return { room: this.summary(room), viewer: { playerId: member.playerId, role: member.role, ...(member.playerId ? { autoPass: Boolean(member.autoPass) } : {}) }, ...(room.state ? { state: projectGameState(room.state, member.playerId) } : {}) };
+    return { room: this.summary(room), viewer: { playerId: member.playerId, role: member.role, ...(member.playerId ? { autoPass: Boolean(member.autoPass),canUndoTurn:room.state?.currentPlayer===member.playerId&&!room.turnUndoLocked } : {}) }, ...(room.state ? { state: projectGameState(room.state, member.playerId) } : {}) };
   }
 
   async subscribe(roomId: string, token: string, notify: (snapshot: RoomSnapshot) => void): Promise<() => void> {
@@ -136,7 +155,9 @@ export class RoomService {
       if (room.state.pendingRewards.some(reward => reward.playerId === member.playerId)) return;
       member.autoPass = false;
       const command: EngineCommand = { type: 'action', action: { type: 'PASS', playerId: member.playerId! } };
+      const previousPlayer=room.state.currentPlayer;
       room.state = applyEngineCommand(room.state, command, this.context);
+      if(room.state.currentPlayer!==previousPlayer){room.turnStartState=structuredClone(room.state);room.turnUndoLocked=false;}
       room.version += 1;
       room.events.push({ version: room.version, at: new Date().toISOString(), kind: 'command', command });
       if (room.version % 20 === 0) room.snapshots.push({ version: room.version, state: structuredClone(room.state) });

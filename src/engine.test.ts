@@ -97,15 +97,18 @@ test('resource spending rejects insufficient resources without mutating input st
   assert.equal(state.players.p1.resources.compass, 0);
 });
 
-test('buying an item spends coins, puts it on the bottom of the deck, and refills the row', () => {
+test('buying an item spends coins, puts it on the bottom of the deck, and defers refill until turn end', () => {
   let state = reduce(createGame(['p1']), { type: 'START_GAME' });
   state.market.items = ['item1'];
   state.market.itemDeck = ['item2'];
   state = reduce(state, { type: 'BUY_CARD', playerId: 'p1', cardId: 'item1' }, cards);
   assert.equal(state.players.p1.resources.coin, 0);
   assert.deepEqual(state.players.p1.deck, ['item1']);
-  assert.deepEqual(state.market.items, ['item2']);
-  assert.deepEqual(state.market.itemDeck, []);
+  assert.deepEqual(state.market.items, []);
+  assert.deepEqual(state.market.itemDeck, ['item2']);
+  state=reduce(state,{type:'END_TURN',playerId:'p1'},cards);
+  assert.deepEqual(state.market.items,['item2']);
+  assert.deepEqual(state.market.itemDeck,[]);
 });
 
 test('buying an artifact spends compasses and places it in the played area', () => {
@@ -116,6 +119,8 @@ test('buying an artifact spends compasses and places it in the played area', () 
   state = reduce(state, { type: 'BUY_CARD', playerId: 'p1', cardId: 'artifact1' }, cards);
   assert.equal(state.players.p1.resources.compass, 0);
   assert.deepEqual(state.players.p1.playedCards, ['artifact1']);
+  assert.deepEqual(state.market.artifacts, []);
+  state=reduce(state,{type:'END_TURN',playerId:'p1'},cards);
   assert.deepEqual(state.market.artifacts, ['artifact2']);
 });
 

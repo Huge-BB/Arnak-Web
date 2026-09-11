@@ -11,6 +11,7 @@ import {decodeStateCode,encodeStateCode} from './state-code.ts';
 import { calibrationMark, calibrationStorageKey, readBoardCalibration } from './board-calibration.ts';
 import {BASE_BOARD_INTERACTION_SPOTS,createBaseBoardSites} from './base-board-setup.ts';
 import {BASE_IDOL_EFFECTS,BASE_IDOL_SLOTS,LEADER_IDOL_EFFECT_LAYOUT,LEADER_LAYOUT,RESEARCH_BOARD_SIZE,RESEARCH_TEMPLE_TILE_COMPONENTS,SUPPLY_BOARD_COMPONENTS,SUPPLY_BOARD_SIZE,researchTokenPoint,pointStyle,playerPointStyle} from './board-layout.ts';
+import {actionRevealsHiddenInformation,commandRevealsHiddenInformation} from './information-policy.ts';
 import {idolSlotConfig,type IdolEffect} from './leaders/idol-actions.ts';
 import {isLeaderStartingCard} from './leaders/utils.ts';
 type Asset={url?:string;sheetUrl:string;sheetWidth:number;sheetHeight:number;cardIndex:number};type Spot={id:string;level:1|2;left:number;top:number;width?:number;height?:number;rewardCode?:string};
@@ -437,7 +438,7 @@ render();
 // that checkpoint was reached.  Keep this client-only: a room's event log is
 // still owned by its server.
 type DebugTimelineEntry = { id: number; label: string; status: 'accepted' | 'rejected' | 'checkpoint'; code: string; detail?: string };
-let debugTimeline: DebugTimelineEntry[] = [], debugTimelineId = 0;
+let debugTimeline: DebugTimelineEntry[] = [], debugTimelineId = 0, eventBeforeState:GameState|undefined;
 function html(value: unknown) { return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'); }
 function describeReducerValue(value: unknown) {
   const record = value && typeof value === 'object' ? value as Record<string, unknown> : {};
@@ -465,9 +466,23 @@ function recordReducerEvent(value: unknown, status: DebugTimelineEntry['status']
   debugTimeline = [...debugTimeline.slice(-59), {
     id: ++debugTimelineId,
     label: describeReducerValue(value), status,
-    detail,
+    detail:detail??(eventBeforeState?describeStateDelta(eventBeforeState,state):undefined),
     code: encodeStateCode(state),
   }];
+}
+function describeStateDelta(before:GameState,after:GameState){
+  const changes:string[]=[];
+  for(const id of after.playerOrder){const a=before.players[id],b=after.players[id];if(!a||!b)continue;
+    const names={coin:'金币',compass:'指南针',tablet:'石板',arrowhead:'箭头',jewel:'宝石',fear:'恐惧'} as const;
+    for(const key of Object.keys(names) as Array<keyof typeof names>){const delta=b.resources[key]-a.resources[key];if(delta)changes.push(`${id}${delta>0?'获得':'支付'} ${Math.abs(delta)} ${names[key]}`);}
+    const hand=b.hand.length-a.hand.length,deck=b.deck.length-a.deck.length,played=b.playedCards.length-a.playedCards.length;
+    if(hand)changes.push(`${id}手牌 ${hand>0?'+':''}${hand}`);if(deck)changes.push(`${id}牌库 ${deck>0?'+':''}${deck}`);if(played)changes.push(`${id}已打出 ${played>0?'+':''}${played}`);
+    if(b.availableWorkers!==a.availableWorkers)changes.push(`${id}可用工人 ${a.availableWorkers}→${b.availableWorkers}`);
+    if(b.researchMagnifying!==a.researchMagnifying)changes.push(`${id}放大镜 ${a.researchMagnifying}→${b.researchMagnifying}`);
+    if(b.researchJournal!==a.researchJournal)changes.push(`${id}笔记本 ${a.researchJournal}→${b.researchJournal}`);
+  }
+  if(before.currentPlayer!==after.currentPlayer)changes.push(`当前玩家 ${before.currentPlayer}→${after.currentPlayer}`);if(before.round!==after.round)changes.push(`轮次 ${before.round}→${after.round}`);
+  return changes.join('；')||'状态未发生可见变化';
 }
 function resetDebugTimeline(label: string) {
   debugTimeline = [];
@@ -838,7 +853,7 @@ render();
 // service: browser state is a projected view, never a reducer input.
 type RoomTicketUi = { roomId: string; token: string; playerId?: PlayerId; role: 'player' | 'spectator' };
 type RoomSummaryUi = { id: string; name: string; seats: number; occupiedSeats: number; spectatorCount: number; status: 'lobby' | 'playing' | 'finished'; hostPlayerId: PlayerId; visibility: 'public' | 'unlisted' };
-type RoomSnapshotUi = { room: RoomSummaryUi; viewer: { playerId?: PlayerId; role: 'player' | 'spectator'; autoPass?: boolean }; state?: GameState };
+type RoomSnapshotUi = { room: RoomSummaryUi; viewer: { playerId?: PlayerId; role: 'player' | 'spectator'; autoPass?: boolean; canUndoTurn?:boolean }; state?: GameState };
 type AuthSessionUi = { token: string; user: { id: string; username: string; displayName: string }; expiresAt: string };
 const roomSessionKey = 'arnak.room-session.v1', roomAddressKey = 'arnak.room-address.v1', authSessionKey = 'arnak.auth-session.v1';
 let roomAddress = localStorage.getItem(roomAddressKey) || `${location.protocol}//${location.hostname || '127.0.0.1'}:8787`;
@@ -1518,7 +1533,20 @@ research = () => {
     const bronzeStack = variant==='2b' ? 'bronzeB' : variant==='2c' ? 'bronzeC' : 'bronzeA';
     const available = tier==='bronze' ? state.templeTiles[bronzeStack]>0 : tier==='silver' ? (variant==='6b'?state.templeTiles.silverRight:state.templeTiles.silverLeft)>0 : state.templeTiles.gold > 0;
     const eligible = available && canBuyTempleTile(state, state.currentPlayer, tier, track);
-    const component = calibratedResearchComponent(state.research.board, `research-temple-tile-${variant}`, RESEARCH_TEMPLE_TILE_COMPONENTS[variant]);
+    // Bird and Snake were calibrated by hand. Monkey/Lizard still contain old
+    // vertical placeholder marks, so inherit Bird's verified triangle until
+    // those two boards are independently fine-tuned in the collector.
+    const inheritedTriangle = {
+      '11': { x:418, y:85, width:297, height:141 },
+      '6a': { x:546, y:254, width:237, height:113 },
+      '6b': { x:300, y:249, width:237, height:113 },
+      '2a': { x:171, y:402, width:210, height:94 },
+      '2b': { x:661, y:402, width:210, height:94 },
+      '2c': { x:418, y:405, width:210, height:94 },
+    } as const;
+    const component = state.research.board==='monkey'||state.research.board==='lizard'
+      ? inheritedTriangle[variant]
+      : calibratedResearchComponent(state.research.board, `research-temple-tile-${variant}`, RESEARCH_TEMPLE_TILE_COMPONENTS[variant]);
     const remaining=tier==='bronze'?state.templeTiles[bronzeStack]:tier==='silver'?(variant==='6b'?state.templeTiles.silverRight:state.templeTiles.silverLeft):state.templeTiles.gold;
     return `<button class="research-temple-tile ${tier}" style="${researchComponentStyle(component)}" ${eligible ? 'data-temple-shop' : 'disabled'} title="${eligible ? `buy ${variant.toUpperCase()} temple tile` : `${variant.toUpperCase()} temple tile unavailable`}"><img src="${publicAsset(`/assets/temple-tile-${variant}.png`)}" alt="${variant} temple tile"><b>${remaining}</b></button>`;
   }).join('');
@@ -1599,7 +1627,11 @@ board = () => `<section class="map-board"><img src="${publicAsset(`/assets/board
     const color = state.players[playerId].color.toLowerCase();
     return `<i class="archaeologist-base ${color}" style="--worker-left:${workerLeft}%;--worker-top:${workerTop}%" aria-hidden="true"></i><i class="archaeologist-token ${color}" style="--worker-left:${workerLeft}%;--worker-top:${workerTop}%" title="${playerId} archaeologist"></i>`;
   }).join('');
-  return `<button class="map-hotspot ${status}" style="--site-x:${spot.left}%;--site-y:${spot.top}%;--site-w:${siteWidth}%;--site-h:${siteHeight}%" ${blocked ? 'disabled ' : ''}${ready ? 'data-site' : 'data-discover'}="${spot.id}" title="${blocked ? 'blocked camp' : spot.rewardCode ? 'camp' : `level ${spot.level}`}">${archaeologist}${idols}</button>${tile}${guardian}`;
+  const blockers = campSlots.filter(slot=>slot.blocked).map(slot=>{
+    const anchor=workerAnchor(spot,slot.id),left=(anchor.x-spot.left)/siteWidth*100+50,top=(anchor.y-spot.top)/siteHeight*100+50;
+    return `<i class="camp-space-blocker" style="--worker-left:${left}%;--worker-top:${top}%" title="该营地工位按玩家人数关闭"></i>`;
+  }).join('');
+  return `<button class="map-hotspot ${status}" style="--site-x:${spot.left}%;--site-y:${spot.top}%;--site-w:${siteWidth}%;--site-h:${siteHeight}%" ${blocked ? 'disabled ' : ''}${ready ? 'data-site' : 'data-discover'}="${spot.id}" title="${blocked ? 'blocked camp' : spot.rewardCode ? 'camp' : `level ${spot.level}`}">${archaeologist}${blockers}${idols}</button>${tile}${guardian}`;
 }).join('')}${research()}</section>${supplyBoard()}`;
 render();
 
@@ -1983,11 +2015,16 @@ function playerComponentTray(id: PlayerId) {
   return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-guardians"><strong>守卫</strong><div>${guardians || '<small>—</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>交通工具</strong><div>${temporaryIcons || '<small>—</small>'}</div></section></aside>`;
 }
 function playerDrawDeck(id: PlayerId) {
-  const leader = Boolean(state.players[id].leader);
-  const fallback = leader ? { x: 110, y: 140 } : { x: 610, y: 160 };
-  const mark = leader ? undefined : calibrationMark('player-base', 'player-base-draw-deck');
-  const component = mark ? { x:mark.x/100*1270, y:mark.y/100*328, width:mark.width, height:mark.height } : { ...fallback,width:150,height:250 };
-  const style = leader ? playerPointStyle(component, true) : playerComponentStyle(component);
+  const playerState=state.players[id], leaderId=playerState.leader?.id;
+  const leader = Boolean(leaderId);
+  const leaderX:Record<string,number>={captain:96,falconer:96,baroness:96,professor:96,explorer:96,mystic:387};
+  const leftCrop=playerState.color==='Blue'||playerState.color==='Green';
+  const component=leader
+    ? {x:leaderX[leaderId!]??96,y:158,width:170,height:244}
+    : {x:leftCrop?107:610,y:161,width:174,height:246};
+  const style=leader
+    ? playerComponentStyle(component,true)
+    : `--x:${((component.x-(leftCrop?0:504))/766)*100}%;--y:${component.y/328*100}%;--player-piece-w:${component.width/766*100}%;--player-piece-h:${component.height/328*100}%`;
   return `<button class="player-draw-deck ${leader ? 'leader-draw-deck' : ''}" style="${style}" data-view-deck="${id}" title="查看牌库（${state.players[id].deck.length} 张，展示顺序随机）"><img src="${publicAsset('/assets/card-back.jpg')}" alt="查看牌库"><b>${state.players[id].deck.length}</b></button>`;
 }
 const playerWithExternalResourceSummary = player;
@@ -2266,4 +2303,29 @@ function applyTurnFocusedPlayerLayout() {
 }
 const renderWithTurnFocusedPlayerLayout = render;
 render = () => { renderWithTurnFocusedPlayerLayout(); applyTurnFocusedPlayerLayout(); };
+render();
+
+// Final entry screen. Keep all modes in one deliberate hierarchy instead of
+// allowing historical feature wrappers to append unrelated controls.
+renderSetup = () => {
+  const playerIds=Array.from({length:setupPlayerCount},(_,index)=>`p${index+1}`);
+  const leaderSelect=(id:string)=>`<option value="">基础探险家</option>${(['captain','falconer','baroness','professor','explorer','mystic'] as LeaderId[]).map(leader=>`<option value="${leader}" ${setupLeaders[id]===leader?'selected':''}>${leader}</option>`).join('')}`;
+  app.innerHTML=`<main class="setup-screen setup-screen--redesigned"><section class="setup-card setup-card--expedition"><header class="setup-hero"><div class="setup-kicker">LOST RUINS OF ARNAK</div><h1>准备远征</h1><p>选择版图与探险队，然后开始本地热座、单人对局或联机房间。</p></header><nav class="play-mode-switch"><button class="is-current" disabled><strong>本地设置</strong><small>同一设备轮流操作</small></button><button data-room-open><strong>联机房间</strong><small>局域网多人同步</small></button></nav><div class="setup-fields"><label class="setup-field"><span>玩家人数</span><select data-setup-players>${[2,3,4].map(count=>`<option value="${count}" ${setupPlayerCount===count?'selected':''}>${count} 人</option>`).join('')}</select></label><label class="setup-field"><span>主板图</span><select data-setup-main><option value="bird" ${mainBoard==='bird'?'selected':''}>普通版</option><option value="snake" ${mainBoard==='snake'?'selected':''}>进阶版</option></select></label><label class="setup-field"><span>研究板</span><select data-setup-research>${(['bird','snake','monkey','lizard'] as ResearchBoardId[]).map(id=>`<option value="${id}" ${researchBoard===id?'selected':''}>${id}</option>`).join('')}</select></label><label class="setup-field"><span>月杖</span><select data-setup-moon-staff><option value="blue" ${setupMoonStaff==='blue'?'selected':''}>蓝色</option><option value="red" ${setupMoonStaff==='red'?'selected':''}>红色</option></select></label>${playerIds.map((id,index)=>`<label class="setup-field"><span>玩家 ${index+1}</span><select data-setup-leader="${id}">${leaderSelect(id)}</select></label>`).join('')}<label class="setup-field setup-seed"><span>随机种子</span><input data-setup-seed value="${setupSeed}" placeholder="留空则随机" spellcheck="false"></label></div><div class="setup-expansions"><label><input type="checkbox" data-setup-leaders-market ${setupLeadersMarket?'checked':''}>领袖扩展市场牌</label><label><input type="checkbox" data-setup-surprise-shipment ${setupSurpriseShipment?'checked':''}>惊喜快递市场牌</label></div><div class="setup-mode-actions"><button class="setup-start" data-setup-start>开始本地热座</button><label class="solo-difficulty"><span>单人难度</span><select data-solo-difficulty>${[0,1,2,3,4,5].map(level=>`<option value="${level}" ${soloDifficulty===level?'selected':''}>${level}</option>`).join('')}</select></label><button data-solo-start>开始单人对局</button></div><button class="setup-lab-link" data-research-lab>进入研究轨实验室</button></section></main>`;
+};
+
+// A local checkpoint is private UI state; room checkpoints live on the
+// authoritative service below. Revealing hidden information locks the turn.
+let turnStartCode='',turnStartOwner:PlayerId|undefined,localTurnUndoLocked=false;
+let pendingRevealAction:GameAction|undefined,pendingRevealChoice:PendingChoice|undefined;
+function ensureTurnCheckpoint(){if(turnStartOwner!==state.currentPlayer){turnStartOwner=state.currentPlayer;turnStartCode=encodeStateCode(state);localTurnUndoLocked=false;}}
+async function undoLanTurn(){if(!roomSession)return;try{const snapshot=(await roomRequest<{snapshot:RoomSnapshotUi}>(`/rooms/${roomSession.roomId}/undo-turn`,{method:'POST',body:JSON.stringify({token:roomSession.token})})).snapshot;applyRoomSnapshot(snapshot);}catch(error){message=error instanceof Error?error.message:String(error);render();}}
+const runBeforeUndoPolicy=run;
+run=(action:GameAction)=>{ensureTurnCheckpoint();if(actionRevealsHiddenInformation(state,action,context)){pendingRevealAction=action;render();return;}const before=state;eventBeforeState=before;runBeforeUndoPolicy(action);eventBeforeState=undefined;if(!roomSession&&state.currentPlayer!==before.currentPlayer){turnStartOwner=state.currentPlayer;turnStartCode=encodeStateCode(state);localTurnUndoLocked=false;}};
+const chooseBeforeUndoPolicy=choose;
+choose=(choice:PendingChoice)=>{ensureTurnCheckpoint();const pending=state.pendingRewards[0];if(pending&&commandRevealsHiddenInformation(state,{type:'pending-choice',playerId:pending.playerId,pendingIndex:0,choice},context)){pendingRevealChoice=choice;render();return;}const before=state;eventBeforeState=before;chooseBeforeUndoPolicy(choice);eventBeforeState=undefined;};
+
+function detailedActivityLog(){const items=[...debugTimeline].slice(-10).reverse().map(entry=>`<li class="${entry.status}"><button data-debug-load="${entry.id}" title="回溯到此步骤"><strong>${html(entry.label)}</strong>${entry.detail?`<small>${html(entry.detail)}</small>`:''}</button></li>`).join('');return `<section class="activity-log activity-log--detailed"><strong>行动记录</strong><ol>${items||'<li><span>本局尚未发生操作</span></li>'}</ol></section>`;}
+const renderBeforeUndoPolicy=render;
+render=()=>{renderBeforeUndoPolicy();if(screen!=='game')return;app.querySelector('.activity-log')?.remove();app.querySelector('header')?.insertAdjacentHTML('afterend',detailedActivityLog());app.querySelectorAll('.debug-timeline details,.debug-current-code,.debug-current-actions,.debug-timeline>p').forEach(node=>node.remove());const canUndo=roomSession?Boolean(roomSnapshot?.viewer.canUndoTurn):Boolean(turnStartCode&&!localTurnUndoLocked&&turnStartOwner===state.currentPlayer);app.querySelector('.header-actions')?.insertAdjacentHTML('afterbegin',`<button data-undo-turn ${canUndo?'':'disabled'} title="撤回到当前玩家回合开始">撤回本回合</button>`);if(pendingRevealAction||pendingRevealChoice)app.insertAdjacentHTML('beforeend',`<section class="reveal-confirm" role="dialog" aria-modal="true"><div><h2>将揭示新信息</h2><p>此操作会抽牌、翻开未知组件或查看牌库顶。确认后，本回合将不能撤回。</p><div><button data-reveal-cancel>取消</button><button class="confirm" data-reveal-confirm>确认执行</button></div></div></section>`);};
+app.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');if(!button)return;if(button.dataset.undoTurn!==undefined){if(roomSession)void undoLanTurn();else if(turnStartCode&&!localTurnUndoLocked){state=decodeStateCode(turnStartCode);researchBoard=state.research.board;message='已撤回到本回合开始。';recordReducerEvent({type:'UNDO_TURN'},'checkpoint');render();}return;}if(button.dataset.revealCancel!==undefined){pendingRevealAction=undefined;pendingRevealChoice=undefined;render();return;}if(button.dataset.revealConfirm!==undefined){const action=pendingRevealAction,choice=pendingRevealChoice;pendingRevealAction=undefined;pendingRevealChoice=undefined;if(action){const before=state;eventBeforeState=before;runBeforeUndoPolicy(action);eventBeforeState=undefined;if(!roomSession&&state!==before&&!message)localTurnUndoLocked=true;}else if(choice){const before=state;eventBeforeState=before;chooseBeforeUndoPolicy(choice);eventBeforeState=undefined;if(!roomSession&&state!==before&&!message)localTurnUndoLocked=true;}return;}});
 render();

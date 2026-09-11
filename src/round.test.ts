@@ -67,14 +67,16 @@ test('played cards are shuffled to the bottom of the deck and hand draws back to
   assert.equal(state.players.p1.deck.length, 2);
 });
 
-test('artifact purchase refills on the far side of the artifact row', () => {
+test('artifact purchase refills on the far side of the artifact row at turn end', () => {
   const context = setupContext();
   let state = reduce(createGame(['p1']), { type: 'START_GAME', seed: 'artifact-refill' }, context);
 
   state.players.p1.resources.compass = 10;
+  state.round = 2;
   state.market.artifacts = ['a0', 'a1'];
   state.market.artifactDeck = ['a9'];
   state = reduce(state, { type: 'BUY_CARD', playerId: 'p1', cardId: 'a1' }, context);
-
+  assert.deepEqual(state.market.artifacts, ['a0']);
+  state=reduce(state,{type:'END_TURN',playerId:'p1'},context);
   assert.deepEqual(state.market.artifacts, ['a9', 'a0']);
 });

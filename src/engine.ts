@@ -216,13 +216,6 @@ function rotateFirstPlayer(s: GameState) {
   const i = s.playerOrder.indexOf(s.firstPlayer);
   return s.playerOrder[(i + 1) % s.playerOrder.length];
 }
-function refillMarketSlot(s: GameState, type: "Item" | "Artifact") {
-  const deck = type === "Item" ? s.market.itemDeck : s.market.artifactDeck;
-  const card = deck.shift();
-  if (!card) return;
-  if (type === "Item") s.market.items.push(card);
-  else s.market.artifacts.unshift(card);
-}
 function refillMarketForRound(s: GameState) {
   const a = s.market.artifactDeck.splice(
     0,
@@ -442,7 +435,9 @@ function buyCard(
   else if (destination === "deck") p.deck.push(card.id);
   else p.playedCards.push(card.id);
   if (card.type === 'Artifact' && a.activateImmediately) applyCardEffects(s, a.playerId, getCardEffects(card.id, c), c, card.id);
-  refillMarketSlot(s, card.type);
+  // A purchased card leaves a visible gap for the rest of this player's
+  // turn.  This preserves public information and matches the tabletop/BGA
+  // timing: ordinary market slots refill only when the turn is ended.
 }
 function advanceResearch(
   s: GameState,
@@ -800,6 +795,7 @@ export function reduce(
       if (!next.players[action.playerId].mainActionUsed) throw new Error('Take a main action or PASS instead of ending the turn');
       delete next.players[action.playerId].mainActionUsed;
       delete next.players[action.playerId].extraMainActions;
+      refillMarketForRound(next);
       const following = nextActivePlayer(next, action.playerId);
       if (!following)
         throw new Error(
@@ -812,6 +808,7 @@ export function reduce(
       assertPlaying(next);
       assertCurrentPlayer(next, action.playerId);
       const player=next.players[action.playerId];
+      refillMarketForRound(next);
       player.hasPassed = true;
       const following = nextActivePlayer(next, action.playerId);
       if (following) next.currentPlayer = following;

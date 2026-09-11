@@ -1,9 +1,10 @@
-import type { EngineCommand, GameState, PlayerId } from './types.ts';
+import type { EngineCommand } from './engine-api.ts';
+import type { GameState, PlayerId } from './types.ts';
 import type { UserId } from './auth.ts';
 
 export type StoredMember = { tokenHash: string; userId?: UserId; playerId?: PlayerId; role: 'player' | 'spectator'; name: string; joinedAt: string; lastSeenAt: string; autoPass?: boolean };
-export type RoomEvent = { version: number; at: string; kind: 'start' | 'command'; command?: EngineCommand };
-export interface StoredRoom { id: string; name: string; seats: number; hostPlayerId: PlayerId; hostUserId?: UserId; members: StoredMember[]; state?: GameState; version: number; events: RoomEvent[]; snapshots: { version: number; state: GameState }[]; createdAt: string; updatedAt: string; visibility: 'public' | 'unlisted'; }
+export type RoomEvent = { version: number; at: string; kind: 'start' | 'command' | 'undo'; command?: EngineCommand };
+export interface StoredRoom { id: string; name: string; seats: number; hostPlayerId: PlayerId; hostUserId?: UserId; members: StoredMember[]; state?: GameState; turnStartState?:GameState; turnUndoLocked?:boolean; version: number; events: RoomEvent[]; snapshots: { version: number; state: GameState }[]; createdAt: string; updatedAt: string; visibility: 'public' | 'unlisted'; }
 
 /** Persistence seam. A SQL implementation should make transact one database transaction (SELECT … FOR UPDATE). */
 export interface RoomStore { create(room: StoredRoom): Promise<void>; list(): Promise<StoredRoom[]>; read(roomId: string): Promise<StoredRoom>; transact<T>(roomId: string, mutate: (room: StoredRoom) => Promise<T> | T): Promise<T>; }
