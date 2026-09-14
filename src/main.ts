@@ -1229,8 +1229,9 @@ app.addEventListener('click', (event) => {
 });
 render();
 
-type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; hiredPlanes?:number; discardCardId?: string; discardCardIndex?:number; guardianChoiceIndex?:0|1; useBlindsight?:boolean; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
+type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; hiredPlanes?:number; discardCardId?: string; discardCardIndex?:number; guardianChoiceIndex?:0|1; siteChoiceIndex?:0|1; useScouting?:boolean; useBlindsight?:boolean; leaderChoiceResolved?:boolean; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
 let researchPayment: PaymentDraft | undefined;
+let leaderDiscoveryChoice: { draft:PaymentDraft; kind:'tracking'|'scouting'|'blindsight' } | undefined;
 type ResearchCostChoice = { action:'research'|'pending-research'; destinationId:string; researchToken:'magnifying'|'journal'; costs:Record<string,unknown>[]; discount:Record<string,number>; bonusTileId?:string };
 let researchCostChoice: ResearchCostChoice | undefined;
 const paymentCardIds = (draft: PaymentDraft) => draft.cardIndexes.map((index) => state.players[state.currentPlayer].hand[index]).filter((id): id is string => Boolean(id));
@@ -1298,20 +1299,26 @@ render = () => {
   const temporaryPool=state.actionWindow?.playerId===state.currentPlayer?state.actionWindow.temporaryTravel:{};
   const temporary=(researchPayment.action==='site'||researchPayment.action==='discover')?(['boot','car','boat','plane'] as const).flatMap(kind=>Array.from({length:temporaryPool[kind]??0},(_,index)=>`<button class="payment-temporary ${index<(researchPayment!.temporaryTravel?.[kind]??0)?'selected-choice':''}" data-payment-temporary="${kind}" title="临时${kind}（点击选择）">${paymentIconArtwork(kind,1)}</button>`)).join(''):'';
   const discard = Number(researchPayment.cost.discardCard ?? 0) ? `<div class="payment-discard"><span>弃置手牌</span>${player.hand.map((id,index) => `<button class="card ${researchPayment.discardCardIndex === index ? 'selected-choice' : ''}" data-payment-discard-index="${index}" title="弃置 ${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('')}</div>` : '';
-  const tracking = researchPayment.action === 'discover' && player.leader?.id === 'falconer' && player.leader.data.trackingGuardianChoiceThisTurn === true
-    ? `<div class="tracking-choice"><strong>Tracking：选择本次探索出现的守卫</strong><div>${state.discovery.guardianDeck.slice(0,2).map((id,index)=>`<button class="guardian-choice ${researchPayment!.guardianChoiceIndex===index?'selected-choice':''}" data-tracking-guardian="${index}" title="${context.guardians?.[id]?.name??id}" style="${sprite(assets[`guardian:${id}:face`])}"></button>`).join('')}</div></div>` : '';
-  const blindsight = researchPayment.action === 'discover' && player.leader?.id === 'mystic' && player.leader.data.blindsightIdolExileThisTurn === true
-    ? `<div class="tracking-choice"><strong>Blindsight：选择本次正面神像奖励</strong><div><button class="${researchPayment.useBlindsight?'selected-choice':''}" data-blindsight-toggle>${researchPayment.useBlindsight?'放逐自己 1 张牌':'使用神像原本奖励'}</button></div></div>` : '';
   const hasTravel = researchPayment.cost.travel && typeof researchPayment.cost.travel === 'object';
   const hiredPlanes = researchPayment.hiredPlanes ?? 0;
   const hirePlane = hasTravel ? `<button class="hire-plane ${hiredPlanes ? 'selected-choice' : ''}" data-hire-plane title="花费2金币租用1架飞机">${paymentIconArtwork('coin',2)}<span>→</span>${paymentIconArtwork('plane',1)}${hiredPlanes ? `<b>×${hiredPlanes}</b>` : ''}</button>` : '';
   if (discard) app.insertAdjacentHTML('beforeend', `<section class="payment-panel payment-discard-panel">${discard}</section>`);
-  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${tracking}${blindsight}${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
+  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
 };
 const renderWithPaymentTitle = render;
 render = () => {
   renderWithPaymentTitle();
   if (researchPayment) app.querySelector<HTMLElement>('.payment-panel[role="dialog"]')?.insertAdjacentHTML('afterbegin', `<h2 class="payment-title">${paymentTitle(researchPayment)}</h2>`);
+  if (leaderDiscoveryChoice) {
+    const {draft,kind}=leaderDiscoveryChoice, site=state.sites[draft.destinationId];
+    const choices = kind==='tracking'
+      ? state.discovery.guardianDeck.slice(0,2).map((id,index)=>`<button class="guardian-choice" data-leader-discovery-choice="${index}" title="${context.guardians?.[id]?.name??id}" style="${sprite(assets[`guardian:${id}:face`])}"></button>`).join('')
+      : kind==='scouting'
+        ? (site?.level===2?state.discovery.level2Deck:state.discovery.level1Deck).slice(0,2).map((id,index)=>`<button class="site-choice" data-leader-discovery-choice="${index}" title="${context.sites?.[id]?.name??id}" style="${sprite(assets[`site:${id}:face`])}"></button>`).join('')
+        : `<button data-leader-discovery-choice="original">使用神像原本奖励</button><button data-leader-discovery-choice="exile">改为放逐自己 1 张牌</button>`;
+    const title=kind==='tracking'?'Tracking：选择本次翻开的守卫':kind==='scouting'?'Scouting：选择本次翻开的地点':'Blindsight：选择正面神像奖励';
+    app.insertAdjacentHTML('beforeend', `<section class="payment-panel leader-discovery-picker" role="dialog" aria-label="leader discovery choice"><h2 class="payment-title">${title}</h2><div class="tracking-choice"><div>${choices}</div></div></section>`);
+  }
   if (researchBonusChoice) app.insertAdjacentHTML('beforeend', `<section class="research-bonus-picker" role="dialog" aria-label="choose research bonus"><strong>选择该研究格的奖励</strong><div>${researchBonusChoice.tileIds.map(tileId=>{const face=researchBonusFace(tileId);return`<button data-research-bonus-tile="${tileId}" title="${face.label}">${face.html}</button>`;}).join('')}</div><button data-research-bonus-cancel>×</button></section>`);
   if (researchCostChoice) app.insertAdjacentHTML('beforeend', `<section class="research-cost-picker" role="dialog" aria-label="choose research cost"><strong>选择一组研究费用</strong><div>${researchCostChoice.costs.map((cost,index)=>`<button data-research-cost-alternative="${index}" title="choose this printed cost">${paymentCost(discountedResearchCost(cost,researchCostChoice!.discount))}</button>`).join('')}</div><button data-research-cost-cancel title="cancel">×</button></section>`);
 };
@@ -1321,6 +1328,17 @@ render = () => {
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button) return;
+  if (button.dataset.leaderDiscoveryChoice !== undefined && leaderDiscoveryChoice) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    const {draft,kind}=leaderDiscoveryChoice, selected=button.dataset.leaderDiscoveryChoice;
+    draft.leaderChoiceResolved=true;
+    if(kind==='tracking') draft.guardianChoiceIndex=Number(selected) as 0|1;
+    else if(kind==='scouting'){draft.useScouting=true;draft.siteChoiceIndex=Number(selected) as 0|1;}
+    else draft.useBlindsight=selected==='exile';
+    leaderDiscoveryChoice=undefined; researchPayment=draft; render();
+    queueMicrotask(()=>app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
+    return;
+  }
   if (button.dataset.researchCostCancel !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation(); researchCostChoice = undefined; render(); return;
   }
@@ -1453,7 +1471,7 @@ app.addEventListener('click', (event) => {
     researchPayment.cardIds = paymentCardIds(researchPayment);
     render();
     const travel = researchPayment.cost.travel;
-    if (travel && typeof travel === 'object' && researchPayment.guardianChoiceIndex === undefined && state.players[state.currentPlayer].leader?.data.trackingGuardianChoiceThisTurn !== true && state.players[state.currentPlayer].leader?.data.blindsightIdolExileThisTurn !== true && canPayTravel(travel as Record<'boot'|'car'|'boat'|'plane',number>, researchPayment.cardIds, context)) queueMicrotask(() => app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
+    if (travel && typeof travel === 'object' && researchPayment.guardianChoiceIndex === undefined && state.players[state.currentPlayer].leader?.data.trackingGuardianChoiceThisTurn !== true && state.players[state.currentPlayer].leader?.data.scoutingSiteChoiceThisTurn !== true && state.players[state.currentPlayer].leader?.data.blindsightIdolExileThisTurn !== true && canPayTravel(travel as Record<'boot'|'car'|'boat'|'plane',number>, researchPayment.cardIds, context)) queueMicrotask(() => app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
     return;
   }
   if (button.dataset.paymentDiscardIndex !== undefined) {
@@ -1486,6 +1504,11 @@ app.addEventListener('click', (event) => {
   if (button.dataset.paymentConfirm !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation();
     try {
+      if(researchPayment.action==='discover'&&!researchPayment.leaderChoiceResolved){
+        const leaderData=state.players[state.currentPlayer].leader?.data;
+        const kind=leaderData?.trackingGuardianChoiceThisTurn===true?'tracking':leaderData?.scoutingSiteChoiceThisTurn===true?'scouting':leaderData?.blindsightIdolExileThisTurn===true?'blindsight':undefined;
+        if(kind){const draft=researchPayment;researchPayment=undefined;leaderDiscoveryChoice={draft,kind};render();return;}
+      }
       if (researchPayment.action === 'pending-research') {
         const draft = researchPayment;
         researchPayment = undefined;
@@ -1500,7 +1523,7 @@ app.addEventListener('click', (event) => {
           ? { type: 'OVERCOME_GUARDIAN', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId }
           : researchPayment.action === 'lizard-guardian'
             ? { type: 'OVERCOME_LIZARD_TRACK_GUARDIAN', playerId: state.currentPlayer, paymentCardIds: researchPayment.cardIds, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId }
-            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId, ...(researchPayment.action==='discover'&&researchPayment.guardianChoiceIndex!==undefined?{useTracking:true,guardianChoiceIndex:researchPayment.guardianChoiceIndex}:{}), ...(researchPayment.action==='discover'&&researchPayment.useBlindsight?{useBlindsight:true}:{}) };
+            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId, ...(researchPayment.action==='discover'&&researchPayment.guardianChoiceIndex!==undefined?{useTracking:true,guardianChoiceIndex:researchPayment.guardianChoiceIndex}:{}), ...(researchPayment.action==='discover'&&researchPayment.useScouting&&researchPayment.siteChoiceIndex!==undefined?{useScouting:true,siteChoiceIndex:researchPayment.siteChoiceIndex}:{}), ...(researchPayment.action==='discover'&&researchPayment.useBlindsight?{useBlindsight:true}:{}) };
       state = applyEngineCommand(state, { type: 'action', action }, context);
       researchPayment = undefined; message = '';
       recordReducerEvent(action, 'accepted');
