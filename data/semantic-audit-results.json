@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-13T00:25:00+08:00",
+  "records": {
+    "card:1021": {
+      "status": "pass",
+      "note": "",
+      "source": "manual-browser-audit"
+    },
+    "card:1022": {
+      "status": "pass",
+      "note": "",
+      "source": "manual-browser-audit"
+    },
+    "card:1023": {
+      "status": "issue",
+      "note": "单独的效果不需要弹出选项。",
+      "source": "manual-browser-audit"
+    },
+    "card:1024": {
+      "status": "issue",
+      "note": "可以选择打出（不像其他恐惧牌），但没有效果；会弹出“请选择要执行的行动”，导致游戏卡死无法继续。",
+      "source": "manual-browser-audit"
+    }
+  }
+}

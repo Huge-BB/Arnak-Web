@@ -66,6 +66,25 @@ test('Captain Specialist, Professor archive purchase, and Mystic Ritual each con
   assert.throws(()=>applyEngineCommand(afterRitual,{type:'action',action:{type:'PLACE_WORKER',playerId:'p1',siteId:'x'}},context),/main action/);
 });
 
+test('Mystic starting-card ritual consumes its main action exactly once after the ritual choice',()=>{
+  const s=game();
+  s.players.p1.leader={id:'mystic',data:{ritualPile:['fear','fear2']}};
+  s.players.p1.hand=['mystic-card'];
+  const ctx:EngineContext={cards:{
+    'mystic-card':{id:'mystic-card',name:'Meditation',type:'Starter',expansion:'Expedition Leaders'},
+    fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'},
+    fear2:{id:'fear2',name:'Fear',type:'Fear',expansion:'Base Game'},
+  }};
+  const pending=applyEngineCommand(s,{type:'action',action:{type:'LEADER_MYSTIC_EXILE_STARTING_CARD',playerId:'p1',cardId:'mystic-card'}},ctx);
+  assert.equal(pending.players.p1.mainActionUsed,undefined);
+  assert.equal(pending.pendingRewards[0]?.code,'leader:MYSTIC_RITUAL_CHOICE');
+  const resolved=applyEngineCommand(pending,{type:'pending-choice',playerId:'p1',pendingIndex:0,choice:{type:'ritual',fearCount:2}},ctx);
+  assert.equal(resolved.players.p1.mainActionUsed,true);
+  assert.deepEqual(resolved.players.p1.leader!.data.ritualPile,[]);
+  assert.equal(resolved.players.p1.resources.coin,1);
+  assert.equal(resolved.players.p1.resources.compass,1);
+});
+
 test('canonical route consumes an Aeroplane-style discount on the next Discover and clears it afterwards',()=>{
   const s=game();s.players.p1.hand=['air'];s.players.p1.resources.compass=1;s.sites.x={id:'x',level:1,idolSlots:1,travelCost:{plane:1}};s.discovery.level1Deck=['tile'];s.discovery.guardianDeck=['guardian'];s.discovery.idolDeck=['idol'];
   const ctx:EngineContext={cards:{air:{id:'air',name:'Air',type:'Item',expansion:'Base Game'}},cardEffects:{air:[{type:'REDUCE_NEXT_SITE_ACTION_COST',plane:1,discoveryCompass:2}]},sites:{tile:{id:'tile',level:1,rewardCode:'',expansion:'Base Game'}},idols:{idol:{id:'idol',rewardCode:'',expansion:'Base Game'}},guardians:{guardian:{id:'guardian',expansion:'Base Game'}}};

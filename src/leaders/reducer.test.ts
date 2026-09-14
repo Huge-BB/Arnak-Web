@@ -31,10 +31,14 @@ test('Falconer guardian boon action advances eagle once',()=>{
   assert.equal(s.players.p1.leader!.data.eaglePosition,before+1);
 });
 
-test('Mystic self-exile queues ritual choice through typed reducer',()=>{
-  let s=stateFor('mystic'); const id='l:Meditation'; s.players.p1.hand=[id];
-  s=reduceExpeditionLeaderAction(s,{type:'LEADER_MYSTIC_EXILE_STARTING_CARD',playerId:'p1',cardId:id},context);
-  assert.ok(s.market.exiled.includes(id)); assert.equal(s.pendingRewards[0].code,'leader:MYSTIC_RITUAL_CHOICE'); assert.equal(s.players.p1.mainActionUsed,true);
+test('every Mystic starting card can self-exile to queue a ritual choice',()=>{
+  for(const name of ['Divine Guidance','Meditation','Worldly Goods','Blindsight']){
+    let s=stateFor('mystic'); const id=`l:${name}`; s.players.p1.hand=[id]; s.players.p1.leader!.data.ritualPile=['fear','fear2'];
+    s=reduceExpeditionLeaderAction(s,{type:'LEADER_MYSTIC_EXILE_STARTING_CARD',playerId:'p1',cardId:id},context);
+    assert.ok(s.market.exiled.includes(id),`${name} should exile itself`);
+    assert.equal(s.pendingRewards[0].code,'leader:MYSTIC_RITUAL_CHOICE');
+    assert.equal(s.players.p1.mainActionUsed,undefined);
+  }
 });
 
 test('Explorer Cartography snack branch consumes the main action',()=>{
@@ -43,10 +47,10 @@ test('Explorer Cartography snack branch consumes the main action',()=>{
   assert.equal(s.players.p1.mainActionUsed,true); assert.equal(s.pendingRewards[0].code,'leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL');
 });
 
-test('only Mystic ritual idol branch spends the main action',()=>{
+test('Mystic ritual idol defers its main action until the ritual choice resolves',()=>{
   let s=stateFor('mystic'); s.players.p1.idols=[{id:'idol',faceUp:true}];
   s=reduceExpeditionLeaderAction(s,{type:'LEADER_USE_IDOL',playerId:'p1',idolId:'idol',slotIndex:2,effect:'mysticExileRitual'},context);
-  assert.equal(s.players.p1.mainActionUsed,true);
+  assert.equal(s.players.p1.mainActionUsed,undefined);
   assert.equal(s.pendingRewards[0].code,'leader:MYSTIC_RITUAL_CHOICE');
   const free=stateFor('falconer'); free.players.p1.idols=[{id:'idol',faceUp:true}];
   const afterFree=reduceExpeditionLeaderAction(free,{type:'LEADER_USE_IDOL',playerId:'p1',idolId:'idol',slotIndex:3,effect:'leaderUnique'},context);

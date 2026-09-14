@@ -21,8 +21,8 @@ test('Mystic exiled Fear leaves player zones and enters ritual pile',()=>{
  let s=stateFor('mystic'); s.players.p1.hand=['fear']; s=mysticExileFear(s,'p1','fear',context); assert.ok(!s.players.p1.hand.includes('fear')); assert.deepEqual(s.players.p1.leader!.data.ritualPile,['fear']);
 });
 
-test('Mystic starting card exile queues a main-action ritual choice',()=>{
- let s=stateFor('mystic'); const id='l:Meditation'; s.players.p1.hand=[id]; s=mysticExileStartingCardForRitual(s,'p1',id,context); assert.ok(s.market.exiled.includes(id)); assert.equal(s.pendingRewards[0].code,'leader:MYSTIC_RITUAL_CHOICE');
+test('Mystic starting card exile queues a main-action ritual choice only when its cost can be paid',()=>{
+ let s=stateFor('mystic'); const id='l:Meditation'; s.players.p1.hand=[id]; assert.throws(()=>mysticExileStartingCardForRitual(s,'p1',id,context),/at least 2 Fear/); s.players.p1.leader!.data.ritualPile=['fear','fear2']; s=mysticExileStartingCardForRitual(s,'p1',id,context); assert.ok(s.market.exiled.includes(id)); assert.equal(s.pendingRewards[0].code,'leader:MYSTIC_RITUAL_CHOICE');
 });
 
 test('Explorer Hike and Cartography consume the same snack pool as movement',()=>{

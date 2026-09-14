@@ -28,5 +28,6 @@ export function actionRevealsHiddenInformation(state: GameState, action: GameAct
 export function commandRevealsHiddenInformation(state: GameState, command: EngineCommand, context: EngineContext): boolean {
   if (command.type === 'action') return actionRevealsHiddenInformation(state, command.action, context);
   const pending=state.pendingRewards[command.pendingIndex];
+  if(pending?.code==='leader:OPTIONAL_EXILE_FAR_LEFT_ITEM'&&command.choice.type!=='skip')return true;
   return REVEAL_EFFECTS.test(JSON.stringify(pending?.payload ?? pending?.code ?? ''));
 }

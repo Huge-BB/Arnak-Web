@@ -38,6 +38,7 @@ export function mysticExileStartingCardForRitual(state:GameState,playerId:Player
   const {player}=requireLeader(state,playerId,'mystic'); const card=context.cards[cardId];
   if(!card||card.expansion!=='Expedition Leaders'||!['Divine Guidance','Meditation','Worldly Goods','Blindsight'].includes(card.name))throw new Error('Card cannot trigger a Mystic ritual');
   if(!player.hand.includes(cardId))throw new Error('Mystic starting card is not in hand');
+  if(((player.leader?.data.ritualPile??[]) as CardId[]).length<2)throw new Error('Mystic needs at least 2 Fear cards in the ritual pile');
   const next=structuredClone(state); const p=next.players[playerId]; p.hand.splice(p.hand.indexOf(cardId),1);
   next.market.exiled.push(cardId);
   next.pendingRewards.push({playerId,sourceId:`leader:mystic:${card.name}`,code:'leader:MYSTIC_RITUAL_CHOICE',payload:{allowedFearCounts:[2,3,4],mainAction:true}});

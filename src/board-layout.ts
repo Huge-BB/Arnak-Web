@@ -99,7 +99,9 @@ export const LEADER_LAYOUT = {
   captain: { idolSlots: [{ x: 369, y: 54 }, { x: 439, y: 54 }, { x: 519, y: 54 }, { x: 594, y: 54 }], specialist: { x: 366, y: 260 } },
   falconer: { idolSlots: [{ x: 369, y: 54 }, { x: 439, y: 54 }, { x: 519, y: 54 }, { x: 594, y: 54 }], eagleTrack: [{ x: 286, y: 49 }, { x: 360, y: 65 }, { x: 439, y: 65 }, { x: 519, y: 65 }, { x: 600, y: 65 }] },
   baroness: { idolSlots: [{ x: 369, y: 54 }, { x: 439, y: 54 }, { x: 519, y: 54 }, { x: 594, y: 54 }] },
-  professor: { idolSlots: [{ x: 369, y: 54 }, { x: 439, y: 54 }, { x: 519, y: 54 }, { x: 594, y: 54 }], suitcase: { x: 43, y: 296 } },
+  professor: {
+    idolSlots: [{ x: 369, y: 54 }, { x: 439, y: 54 }, { x: 519, y: 54 }, { x: 594, y: 54 }],
+  },
   // Calibrated in the browser collector against leader-explorer.jpg.
   explorer: { idolSlots: [{ x: 369, y: 54 }, { x: 439, y: 54 }, { x: 519, y: 54 }, { x: 594, y: 54 }], snacks: { free: { x: 766, y: 55 }, coin: { x: 766, y: 162 }, compass: { x: 765, y: 271 } } },
   mystic: { idolSlots: [{ x: 652, y: 54 }, { x: 724, y: 54 }, { x: 806, y: 54 }, { x: 877, y: 54 }, { x: 950, y: 54 }], ritualEffects: [{ fearCount: 2, point: { x: 112, y: 232 } }, { fearCount: 3, point: { x: 112, y: 254 } }, { fearCount: 4, point: { x: 112, y: 278 } }] },

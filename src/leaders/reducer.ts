@@ -28,17 +28,19 @@ export function reduceExpeditionLeaderAction(state:GameState,action:ExpeditionLe
     const timing=leaderIdolActionTiming(state.players[action.playerId].leader!.id,action.effect);
     if(timing==='main')assertMainActionAvailable(state,action.playerId);
     const next=useLeaderIdol(state,action.playerId,action.idolId,action.slotIndex,action.effect,context,{snackId:action.snackId,ritualFearCount:action.ritualFearCount});
-    if(timing==='main')consumeMainAction(next,action.playerId);
+    // Mystic ritual selection carries payload.mainAction and consumes the
+    // action through the pending dispatcher after a valid tier resolves.
+    if(timing==='main'&&action.effect!=='mysticExileRitual')consumeMainAction(next,action.playerId);
     return next;
   }
   case'LEADER_BARONESS_SPECIAL_DELIVERY':return baronessPlaySpecialDelivery(state,action.playerId);
   case'LEADER_CAPTAIN_SPECIALIST':{const next=captainCallSpecialist(state,action.playerId,action.stackIndex);consumeMainAction(next,action.playerId);return next;}
   case'LEADER_FALCONER_RETURN_EAGLE':return falconerReturnEagle(state,action.playerId,action.rewardPosition);
   case'LEADER_FALCONER_GUARDIAN_BOON':return falconerUseGuardianBoonForFlight(state,action.playerId,action.guardianId);
-  case'LEADER_PROFESSOR_BUY_ARCHIVE':{const next=professorBuyArchiveArtifact(state,action.playerId,action.cardId,context,action.suitcaseCompass??0);consumeMainAction(next,action.playerId);return next;}
+  case'LEADER_PROFESSOR_BUY_ARCHIVE':{assertMainActionAvailable(state,action.playerId);const next=professorBuyArchiveArtifact(state,action.playerId,action.cardId,context,action.suitcaseCompass??0);consumeMainAction(next,action.playerId);return next;}
   case'LEADER_EXPLORER_SPEND_SNACK':return explorerSpendSnack(state,action.playerId,action.snackId,action.siteId);
   case'LEADER_MYSTIC_EXILE_FEAR':return mysticExileFear(state,action.playerId,action.cardId,context);
-  case'LEADER_MYSTIC_EXILE_STARTING_CARD':{assertMainActionAvailable(state,action.playerId);const next=mysticExileStartingCardForRitual(state,action.playerId,action.cardId,context);consumeMainAction(next,action.playerId);return next;}
+  case'LEADER_MYSTIC_EXILE_STARTING_CARD':{assertMainActionAvailable(state,action.playerId);return mysticExileStartingCardForRitual(state,action.playerId,action.cardId,context);}
   case'LEADER_MYSTIC_RITUAL':{const next=mysticPerformRitual(state,action.playerId,action.fearCount);consumeMainAction(next,action.playerId);return next;}
  }
 }

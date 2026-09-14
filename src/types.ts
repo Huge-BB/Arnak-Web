@@ -155,7 +155,7 @@ export type GameAction =
  | { type:'EXHAUST_ASSISTANT'; playerId:PlayerId; assistantId:string }
  | { type:'ACTIVATE_ASSISTANT'; playerId:PlayerId; assistantId:string }
  | { type:'REFRESH_ASSISTANT'; playerId:PlayerId; assistantId:string }
- | { type:'BUY_CARD'; playerId:PlayerId; cardId:CardId; activateImmediately?:boolean; payment?:Partial<Pick<Resources,'coin'|'compass'>> }
+ | { type:'BUY_CARD'; playerId:PlayerId; cardId:CardId; activateImmediately?:boolean; payment?:Partial<Pick<Resources,'coin'|'compass'>>; useSpecialDelivery?:boolean }
  | { type:'LEADER_USE_IDOL'; playerId:PlayerId; idolId:CardId; slotIndex:number; effect:'coinToJewel'|'arrowhead'|'tablets'|'coinCompass'|'draw'|'leaderUnique'|'mysticExileArrowhead'|'mysticExileRitual'; snackId?:ExplorerSnackId }
  | { type:'LEADER_CAPTAIN_SPECIALIST'; playerId:PlayerId; stackIndex:number }
  | { type:'LEADER_FALCONER_RETURN_EAGLE'; playerId:PlayerId; rewardPosition:number }

@@ -100,7 +100,7 @@ function calibratedResearchComponent(board: ResearchBoardId, id: string, fallbac
 function researchComponentStyle(component: { x: number; y: number; width: number; height: number }) {
   return `${pointStyle(component, RESEARCH_BOARD_SIZE)};--component-w:${component.width / RESEARCH_BOARD_SIZE.width * 100}%;--component-h:${component.height / RESEARCH_BOARD_SIZE.height * 100}%`;
 }
-let state:GameState=createGame(['p1','p2']),screen:'setup'|'game'|'rooms'|'room'='setup',setupPlayerCount=2,setupSeed='',setupMoonStaff:MoonStaffVariant='blue',setupSurpriseShipment=false,setupLeadersMarket=false,setupLeaders:Record<string,LeaderId|''>={p1:'',p2:'',p3:'',p4:''},mainBoard:'bird'|'snake'='bird',researchBoard:ResearchBoardId='bird',researchToken:'magnifying'|'journal'='magnifying',pendingSelection:string[]=[],artifactId:string|undefined,leaderStartingCardId:string|undefined,message='',researchLab=false,soloDifficulty=2,labSeed='',researchMoveChoice:{destination:string;tokens:('magnifying'|'journal')[]}|undefined,researchBonusChoice:{destination:string;token:'magnifying'|'journal';tileIds:string[]}|undefined,leaderIdolDraft:{playerId:PlayerId;slotIndex:number}|undefined,leaderIdolSnackDraft:{playerId:PlayerId;slotIndex:number;effect:IdolEffect}|undefined,captainSpecialistDraft:PlayerId|undefined,mysticRitualDraft:PlayerId|undefined;
+let state:GameState=createGame(['p1','p2']),screen:'setup'|'game'|'rooms'|'room'='setup',setupPlayerCount=2,setupSeed='',setupMoonStaff:MoonStaffVariant='blue',setupSurpriseShipment=false,setupLeadersMarket=false,setupLeaders:Record<string,LeaderId|''>={p1:'',p2:'',p3:'',p4:''},mainBoard:'bird'|'snake'='bird',researchBoard:ResearchBoardId='bird',researchToken:'magnifying'|'journal'='magnifying',pendingSelection:string[]=[],artifactId:string|undefined,leaderStartingCardId:string|undefined,specialDeliveryPurchaseCardId:string|undefined,message='',researchLab=false,soloDifficulty=2,labSeed='',researchMoveChoice:{destination:string;tokens:('magnifying'|'journal')[]}|undefined,researchBonusChoice:{destination:string;token:'magnifying'|'journal';tileIds:string[]}|undefined,leaderIdolDraft:{playerId:PlayerId;slotIndex:number}|undefined,leaderIdolSnackDraft:{playerId:PlayerId;slotIndex:number;effect:IdolEffect}|undefined,captainSpecialistDraft:PlayerId|undefined,mysticRitualDraft:PlayerId|undefined;
 const SOLO_ACTION_ART=new Set(['dig-coin','dig-tablet','dig-jewel','dig-compass','dig-arrowhead','discover-green','discover-red','buy-item-green','buy-item-red','buy-artifact-green','buy-artifact-red','research-green','research-red','overcome-green','overcome-red']);
 function soloActionFace(tileId:string){return SOLO_ACTION_ART.has(tileId)?`<i class="solo-action-face" style="background-image:url('${publicAsset(`/assets/solo-actions/${tileId}.webp`)}')" aria-hidden="true"></i>`:'';}
 function mayReplaceLocalSave(){return !localStorage.getItem('arnak.local-game.v2')||localStorage.getItem('arnak.local-game.home')!=='1'||window.confirm('开始新对局会覆盖上次自动存档，确定继续吗？')}
@@ -166,7 +166,7 @@ function pending(){const p=state.pendingRewards[0];if(!p)return'';const payload=
 function artifact(){if(!artifactId)return'';const p=state.players[state.currentPlayer];if(!p.hand.includes(artifactId))return'';return`<section class="pending-panel artifact-panel"><span>◆</span><div>${p.hand.filter(x=>x!==artifactId).map(x=>`<button class="card" data-artifact-payment="${x}"><i style="${sprite(assets[`card:${x}:face`])}"></i></button>`).join('')}<button class="pending-button" data-artifact-cancel>×</button></div></section>`}
 function render(){document.documentElement.dataset.theme='jungle';const active=state.players[state.currentPlayer];app.innerHTML=`<main><header><div class="round">${state.round}</div><div class="turn-dot ${active.color.toLowerCase()}"></div><div class="header-actions"><button data-action="end">结束回合</button><button data-action="pass">跳过</button></div></header><section class="play-surface">${board()}<aside class="market"><div class="market-row">${state.market.items.map(x=>card(x,'buy')).join('')}</div><div class="market-row">${state.market.artifacts.map(x=>card(x,'buy')).join('')}</div></aside></section><section class="players">${state.playerOrder.map(player).join('')}</section><section class="hand">${active.hand.map(x=>card(x,'play')).join('')}</section>${artifact()}${pending()}${message?`<div class="message">${message}</div>`:''}</main>`}
 app.addEventListener('change',e=>{const t=e.target as HTMLSelectElement;if(t.matches('[data-main-board]')){mainBoard=t.value as typeof mainBoard;render()}else if(t.matches('[data-board]')){researchBoard=t.value as ResearchBoardId;start()}});
-app.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b||b.disabled)return;const pid=state.currentPlayer,id=b.dataset.cardId;if(b.dataset.artifactCancel!==undefined){artifactId=undefined;render();return}if(b.dataset.artifactPayment&&artifactId){const action:GameAction={type:'PLAY_CARD',playerId:pid,cardId:artifactId,activationPaymentCardId:b.dataset.artifactPayment};try{state=applyEngineCommand(state,{type:'action',action},context);artifactId=undefined;message='';recordReducerEvent(action,'accepted')}catch(x){message=x instanceof Error?x.message:String(x);recordReducerEvent(action,'rejected',message)}render();return}if(b.dataset.pendingSelect){const x=b.dataset.pendingSelect;pendingSelection=pendingSelection.includes(x)?pendingSelection.filter(y=>y!==x):[...pendingSelection,x];render();return}if(b.dataset.pendingMulti){if(b.dataset.pendingMulti==='assistants')choose({type:'assistants',assistantIds:pendingSelection});else if(b.dataset.pendingMulti==='sites')choose({type:'site-ids',siteIds:pendingSelection});else choose({type:'card-options',optionIndexes:pendingSelection.map(Number)});return}if(b.dataset.pendingChoice){choose(JSON.parse(decodeURIComponent(b.dataset.pendingChoice)) as PendingChoice);return}if(b.dataset.assistant){run({type:'ACTIVATE_ASSISTANT',playerId:pid,assistantId:b.dataset.assistant});return}if(id){if(b.dataset.cardAction==='play'&&isLeaderStartingCard(context,state.players[pid]?.leader?.id,id)){leaderStartingCardId=id;render();return}if(b.dataset.cardAction==='play'&&context.cards[id]?.type==='Artifact'){artifactId=id;render();return}run(b.dataset.cardAction==='buy'?{type:'BUY_CARD',playerId:pid,cardId:id}:{type:'PLAY_CARD',playerId:pid,cardId:id});return}if(b.dataset.site)run({type:'PLACE_WORKER',playerId:pid,siteId:b.dataset.site});else if(b.dataset.discover)run({type:'DISCOVER_SITE',playerId:pid,siteId:b.dataset.discover});else if(b.dataset.research)run({type:'ADVANCE_RESEARCH',playerId:pid,track:researchToken,toNodeId:b.dataset.research});else if(b.dataset.token){researchToken=b.dataset.token as typeof researchToken;render()}else if(b.dataset.action==='end')run({type:'END_TURN',playerId:pid});else if(b.dataset.action==='pass')run({type:'PASS',playerId:pid});else if(b.dataset.action==='reset')start()});
+app.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b||b.disabled)return;const pid=state.currentPlayer,id=b.dataset.cardId;if(b.dataset.artifactCancel!==undefined){artifactId=undefined;render();return}if(b.dataset.artifactPayment&&artifactId){const action:GameAction={type:'PLAY_CARD',playerId:pid,cardId:artifactId,activationPaymentCardId:b.dataset.artifactPayment};try{state=applyEngineCommand(state,{type:'action',action},context);artifactId=undefined;message='';recordReducerEvent(action,'accepted')}catch(x){message=x instanceof Error?x.message:String(x);recordReducerEvent(action,'rejected',message)}render();return}if(b.dataset.pendingSelect){const x=b.dataset.pendingSelect;pendingSelection=pendingSelection.includes(x)?pendingSelection.filter(y=>y!==x):[...pendingSelection,x];render();return}if(b.dataset.pendingMulti){if(b.dataset.pendingMulti==='assistants')choose({type:'assistants',assistantIds:pendingSelection});else if(b.dataset.pendingMulti==='sites')choose({type:'site-ids',siteIds:pendingSelection});else choose({type:'card-options',optionIndexes:pendingSelection.map(Number)});return}if(b.dataset.pendingChoice){choose(JSON.parse(decodeURIComponent(b.dataset.pendingChoice)) as PendingChoice);return}if(b.dataset.assistant){run({type:'ACTIVATE_ASSISTANT',playerId:pid,assistantId:b.dataset.assistant});return}if(id){if(b.dataset.cardAction==='play'&&isLeaderStartingCard(context,state.players[pid]?.leader?.id,id)){const options=leaderCardChoices(id);if(options.length===1){const option=options[0]!;run({type:'LEADER_STARTING_CARD_EFFECT',playerId:pid,cardId:id,choice:option.choice,snackId:option.snackId} as unknown as GameAction);}else{leaderStartingCardId=id;render();}return}if(b.dataset.cardAction==='play'&&context.cards[id]?.type==='Artifact'){artifactId=id;render();return}if(b.dataset.cardAction==='buy'&&context.cards[id]?.type==='Item'&&state.players[pid].leader?.id==='baroness'){const deliveryId=state.players[pid].leader?.data.specialDeliveryCardId as string|undefined;if(deliveryId&&state.players[pid].hand.includes(deliveryId)){specialDeliveryPurchaseCardId=id;render();return;}}run(b.dataset.cardAction==='buy'?{type:'BUY_CARD',playerId:pid,cardId:id}:{type:'PLAY_CARD',playerId:pid,cardId:id});return}if(b.dataset.site)run({type:'PLACE_WORKER',playerId:pid,siteId:b.dataset.site});else if(b.dataset.discover)run({type:'DISCOVER_SITE',playerId:pid,siteId:b.dataset.discover});else if(b.dataset.research)run({type:'ADVANCE_RESEARCH',playerId:pid,track:researchToken,toNodeId:b.dataset.research});else if(b.dataset.token){researchToken=b.dataset.token as typeof researchToken;render()}else if(b.dataset.action==='end')run({type:'END_TURN',playerId:pid});else if(b.dataset.action==='pass')run({type:'PASS',playerId:pid});else if(b.dataset.action==='reset')start()});
 
 // Extend the generic card/research choice panel with leader and assistant
 // pending flows that use the same public PendingChoice dispatcher.
@@ -181,11 +181,16 @@ pending = () => {
   if (queued.code === 'leader:EXILE_OWN_CARD') return panel(cardsOwned.map((id) => pendingButton('▣', { type: 'card', cardId: id })).join(''));
   if (queued.code === 'leader:MYSTIC_RITUAL_CHOICE') {
     const allowed = Array.isArray(payload.allowedFearCounts) ? payload.allowedFearCounts : [2, 3, 4];
-    return panel(allowed.filter((count): count is 2 | 3 | 4 => count === 2 || count === 3 || count === 4).map((fearCount) => pendingButton(String(fearCount), { type: 'ritual', fearCount })).join(''));
+    const availableFear = ((player.leader?.data.ritualPile ?? []) as unknown[]).length;
+    return panel(allowed.filter((count): count is 2 | 3 | 4 => (count === 2 || count === 3 || count === 4) && count <= availableFear).map((fearCount) => pendingButton(`${fearCount} 张恐惧`, { type: 'ritual', fearCount })).join('') || '<span class="pending-unsupported">仪式牌堆中的恐惧不足</span>');
   }
   if (queued.code === 'leader:REFRESH_OWN_ASSISTANT') return panel(player.assistants.map((assistant) => pendingButton('♙', { type: 'assistant', assistantId: assistant.id })).join(''));
   if (queued.code === 'leader:UPGRADE_RESOURCE') return panel((['tablet', 'arrowhead'] as const).filter((resource) => player.resources[resource] > 0).map((resource) => pendingButton(resource === 'tablet' ? '▰' : '▲', { type: 'resource', resource })).join(''));
-  if (queued.code === 'leader:OPTIONAL_EXILE_FAR_LEFT_ITEM') return panel(`${state.market.items[0] ? pendingButton('◈', { type: 'card', cardId: state.market.items[0] }) : ''}${pendingButton('×', { type: 'skip' })}`);
+  if (queued.code === 'leader:OPTIONAL_EXILE_FAR_LEFT_ITEM') {
+    const itemId=state.market.items[0];
+    const item=itemId?`<button class="card" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'card',cardId:itemId}))}" title="放逐并刷新：${context.cards[itemId]?.name??itemId}"><i style="${sprite(assets[`card:${itemId}:face`])}"></i></button>`:'';
+    return `<section class="pending-panel connections-refill"><strong>Connections：是否放逐最左侧物品并立即刷新？</strong><p>确认会揭示一张新市场牌，因此本回合将无法撤回。</p><div>${item}${pendingButton('保留当前市场',{type:'skip'})}</div></section>`;
+  }
   if (queued.code === 'leader:ACTIVATE_TENT_SITE') return panel(Object.values(state.sites).filter((site) => site.isTentSite).map((site) => pendingButton('⌾', { type: 'site', siteId: site.id })).join(''));
   if (queued.code === 'leader:ACTIVATE_DISCOVERED_SITE' || queued.code === 'leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL') return panel(Object.values(state.sites).map((site) => pendingButton(`⌾ ${site.level}`, { type: 'site', siteId: site.id })).join(''));
   if (payload.type === 'OVERCOME_GUARDIAN_FREE' && payload.lizardTrackAllowed === true) { const guardians = ((state.research.templeData as Record<string, unknown> | undefined)?.lizardGuardians ?? []) as Array<{ nodeId: string; defeated: boolean; revealed: boolean }>; const lizard = guardians.find((guardian) => !guardian.defeated && guardian.revealed && state.research.magnifyingNode[queued.playerId] === guardian.nodeId); return panel(`${Object.values(state.sites).filter((site) => site.guardian).map((site) => pendingButton('⌾', { type: 'site', siteId: site.id })).join('')}${lizard ? pendingButton('♞', { type: 'lizard-track-guardian' }) : ''}`); }
@@ -207,6 +212,7 @@ pending = () => {
   return basePendingPanel();
 };
 render();
+
 
 // Presentation-quality setup and final scoring live at the final render edge
 // so every mode (local, solo and restored games) shares the same UI.
@@ -755,7 +761,7 @@ app.addEventListener('click', event => {
 });
 render();
 
-type LeaderCardUiChoice = { choice: string; snackId?: 'free' | 'coin' | 'compass'; label: string };
+type LeaderCardUiChoice = { choice: string; snackId?: 'free' | 'coin' | 'compass'; label: string; disabled?: boolean; title?: string };
 function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
   const player = state.players[state.currentPlayer], cardDefinition = context.cards[cardId], name = cardDefinition?.name ?? '', leader = player.leader?.id;
   const placed = Object.values(state.sites).filter((site) => site.occupiedBy === player.id).length;
@@ -767,6 +773,7 @@ function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
     if (name === 'Funding') return [basic('coin', '●')];
     if (name === 'Piloting') return [basic('compass', '◉'), ...(player.resources.coin > 0 ? [basic('payCoinForPlanes', '●→✈✈')] : [])];
     if (name === 'Transmission') return [basic('coin', '●'), ...(placed >= 2 ? [basic('compass', '◉')] : []), ...(placed >= 3 ? [basic('tablets', '▰')] : [])];
+    if (name === 'Hidden Fear') return [basic('none', '打出')];
   }
   if (leader === 'falconer') {
     if (name === 'Funding') return [basic('coin', '●')];
@@ -777,13 +784,13 @@ function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
   if (leader === 'baroness') {
     if (name === 'Connections') return [basic('coin', '●')];
     if (name === 'Research Notes') return [basic('compass', '◉'), ...(player.resources.coin >= 2 ? [basic('payCoinsForJewel', '●●→◆')] : [])];
-    if (name === 'Resourcefulness') return [basic('coin', '●'), ...(items >= 1 ? [basic('compass', '◉')] : []), ...(items >= 3 ? [basic('refreshAssistant', '♙')] : [])];
+    if (name === 'Resourcefulness') return items >= 3 ? [basic('refreshAssistant', '重置一名助手')] : items >= 1 ? [basic('compass', '获得 1 罗盘')] : [basic('coin', '获得 1 金币')];
   }
   if (leader === 'professor') {
     if (name === 'Funding') return [basic('coin', '●')];
     if (name === 'Preservation') return [basic('compass', '◉'), basic('upgradeResource', '▰→▲')];
     if (name === 'Arnakology') return [basic('compass', '◉')];
-    if (name === 'Linguistics') return [basic('coin', '●'), ...(artifacts >= 1 ? [basic('suitcaseCompass', '◉')] : []), ...(artifacts >= 2 ? [basic('suitcaseTablet', '▰')] : [])];
+    if (name === 'Linguistics') return artifacts >= 2 ? [basic('suitcaseCompassTablet', '公文包获得 1 罗盘和 1 石板')] : artifacts === 1 ? [basic('suitcaseCompass', '公文包获得 1 罗盘')] : [basic('coin', '获得 1 金币')];
   }
   if (leader === 'explorer') {
     const snacks = ((player.leader?.data.snacks ?? []) as Array<{ id: 'free' | 'coin' | 'compass'; used: boolean; availableFromRound: number }>).filter((snack) => !snack.used && state.round >= snack.availableFromRound);
@@ -794,17 +801,19 @@ function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
     if (name === 'Scouting') return [basic('compass', '◉')];
   }
   if (leader === 'mystic') {
-    if (name === 'Worldly Goods') return [basic('coin', '●'), basic('draw', '▣')];
-    if (name === 'Divine Guidance') return [basic('compass', '◉'), basic('exile', '▣')];
-    if (name === 'Meditation') return [basic('coin', '●'), basic('exile', '▣')];
-    if (name === 'Blindsight') return [basic('compass', '◉')];
+    const ritualFearCount=((player.leader?.data.ritualPile??[]) as unknown[]).length;
+    const ritual:LeaderCardUiChoice={choice:'performRitual',label:'放逐本牌并执行仪式（主行动）',disabled:ritualFearCount<2,title:ritualFearCount<2?'仪式牌堆至少需要 2 张恐惧':'performRitual'};
+    if (name === 'Worldly Goods') return [basic('coin', '●'), basic('draw', '▣'), ritual];
+    if (name === 'Divine Guidance') return [basic('compass', '◉'), basic('exile', '▣'), ritual];
+    if (name === 'Meditation') return [basic('coin', '●'), basic('exile', '▣'), ritual];
+    if (name === 'Blindsight') return [basic('compass', '◉'), ritual];
   }
   return [];
 }
 function leaderStartingCardPanel() {
   if (!leaderStartingCardId) return '';
   const options = leaderCardChoices(leaderStartingCardId);
-  return `<section class="pending-panel leader-card-panel"><span>✦</span><div>${options.map((option) => `<button class="pending-button" data-leader-card-choice="${encodeURIComponent(JSON.stringify({ cardId: leaderStartingCardId, choice: option.choice, snackId: option.snackId }))}" title="${option.choice}">${option.label}</button>`).join('') || '<span class="pending-unsupported">…</span>'}<button class="pending-button" data-leader-card-cancel>×</button></div></section>`;
+  return `<section class="pending-panel leader-card-panel"><span>✦</span><div>${options.map((option) => `<button class="pending-button" data-leader-card-choice="${encodeURIComponent(JSON.stringify({ cardId: leaderStartingCardId, choice: option.choice, snackId: option.snackId }))}" title="${option.title??option.choice}" ${option.disabled?'disabled':''}>${option.label}</button>`).join('') || '<span class="pending-unsupported">…</span>'}<button class="pending-button" data-leader-card-cancel>×</button></div></section>`;
 }
 const renderWithLeaderCardPanel = render;
 render = () => {
@@ -818,6 +827,7 @@ app.addEventListener('click', (event) => {
   if (!button.dataset.leaderCardChoice) return;
   const input = JSON.parse(decodeURIComponent(button.dataset.leaderCardChoice)) as { cardId: string; choice: string; snackId?: 'free' | 'coin' | 'compass' };
   leaderStartingCardId = undefined;
+  if(input.choice==='performRitual'){run({type:'LEADER_MYSTIC_EXILE_STARTING_CARD',playerId:state.currentPlayer,cardId:input.cardId} as unknown as GameAction);return;}
   run({ type: 'LEADER_STARTING_CARD_EFFECT', playerId: state.currentPlayer, cardId: input.cardId, choice: input.choice, snackId: input.snackId } as unknown as GameAction);
 });
 render();
@@ -1192,10 +1202,10 @@ pending = () => {
   const queued = state.pendingRewards[0];
   if (queued?.code !== 'leader:OPTIONAL_SWAP_ARCHIVE_ARTIFACT') return pendingWithoutArchiveSwap();
   const archive = (state.players[queued.playerId].leader?.data.archive ?? []) as string[];
-  const archiveButtons = archive.map((id) => `<button class="card ${pendingArchiveSwap.archiveCardId === id ? 'selected-choice' : ''}" data-archive-card="${id}" title="archive"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
-  const marketButtons = state.market.artifacts.map((id) => `<button class="card ${pendingArchiveSwap.marketCardId === id ? 'selected-choice' : ''}" data-market-artifact="${id}" title="market"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
+  const archiveButtons = archive.map((id) => `<button class="card ${pendingArchiveSwap.archiveCardId === id ? 'selected-choice' : ''}" data-archive-card="${id}" title="公文包档案：${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
+  const marketButtons = state.market.artifacts.map((id) => `<button class="card ${pendingArchiveSwap.marketCardId === id ? 'selected-choice' : ''}" data-market-artifact="${id}" title="神器市场：${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
   const ready = pendingArchiveSwap.archiveCardId && pendingArchiveSwap.marketCardId;
-  return `<section class="pending-panel archive-swap"><span>◆</span><div>${archiveButtons}</div><div>${marketButtons}</div><div><button class="pending-confirm" ${ready ? '' : 'disabled'} data-archive-confirm>✓</button>${pendingButton('×', { type: 'skip' })}</div></section>`;
+  return `<section class="pending-panel archive-swap"><strong>可选择交换一张档案神器与一张市场神器</strong><label>公文包档案</label><div>${archiveButtons}</div><label>神器市场</label><div>${marketButtons}</div><div><button class="pending-confirm" ${ready ? '' : 'disabled'} data-archive-confirm>确认交换</button>${pendingButton('跳过', { type: 'skip' })}</div></section>`;
 };
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -1952,8 +1962,11 @@ function leaderComponents(id: PlayerId) {
     return `<button class="falcon-track-token" style="${playerPointStyle(point, true)}${size}" ${canReturn ? `data-falcon-return="${position}"` : 'disabled'} title="${canReturn ? `return falcon from step ${position}` : `falcon step ${position}`}"><img src="${publicAsset('/assets/leader-falcon-token.png')}" alt="falcon"></button>`;
   }
   if (leader.id === 'professor') {
-    const suitcase = (leader.data.suitcase ?? {}) as { compass?: number; tablet?: number };
-    return `<span class="professor-suitcase-token" style="${playerPointStyle(LEADER_LAYOUT.professor.suitcase, true)}" title="Professor suitcase: ${suitcase.compass ?? 0} compass, ${suitcase.tablet ?? 0} tablets"><img src="${publicAsset('/assets/leader-professor-suitcase-alpha.png')}" alt="Professor suitcase"></span>`;
+    return '';
+  }
+  if (leader.id === 'mystic') {
+    const pile=(leader.data.ritualPile??[]) as string[];
+    return `<span class="mystic-ritual-pile" title="仪式牌堆：${pile.length} 张恐惧">${pile.map((cardId,index)=>`<i style="${sprite(assets[`card:${cardId}:face`])};--ritual-index:${Math.min(index,5)}"></i>`).join('')}${pile.length?`<b>${pile.length}</b>`:''}</span>`;
   }
   if (leader.id === 'explorer') {
     const snacks = (leader.data.snacks ?? []) as Array<{ id: 'free' | 'coin' | 'compass'; used: boolean; availableFromRound: number }>;
@@ -2059,7 +2072,14 @@ function playerComponentTray(id: PlayerId) {
   const guardians = playerState.defeatedGuardians.map((guardianId) => playerState.usedGuardianBoons.includes(guardianId)
     ? `<button class="player-guardian-card used" style="background-image:url('${publicAsset('/assets/guardian-back.jpg')}')" disabled title="守卫能力已使用，可被效果重置"></button>`
     : `<button class="player-guardian-card" style="${sprite(assets[`guardian:${guardianId}:face`])}" ${id === state.currentPlayer ? `data-guardian-boon="${guardianId}"` : 'disabled'} title="使用守卫能力"></button>`).join('');
-  return `<aside class="player-component-tray" aria-label="${id} 持有组件"><section class="player-component-group player-guardians"><strong>守卫</strong><div>${guardians || '<small>—</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>交通工具</strong><div>${temporaryIcons || '<small>—</small>'}</div></section></aside>`;
+  const archive = playerState.leader?.id === 'professor'
+    ? ((playerState.leader.data.archive ?? []) as string[]).map((cardId) => `<button class="card professor-archive-card" data-professor-preview="${cardId}" title="教授档案：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('')
+    : '';
+  const suitcase = (playerState.leader?.data.suitcase ?? {}) as { compass?: number; tablet?: number };
+  const archiveGroup = playerState.leader?.id === 'professor'
+    ? `<section class="player-component-group professor-archive" aria-label="教授公文包"><header class="professor-suitcase-heading"><img src="${publicAsset('/assets/leader-professor-suitcase-alpha.png')}" alt="教授公文包"><span>${resourceArtwork('compass', suitcase.compass ?? 0)}${resourceArtwork('tablet', suitcase.tablet ?? 0)}</span></header><div>${archive || '<small>—</small>'}</div></section>`
+    : '';
+  return `<aside class="player-component-tray" aria-label="${id} 持有组件">${archiveGroup}<section class="player-component-group player-guardians"><strong>守卫</strong><div>${guardians || '<small>—</small>'}</div></section><section class="player-component-group player-temporary-travel"><strong>交通工具</strong><div>${temporaryIcons || '<small>—</small>'}</div></section></aside>`;
 }
 function playerDrawDeck(id: PlayerId) {
   const playerState=state.players[id], leaderId=playerState.leader?.id;
@@ -2116,6 +2136,65 @@ pending = () => {
 };
 render();
 
+// Professor archive cards are public information. Mouse users get a transient
+// hover preview; touch users tap a card and dismiss the pinned preview.
+let professorPreviewCardId: string | undefined;
+let professorPreviewPinned = false;
+function professorCardPreview() {
+  if (!professorPreviewCardId) return '';
+  const definition = context.cards[professorPreviewCardId];
+  const player = state.players[state.currentPlayer], suitcase = (player.leader?.data.suitcase ?? {}) as { compass?:number };
+  const isArchiveCard = player.leader?.id === 'professor' && ((player.leader.data.archive ?? []) as string[]).includes(professorPreviewCardId);
+  const cost = definition?.cost ?? 0, maxSuitcase = Math.min(cost, suitcase.compass ?? 0);
+  const purchaseOptions = isArchiveCard && !state.pendingRewards.length && (!player.mainActionUsed || (player.extraMainActions ?? 0) > 0)
+    ? Array.from({length:maxSuitcase+1},(_,useSuitcase)=>({useSuitcase,general:cost-useSuitcase})).filter(option=>option.general<=player.resources.compass).map(option=>`<button class="professor-buy-option" data-professor-buy="${professorPreviewCardId}" data-suitcase-compass="${option.useSuitcase}">购买：${option.useSuitcase ? `公文包 ${option.useSuitcase} + ` : ''}资源池 ${option.general} 罗盘</button>`).join('')
+    : '';
+  return `<aside class="card-detail-preview" role="dialog" aria-label="神器详情"><button data-professor-preview-close aria-label="关闭">×</button><i style="${sprite(assets[`card:${professorPreviewCardId}:face`])}"></i><section><strong>${definition?.name ?? professorPreviewCardId}</strong><p>${cardHoverText(professorPreviewCardId, definition?.name ?? professorPreviewCardId)}</p>${purchaseOptions ? `<div class="professor-buy-options">${purchaseOptions}</div>` : ''}</section></aside>`;
+}
+const renderWithProfessorPreview = render;
+render = () => { renderWithProfessorPreview(); if (screen === 'game' && professorPreviewCardId) app.insertAdjacentHTML('beforeend', professorCardPreview()); };
+app.addEventListener('pointerover', (event) => {
+  if (professorPreviewPinned || (event as PointerEvent).pointerType === 'touch') return;
+  const card = (event.target as HTMLElement).closest<HTMLElement>('[data-professor-preview]');
+  if (!card || card.dataset.professorPreview === professorPreviewCardId) return;
+  professorPreviewCardId = card.dataset.professorPreview; render();
+});
+app.addEventListener('pointerout', (event) => {
+  if (professorPreviewPinned || (event as PointerEvent).pointerType === 'touch') return;
+  const card = (event.target as HTMLElement).closest<HTMLElement>('[data-professor-preview]');
+  if (!card || card.contains((event as PointerEvent).relatedTarget as Node | null)) return;
+  professorPreviewCardId = undefined; render();
+});
+app.addEventListener('click', (event) => {
+  const purchase = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-professor-buy]');
+  if (purchase) {
+    const cardId = purchase.dataset.professorBuy!, suitcaseCompass = Number(purchase.dataset.suitcaseCompass ?? 0);
+    professorPreviewCardId = undefined; professorPreviewPinned = false;
+    run({type:'LEADER_PROFESSOR_BUY_ARCHIVE',playerId:state.currentPlayer,cardId,suitcaseCompass});
+    return;
+  }
+  const target = (event.target as HTMLElement).closest<HTMLElement>('[data-professor-preview],[data-professor-preview-close]');
+  if (!target) return;
+  if (target.dataset.professorPreviewClose !== undefined) { professorPreviewCardId = undefined; professorPreviewPinned = false; render(); return; }
+  professorPreviewCardId = target.dataset.professorPreview; professorPreviewPinned = true; render();
+});
+
+const renderWithSpecialDeliveryPrompt = render;
+render = () => {
+  renderWithSpecialDeliveryPrompt();
+  if (!specialDeliveryPurchaseCardId || screen !== 'game') return;
+  const name=context.cards[specialDeliveryPurchaseCardId]?.name ?? specialDeliveryPurchaseCardId;
+  app.insertAdjacentHTML('beforeend', `<section class="pending-panel special-delivery-prompt" role="dialog"><strong>购买 ${name}</strong><p>是否打出 Special Delivery，将购买的物品直接加入手牌？</p><div><button data-special-delivery="yes">使用并购买</button><button data-special-delivery="no">直接购买到牌库</button><button data-special-delivery="cancel">取消</button></div></section>`);
+};
+app.addEventListener('click',(event)=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-special-delivery]');
+  if(!button||!specialDeliveryPurchaseCardId)return;
+  const cardId=specialDeliveryPurchaseCardId,choice=button.dataset.specialDelivery;specialDeliveryPurchaseCardId=undefined;
+  if(choice==='cancel'){render();return;}
+  run({type:'BUY_CARD',playerId:state.currentPlayer,cardId,useSpecialDelivery:choice==='yes'});
+});
+
+
 // The laboratory deliberately uses the normal game renderer and reducer; it
 // only changes the initial player inventory so research can be exercised in
 // isolation without taking repeated setup turns.
@@ -2161,7 +2240,6 @@ app.addEventListener('change', event => { const target=event.target as HTMLSelec
 app.addEventListener('input', event => { const target=event.target as HTMLInputElement; if(target.matches('[data-research-lab-seed]')) labSeed=target.value; });
 app.addEventListener('click', event => { const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button'); if(button?.dataset.soloStart!==undefined) startSolo(); });
 render();
-if (location.pathname.endsWith('/lab.html')) {const auditLeader=new URLSearchParams(location.search).get('leader') as LeaderId|null;if(auditLeader&&['captain','falconer','baroness','professor','explorer','mystic'].includes(auditLeader))setupLeaders.p1=auditLeader;startResearchLab();}
 if (location.pathname.endsWith('/solo.html')) {
   const params=new URLSearchParams(location.search),requestedDifficulty=Number(params.get('difficulty') ?? soloDifficulty),requestedBoard=params.get('board'),requestedSeed=params.get('seed');
   soloDifficulty=Number.isInteger(requestedDifficulty)&&requestedDifficulty>=0&&requestedDifficulty<=5?requestedDifficulty:2;
@@ -2479,3 +2557,12 @@ render = () => {
   pinSoloRivalToTop();
 };
 render();
+
+// A directed Lab URL wins over local autosave restoration. This must remain
+// after every render/state enhancer so an unrelated saved game cannot replace
+// the requested leader audit.
+if (location.pathname.endsWith('/lab.html')) {
+  const directedLeader = new URLSearchParams(location.search).get('leader') as LeaderId | null;
+  if (directedLeader && ['captain','falconer','baroness','professor','explorer','mystic'].includes(directedLeader)) setupLeaders.p1 = directedLeader;
+  startResearchLab();
+}

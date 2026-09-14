@@ -2817,6 +2817,18 @@
       { "id": "leader-falconer-eagle-track-2", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 2", "x": 56.3, "y": 69.82, "width": 80, "height": 80, "rotation": 326 },
       { "id": "leader-falconer-eagle-track-3", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 3", "x": 59.61, "y": 47.56, "width": 80, "height": 80, "rotation": 297 },
       { "id": "leader-falconer-eagle-track-4", "kind": "token", "asset": "falcon", "label": "leader falconer · eagle track 4", "x": 60.24, "y": 20.12, "width": 80, "height": 80, "rotation": 272 }
+    ],
+    "leader-mystic": [
+      { "id": "leader-mystic-idol-effect-coinToJewel", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect coinToJewel", "x": 42.28, "y": 10.06, "width": 48, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-idol-effect-arrowhead", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect arrowhead", "x": 43.39, "y": 23.48, "width": 48, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-idol-effect-tablets", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect tablets", "x": 43.46, "y": 36.28, "width": 48, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-idol-effect-coinCompass", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect coinCompass", "x": 43.46, "y": 48.78, "width": 48, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-idol-effect-draw", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect draw", "x": 43.31, "y": 62.5, "width": 48, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-idol-effect-mysticExileArrowhead", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect exile arrowhead", "x": 43.31, "y": 78.05, "width": 68, "height": 36, "rotation": 0 },
+      { "id": "leader-mystic-idol-effect-mysticExileRitual", "kind": "hotspot", "asset": "", "label": "leader mystic · idol effect ritual", "x": 43.31, "y": 91.16, "width": 68, "height": 36, "rotation": 0 },
+      { "id": "leader-mystic-ritual-2", "kind": "hotspot", "asset": "", "label": "leader mystic · 2-Fear ritual", "x": 5.43, "y": 71.95, "width": 120, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-ritual-3", "kind": "hotspot", "asset": "", "label": "leader mystic · 3-Fear ritual", "x": 16.85, "y": 71.95, "width": 110, "height": 32, "rotation": 0 },
+      { "id": "leader-mystic-ritual-4", "kind": "hotspot", "asset": "", "label": "leader mystic · 4-Fear ritual", "x": 10.87, "y": 86.28, "width": 122, "height": 33, "rotation": 0 }
     ]
   }
 }

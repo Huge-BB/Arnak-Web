@@ -422,6 +422,12 @@ function buyCard(
     index = row.indexOf(a.cardId);
   if (index < 0) throw new Error("Card is not available in the market");
   const p=assertPlayer(s,a.playerId);
+  if(a.useSpecialDelivery){
+    if(card.type!=='Item'||p.leader?.id!=='baroness')throw new Error('Special Delivery can only be used by the Baroness when buying an Item');
+    const deliveryId=p.leader.data.specialDeliveryCardId as string|undefined,index=deliveryId?p.hand.indexOf(deliveryId):-1;
+    if(!deliveryId||index<0)throw new Error('Special Delivery is not in hand');
+    p.hand.splice(index,1);p.playedCards.push(deliveryId);p.leader.data.specialDeliveryArmed=true;
+  }
   const flexibleAltar=['3208','3209','3211'].includes(card.id);
   if(flexibleAltar){
     const cost=card.cost??0,payment=a.payment??{compass:Math.min(p.resources.compass,cost),coin:Math.max(0,cost-p.resources.compass)};

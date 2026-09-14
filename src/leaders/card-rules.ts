@@ -5,7 +5,7 @@ import { explorerSpendSnackOnStartingCard } from './extra-actions.ts';
 import { isLeaderStartingCard } from './utils.ts';
 
 export type LeaderCardChoice =
-  | 'coin'|'compass'|'tablets'|'exile'|'eagle'|'refreshAssistant'|'upgradeResource'|'suitcaseCompass'|'suitcaseTablet'
+  | 'none'|'coin'|'compass'|'tablets'|'exile'|'eagle'|'refreshAssistant'|'upgradeResource'|'suitcaseCompass'|'suitcaseCompassTablet'
   | 'payCoinForPlanes'|'payCoinsForJewel'|'activateSite'|'activateFaceupIdol'|'draw';
 function requirePlayer(state:GameState,playerId:PlayerId){const player=state.players[playerId];if(!player)throw new Error(`Unknown player: ${playerId}`);if(!player.leader)throw new Error(`${playerId} has no expedition leader`);return player;}
 function requireCard(state:GameState,playerId:PlayerId,cardId:CardId,context:EngineContext){const player=requirePlayer(state,playerId);const card=context.cards[cardId];if(!card||!isLeaderStartingCard(context,player.leader?.id,cardId))throw new Error(`Not a starting card for this expedition leader: ${cardId}`);if(!player.hand.includes(cardId)&&!player.playedCards.includes(cardId))throw new Error('Leader card is not available to this player');return{player,card};}
@@ -20,7 +20,7 @@ export function resolveLeaderStartingCard(state:GameState,playerId:PlayerId,card
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
    if(card.name==='Piloting'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='payCoinForPlanes'){if(next.players[playerId].resources.coin<1)throw new Error('Piloting requires 1 coin');next.players[playerId].resources.coin-=1;return grantTemporaryTravel(next,playerId,{plane:2});}throw new Error('Invalid Piloting choice');}
    if(card.name==='Transmission'){const placed=placedArchaeologists(next,playerId);if(placed<1)throw new Error('Transmission has no effect with zero placed archaeologists');if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='compass'&&placed>=2){gain(next,playerId,'compass');return next;}if(choice==='tablets'&&placed>=3){gain(next,playerId,'tablet');return next;}throw new Error('Transmission choice is not unlocked');}
-   if(card.name==='Hidden Fear')throw new Error('Hidden Fear cannot be played for an effect');break;
+   if(card.name==='Hidden Fear'){if(choice!=='none')throw new Error('Hidden Fear has no play effect');return next;}break;
   }
   case'falconer':{
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
@@ -31,13 +31,13 @@ export function resolveLeaderStartingCard(state:GameState,playerId:PlayerId,card
   case'baroness':{
    if(card.name==='Connections'){if(choice!=='coin')throw new Error('Connections grants coin');gain(next,playerId,'coin');queue(next,playerId,source,'leader:OPTIONAL_EXILE_FAR_LEFT_ITEM',{refill:true,freeAction:true});return next;}
    if(card.name==='Research Notes'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='payCoinsForJewel'){if(next.players[playerId].resources.coin<2)throw new Error('Research Notes requires 2 coins');next.players[playerId].resources.coin-=2;next.players[playerId].resources.jewel+=1;return next;}throw new Error('Invalid Research Notes choice');}
-   if(card.name==='Resourcefulness'){const items=countPlayedType(next,playerId,context,'Item');if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='compass'&&items>=1){gain(next,playerId,'compass');return next;}if(choice==='refreshAssistant'&&items>=3){queue(next,playerId,source,'leader:REFRESH_OWN_ASSISTANT',{max:1,freeAction:true});return next;}throw new Error('Resourcefulness choice is not unlocked');}break;
+   if(card.name==='Resourcefulness'){const items=countPlayedType(next,playerId,context,'Item');if(choice==='coin'&&items===0){gain(next,playerId,'coin');return next;}if(choice==='compass'&&items>=1&&items<3){gain(next,playerId,'compass');return next;}if(choice==='refreshAssistant'&&items>=3){queue(next,playerId,source,'leader:REFRESH_OWN_ASSISTANT',{max:1,freeAction:true});return next;}throw new Error('Resourcefulness reward does not match the number of played Items');}break;
   }
   case'professor':{
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
    if(card.name==='Preservation'){if(choice==='compass'){gain(next,playerId,'compass');return next;}if(choice==='upgradeResource'){queue(next,playerId,source,'leader:UPGRADE_RESOURCE',{allowedResources:['tablet','arrowhead'],freeAction:true});return next;}throw new Error('Invalid Preservation choice');}
    if(card.name==='Arnakology'){if(choice!=='compass')throw new Error('Arnakology grants compass');gain(next,playerId,'compass');queue(next,playerId,source,'leader:OPTIONAL_SWAP_ARCHIVE_ARTIFACT',{freeAction:true});return next;}
-   if(card.name==='Linguistics'){const artifacts=countPlayedType(next,playerId,context,'Artifact'),suitcase=(next.players[playerId].leader!.data.suitcase??={compass:0,tablet:0}) as {compass:number;tablet:number};if(choice==='coin'){gain(next,playerId,'coin');return next;}if(choice==='suitcaseCompass'&&artifacts>=1){suitcase.compass=(suitcase.compass??0)+1;return next;}if(choice==='suitcaseTablet'&&artifacts>=2){suitcase.tablet=(suitcase.tablet??0)+1;return next;}throw new Error('Linguistics choice is not unlocked');}break;
+   if(card.name==='Linguistics'){const artifacts=countPlayedType(next,playerId,context,'Artifact'),suitcase=(next.players[playerId].leader!.data.suitcase??={compass:0,tablet:0}) as {compass:number;tablet:number};if(choice==='coin'&&artifacts===0){gain(next,playerId,'coin');return next;}if(choice==='suitcaseCompass'&&artifacts===1){suitcase.compass=(suitcase.compass??0)+1;return next;}if(choice==='suitcaseCompassTablet'&&artifacts>=2){suitcase.compass=(suitcase.compass??0)+1;suitcase.tablet=(suitcase.tablet??0)+1;return next;}throw new Error('Linguistics reward does not match the number of played Artifacts');}break;
   }
   case'explorer':{
    if(card.name==='Funding'){if(choice!=='coin')throw new Error('Funding grants coin');gain(next,playerId,'coin');return next;}
