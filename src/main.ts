@@ -100,6 +100,7 @@ function calibratedResearchComponent(board: ResearchBoardId, id: string, fallbac
 function researchComponentStyle(component: { x: number; y: number; width: number; height: number }) {
   return `${pointStyle(component, RESEARCH_BOARD_SIZE)};--component-w:${component.width / RESEARCH_BOARD_SIZE.width * 100}%;--component-h:${component.height / RESEARCH_BOARD_SIZE.height * 100}%`;
 }
+let falconerGuardianDraft:string|undefined;
 let state:GameState=createGame(['p1','p2']),screen:'setup'|'game'|'rooms'|'room'='setup',setupPlayerCount=2,setupSeed='',setupMoonStaff:MoonStaffVariant='blue',setupSurpriseShipment=false,setupLeadersMarket=false,setupLeaders:Record<string,LeaderId|''>={p1:'',p2:'',p3:'',p4:''},mainBoard:'bird'|'snake'='bird',researchBoard:ResearchBoardId='bird',researchToken:'magnifying'|'journal'='magnifying',pendingSelection:string[]=[],artifactId:string|undefined,leaderStartingCardId:string|undefined,specialDeliveryPurchaseCardId:string|undefined,message='',researchLab=false,soloDifficulty=2,labSeed='',researchMoveChoice:{destination:string;tokens:('magnifying'|'journal')[]}|undefined,researchBonusChoice:{destination:string;token:'magnifying'|'journal';tileIds:string[]}|undefined,leaderIdolDraft:{playerId:PlayerId;slotIndex:number}|undefined,leaderIdolSnackDraft:{playerId:PlayerId;slotIndex:number;effect:IdolEffect}|undefined,captainSpecialistDraft:PlayerId|undefined,mysticRitualDraft:PlayerId|undefined;
 const SOLO_ACTION_ART=new Set(['dig-coin','dig-tablet','dig-jewel','dig-compass','dig-arrowhead','discover-green','discover-red','buy-item-green','buy-item-red','buy-artifact-green','buy-artifact-red','research-green','research-red','overcome-green','overcome-red']);
 function soloActionFace(tileId:string){return SOLO_ACTION_ART.has(tileId)?`<i class="solo-action-face" style="background-image:url('${publicAsset(`/assets/solo-actions/${tileId}.webp`)}')" aria-hidden="true"></i>`:'';}
@@ -1209,6 +1210,11 @@ player = (id: PlayerId) => {
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button?.dataset.guardianBoon || button.disabled) return;
+  if(state.players[state.currentPlayer].leader?.id==='falconer'){
+    falconerGuardianDraft=button.dataset.guardianBoon;
+    render();
+    return;
+  }
   run({ type: 'ACTIVATE_GUARDIAN_BOON', playerId: state.currentPlayer, guardianId: button.dataset.guardianBoon });
 });
 
@@ -2650,7 +2656,21 @@ function simplifyRunningLabControls() {
   controls.querySelector('strong')?.insertAdjacentHTML('afterend', `<span class="research-lab-current-config">主板：${mainBoard === 'bird' ? '普通' : '进阶'} · 研究板：${researchBoard} · ${leader}</span>`);
 }
 const renderWithChoiceOverlay = render;
-render = () => { renderWithChoiceOverlay(); simplifyRunningLabControls(); enhanceChoicePanels(); };
+render = () => {
+  renderWithChoiceOverlay(); simplifyRunningLabControls(); enhanceChoicePanels();
+  if(screen==='game'&&falconerGuardianDraft){
+    const guardianId=falconerGuardianDraft;
+    app.insertAdjacentHTML('beforeend',`<section class="choice-overlay" role="dialog" aria-modal="true"><div class="choice-overlay-card"><header><h2>使用守卫奖励</h2></header><div class="choice-overlay-options"><button class="pending-button guardian-choice" style="${sprite(assets[`guardian:${guardianId}:face`])}" data-falconer-guardian-original title="执行该守卫印刷的奖励"></button><button class="pending-button" data-falconer-guardian-flight>将此守卫翻面，推进猎鹰 1 格</button></div><footer><button data-falconer-guardian-cancel>取消</button></footer></div></section>`);
+  }
+};
+app.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if(!button||!falconerGuardianDraft)return;
+  const guardianId=falconerGuardianDraft;
+  if(button.dataset.falconerGuardianCancel!==undefined){falconerGuardianDraft=undefined;render();return;}
+  if(button.dataset.falconerGuardianOriginal!==undefined){falconerGuardianDraft=undefined;run({type:'ACTIVATE_GUARDIAN_BOON',playerId:state.currentPlayer,guardianId});return;}
+  if(button.dataset.falconerGuardianFlight!==undefined){falconerGuardianDraft=undefined;run({type:'LEADER_FALCONER_GUARDIAN_BOON',playerId:state.currentPlayer,guardianId});}
+});
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice-overlay-toggle],[data-choice-overlay-cancel]');
   if (!button) return;

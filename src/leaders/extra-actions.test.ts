@@ -13,7 +13,7 @@ function stateFor(leader:'falconer'|'explorer'|'mystic'){const s=createGame(['p1
 
 test('Falconer can spend each defeated guardian boon only once to advance eagle',()=>{
  let s=stateFor('falconer'); s.players.p1.defeatedGuardians=['g1']; const before=Number(s.players.p1.leader!.data.eaglePosition);
- s=falconerUseGuardianBoonForFlight(s,'p1','g1'); assert.equal(s.players.p1.leader!.data.eaglePosition,before+1); assert.deepEqual(s.players.p1.leader!.data.usedGuardianBoons,['g1']);
+ s=falconerUseGuardianBoonForFlight(s,'p1','g1'); assert.equal(s.players.p1.leader!.data.eaglePosition,before+1); assert.deepEqual(s.players.p1.usedGuardianBoons,['g1']);
  assert.throws(()=>falconerUseGuardianBoonForFlight(s,'p1','g1'),/already been used/);
 });
 
