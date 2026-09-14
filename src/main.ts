@@ -2667,7 +2667,7 @@ render = () => {
   renderWithChoiceOverlay(); simplifyRunningLabControls(); enhanceChoicePanels();
   if(screen==='game'&&falconerGuardianDraft){
     const guardianId=falconerGuardianDraft;
-    app.insertAdjacentHTML('beforeend',`<section class="choice-overlay" role="dialog" aria-modal="true"><div class="choice-overlay-card"><header><h2>使用守卫奖励</h2></header><div class="choice-overlay-options"><button class="pending-button guardian-choice" style="${sprite(assets[`guardian:${guardianId}:face`])}" data-falconer-guardian-original title="执行该守卫印刷的奖励"></button><button class="pending-button" data-falconer-guardian-flight>将此守卫翻面，推进猎鹰 1 格</button></div><footer><button data-falconer-guardian-cancel>取消</button></footer></div></section>`);
+    app.insertAdjacentHTML('beforeend',`<section class="pending-panel falconer-guardian-picker choice-overlay" role="dialog" aria-modal="true"><strong>使用守卫奖励</strong><div><button class="pending-button guardian-choice" style="${sprite(assets[`guardian:${guardianId}:face`])}" data-falconer-guardian-original title="执行该守卫印刷的奖励"></button><button class="pending-button falconer-flight-choice" data-falconer-guardian-flight>将此守卫翻面，推进猎鹰 1 格</button></div><button class="pending-button" data-falconer-guardian-cancel>取消</button></section>`);
   }
 };
 app.addEventListener('click',event=>{
