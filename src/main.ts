@@ -182,7 +182,8 @@ pending = () => {
   if (queued.code === 'leader:MYSTIC_RITUAL_CHOICE') {
     const allowed = Array.isArray(payload.allowedFearCounts) ? payload.allowedFearCounts : [2, 3, 4];
     const availableFear = ((player.leader?.data.ritualPile ?? []) as unknown[]).length;
-    return panel(allowed.filter((count): count is 2 | 3 | 4 => (count === 2 || count === 3 || count === 4) && count <= availableFear).map((fearCount) => pendingButton(`${fearCount} 张恐惧`, { type: 'ritual', fearCount })).join('') || '<span class="pending-unsupported">仪式牌堆中的恐惧不足</span>');
+    const labels:Record<2|3|4,string>={2:'获得 1 金币和 1 罗盘（消耗 2 张恐惧）',3:'以 3 罗盘折扣购买 1 件神器（消耗 3 张恐惧）',4:'免费击败 1 个符合条件的守卫（消耗 4 张恐惧）'};
+    return panel(allowed.filter((count): count is 2 | 3 | 4 => (count === 2 || count === 3 || count === 4) && count <= availableFear).map((fearCount) => pendingButton(labels[fearCount], { type: 'ritual', fearCount })).join('') || '<span class="pending-unsupported">仪式牌堆中的恐惧不足</span>');
   }
   if (queued.code === 'leader:REFRESH_OWN_ASSISTANT') return panel(player.assistants.map((assistant) => pendingButton('♙', { type: 'assistant', assistantId: assistant.id })).join(''));
   if (queued.code === 'leader:UPGRADE_RESOURCE') return panel((['tablet', 'arrowhead'] as const).filter((resource) => player.resources[resource] > 0).map((resource) => pendingButton(resource === 'tablet' ? '▰' : '▲', { type: 'resource', resource })).join(''));
@@ -341,7 +342,8 @@ function leaderIdolSnackPicker() {
 function mysticRitualPicker() {
   if (!mysticRitualDraft) return '';
   const playerState = state.players[mysticRitualDraft], fearCount = ((playerState.leader?.data.ritualPile ?? []) as unknown[]).length;
-  return `<section class="pending-panel leader-idol-picker"><span>Perform ritual</span><div>${([2,3,4] as const).map((count) => `<button class="pending-button" ${fearCount < count ? 'disabled' : ''} data-mystic-ritual-fear="${count}">${count} Fear</button>`).join('')}</div><button class="pending-button" data-leader-panel-cancel>×</button></section>`;
+  const labels:Record<2|3|4,string>={2:'获得 1 金币和 1 罗盘（消耗 2 张恐惧）',3:'以 3 罗盘折扣购买 1 件神器（消耗 3 张恐惧）',4:'免费击败 1 个符合条件的守卫（消耗 4 张恐惧）'};
+  return `<section class="pending-panel leader-idol-picker"><span>执行仪式</span><div>${([2,3,4] as const).map((count) => `<button class="pending-button" ${fearCount < count ? 'disabled' : ''} data-mystic-ritual-fear="${count}">${labels[count]}</button>`).join('')}</div><button class="pending-button" data-leader-panel-cancel>×</button></section>`;
 }
 const playerWithLeaderBoardHotspots = player;
 player = (id: PlayerId) => playerWithLeaderBoardHotspots(id).replace('</section>', `${leaderBoardHotspots(id)}</section>`);
@@ -411,6 +413,17 @@ render = () => {
   if (screen !== 'game') return;
   const controls = `${leaderIdolPicker()}${leaderIdolSnackPicker()}${mysticRitualPicker()}${captainSpecialistDraft ? '<section class="leader-action-hint">Captain: choose a silver assistant in the supply.</section>' : ''}`;
   if (controls) app.insertAdjacentHTML('beforeend', controls);
+};
+render();
+
+// Mystic's three-Fear ritual uses a leader-specific pending code. Render the
+// actual Artifact row instead of falling through to the legacy glyph panel.
+const pendingBeforeMysticArtifactChoice = pending;
+pending = () => {
+  const queued=state.pendingRewards[0];
+  if(queued?.code!=='leader:MYSTIC_BUY_ARTIFACT_DISCOUNT')return pendingBeforeMysticArtifactChoice();
+  const options=state.market.artifacts.map(id=>pendingButton('选择神器',{type:'artifact',artifactId:id})).join('');
+  return `<section class="pending-panel"><span>以 3 罗盘折扣购买 1 件神器</span><div>${options||'<span class="pending-unsupported">市场中没有神器</span>'}</div></section>`;
 };
 render();
 
