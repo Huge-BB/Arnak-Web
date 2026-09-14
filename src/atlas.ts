@@ -21,7 +21,7 @@ const leaderCardTexts:Record<string,string>={
   Funding:'获得 1 金币。', Piloting:'获得 1 罗盘；或支付 1 金币获得 2 飞机。', Transmission:'按已放置考古学家数量解锁：1 个得金币、2 个得罗盘、3 个得 2 石板。',
   Falconry:'获得 1 罗盘；或推进猎鹰。', Tracking:'获得 1 罗盘；本回合查看并选择守卫时获得额外选择。', 'Animal Bond':'获得 1 金币；击败守卫后可放逐牌；击败 3 个守卫后可推进猎鹰。',
   Connections:'获得 1 金币，并可放逐最左物品后补充。', 'Research Notes':'获得 1 罗盘；或支付 2 金币获得 1 宝石。', Resourcefulness:'获得 1 金币；按已打出物品数解锁罗盘与重置助手。',
-  Preservation:'获得 1 罗盘；或升级 1 个资源。', Arnakology:'获得 1 罗盘；并可交换档案与市场中的神器。', Linguistics:'获得 1 金币；按已打出神器数向公文包加入罗盘/石板。',
+  Preservation:'获得 1 罗盘；或升级 1 个资源。', Arnakology:'获得 1 罗盘；并可交换档案与市场中的神器。', Linguistics:'从已满足门槛的奖励中选择 1 项：获得 1 金币，或向公文包加入对应资源。',
   Hike:'获得 1 罗盘；或消耗零食激活已发现地点。', Cartography:'获得 1 金币；或消耗零食激活未发现地点的正面神像。', Scouting:'获得 1 罗盘；本回合发现时查看更多一级地点。',
   'Worldly Goods':'获得 1 金币或抽 1 张牌。', 'Divine Guidance':'获得 1 罗盘；或放逐自己 1 张牌。', Meditation:'获得 1 金币；或放逐自己 1 张牌。', Blindsight:'获得 1 罗盘；本回合发现地点时将正面神像效果改为放逐自己 1 张牌。',
   'Hidden Fear':'恐惧牌，不能主动打出；可作为弃牌/旅行支付。', 'Special Delivery':'男爵夫人的专属递送牌；随其购买物品与回合机制结算。',

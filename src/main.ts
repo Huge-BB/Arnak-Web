@@ -790,7 +790,11 @@ function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
     if (name === 'Funding') return [basic('coin', '●')];
     if (name === 'Preservation') return [basic('compass', '◉'), basic('upgradeResource', '▰→▲')];
     if (name === 'Arnakology') return [basic('compass', '◉')];
-    if (name === 'Linguistics') return artifacts >= 2 ? [basic('suitcaseCompassTablet', '公文包获得 1 罗盘和 1 石板')] : artifacts === 1 ? [basic('suitcaseCompass', '公文包获得 1 罗盘')] : [basic('coin', '获得 1 金币')];
+    if (name === 'Linguistics') return [
+      basic('coin', '获得 1 金币'),
+      ...(artifacts >= 1 ? [basic('suitcaseCompass', '公文包获得 1 罗盘')] : []),
+      ...(artifacts >= 2 ? [basic('suitcaseCompassTablet', '公文包获得 1 罗盘和 1 石板')] : []),
+    ];
   }
   if (leader === 'explorer') {
     const snacks = ((player.leader?.data.snacks ?? []) as Array<{ id: 'free' | 'coin' | 'compass'; used: boolean; availableFromRound: number }>).filter((snack) => !snack.used && state.round >= snack.availableFromRound);
