@@ -2463,6 +2463,23 @@ renderSetup = () => {
 // authoritative service below. Revealing hidden information locks the turn.
 let turnStartCode='',turnStartOwner:PlayerId|undefined,localTurnUndoLocked=false;
 let pendingRevealAction:GameAction|undefined,pendingRevealChoice:PendingChoice|undefined;
+function resetLocalTurnCheckpoint(){
+  turnStartOwner=state.currentPlayer;
+  turnStartCode=encodeStateCode(state);
+  localTurnUndoLocked=false;
+  pendingRevealAction=undefined;
+  pendingRevealChoice=undefined;
+}
+// A Lab batch is a brand-new game even though its sole player is always p1.
+// Reusing only the player id would otherwise make Undo restore the previous
+// batch (and potentially a completely different Expedition Leader).
+const startResearchLabBeforeTurnCheckpointReset=startResearchLab;
+startResearchLab=(seed?:string)=>{
+  startResearchLabBeforeTurnCheckpointReset(seed);
+  resetLocalTurnCheckpoint();
+  resetDebugTimeline('START_RESEARCH_LAB');
+  render();
+};
 function ensureTurnCheckpoint(){if(turnStartOwner!==state.currentPlayer){turnStartOwner=state.currentPlayer;turnStartCode=encodeStateCode(state);localTurnUndoLocked=false;}}
 async function undoLanTurn(){if(!roomSession)return;try{const snapshot=(await roomRequest<{snapshot:RoomSnapshotUi}>(`/rooms/${roomSession.roomId}/undo-turn`,{method:'POST',body:JSON.stringify({token:roomSession.token})})).snapshot;applyRoomSnapshot(snapshot);}catch(error){message=error instanceof Error?error.message:String(error);render();}}
 const runBeforeUndoPolicy=run;
