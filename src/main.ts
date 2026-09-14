@@ -2202,7 +2202,7 @@ const renderWithResearchLabControls = render;
 render = () => {
   renderWithResearchLabControls();
   if (screen !== 'game') return;
-  if (researchLab) app.querySelector('header')?.insertAdjacentHTML('afterend', `<section class="research-lab-controls"><strong>研究轨实验室</strong><label>主板 <select data-research-lab-main-board><option value="bird" ${mainBoard==='bird'?'selected':''}>普通</option><option value="snake" ${mainBoard==='snake'?'selected':''}>进阶</option></select></label><label>研究板 <select data-research-lab-board>${(['bird','snake','monkey','lizard'] as ResearchBoardId[]).map(id=>`<option value="${id}" ${researchBoard===id?'selected':''}>${id}</option>`).join('')}</select></label><label>领袖 <select data-research-lab-leader>${leaderOptions(setupLeaders.p1)}</select></label><label>seed <input data-research-lab-seed value="${labSeed}" spellcheck="false"></label><span>资源 40 · 全扩展市场 · 官方起始牌组 · 随机抽牌库</span><button data-research-lab-reroll>随机重开</button><button data-research-lab-restart>应用配置重开</button><button data-research-lab-exit>返回设置</button></section>`);
+  if (researchLab) app.querySelector('header')?.insertAdjacentHTML('afterend', `<section class="research-lab-controls"><strong>研究轨实验室</strong><label>主板 <select data-research-lab-main-board><option value="bird" ${mainBoard==='bird'?'selected':''}>普通</option><option value="snake" ${mainBoard==='snake'?'selected':''}>进阶</option></select></label><label>研究板 <select data-research-lab-board>${(['bird','snake','monkey','lizard'] as ResearchBoardId[]).map(id=>`<option value="${id}" ${researchBoard===id?'selected':''}>${id}</option>`).join('')}</select></label><label>领袖 <select data-research-lab-leader>${leaderOptions(setupLeaders.p1)}</select></label><label>seed <input data-research-lab-seed value="${labSeed}" spellcheck="false"></label><span>资源 40 · 全扩展市场 · 官方起始牌组 · 随机抽牌库</span><button data-research-lab-reroll>随机重开</button><button data-research-lab-restart>应用配置重开</button>${new URLSearchParams(location.search).get('audit')==='batch'?'<button data-research-lab-audit>返回审计台</button>':''}<button data-research-lab-exit>返回设置</button></section>`);
   if (researchMoveChoice) app.insertAdjacentHTML('beforeend', `<section class="pending-panel research-marker-choice"><span>选择推进标记</span><div>${researchMoveChoice.tokens.map((token) => `<button data-research-choice-token="${token}">${token === 'magnifying' ? '放大镜' : '笔记本'}</button>`).join('')}</div></section>`);
 };
 app.addEventListener('click', (event) => {
@@ -2211,6 +2211,7 @@ app.addEventListener('click', (event) => {
   if (button.dataset.researchLab !== undefined) { startResearchLab(); return; }
   if (button.dataset.researchLabReroll !== undefined) { startResearchLab(randomLabSeed()); return; }
   if (button.dataset.researchLabRestart !== undefined) { startResearchLab(labSeed); return; }
+  if (button.dataset.researchLabAudit !== undefined) { location.assign(publicAsset('/audit.html')); return; }
   if (button.dataset.researchLabExit !== undefined) { researchLab = false; screen = 'setup'; render(); }
   if (button.dataset.researchChoiceToken && researchMoveChoice) {
     const destination = researchMoveChoice.destination;
