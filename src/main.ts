@@ -1329,8 +1329,7 @@ render = () => {
   const hasTravel = researchPayment.cost.travel && typeof researchPayment.cost.travel === 'object';
   const hiredPlanes = researchPayment.hiredPlanes ?? 0;
   const hirePlane = hasTravel ? `<button class="hire-plane ${hiredPlanes ? 'selected-choice' : ''}" data-hire-plane title="花费2金币租用1架飞机">${paymentIconArtwork('coin',2)}<span>→</span>${paymentIconArtwork('plane',1)}${hiredPlanes ? `<b>×${hiredPlanes}</b>` : ''}</button>` : '';
-  if (discard) app.insertAdjacentHTML('beforeend', `<section class="payment-panel payment-discard-panel">${discard}</section>`);
-  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
+  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}${discard}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
 };
 const renderWithPaymentTitle = render;
 render = () => {
