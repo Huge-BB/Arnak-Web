@@ -784,7 +784,11 @@ function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
   if (leader === 'baroness') {
     if (name === 'Connections') return [basic('coin', '●')];
     if (name === 'Research Notes') return [basic('compass', '◉'), ...(player.resources.coin >= 2 ? [basic('payCoinsForJewel', '●●→◆')] : [])];
-    if (name === 'Resourcefulness') return items >= 3 ? [basic('refreshAssistant', '重置一名助手')] : items >= 1 ? [basic('compass', '获得 1 罗盘')] : [basic('coin', '获得 1 金币')];
+    if (name === 'Resourcefulness') return [
+      basic('coin', '获得 1 金币'),
+      ...(items >= 1 ? [basic('compass', '获得 1 罗盘')] : []),
+      ...(items >= 3 ? [basic('refreshAssistant', '重置一名助手')] : []),
+    ];
   }
   if (leader === 'professor') {
     if (name === 'Funding') return [basic('coin', '●')];
