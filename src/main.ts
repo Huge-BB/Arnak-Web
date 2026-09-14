@@ -1229,7 +1229,7 @@ app.addEventListener('click', (event) => {
 });
 render();
 
-type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; hiredPlanes?:number; discardCardId?: string; discardCardIndex?:number; guardianChoiceIndex?:0|1; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
+type PaymentDraft = { action: 'research' | 'pending-research' | 'site' | 'discover' | 'guardian' | 'lizard-guardian'; destinationId: string; cost: Record<string, unknown>; cardIds: string[]; cardIndexes: number[]; temporaryTravel?:Partial<Record<'boot'|'car'|'boat'|'plane',number>>; hiredPlanes?:number; discardCardId?: string; discardCardIndex?:number; guardianChoiceIndex?:0|1; useBlindsight?:boolean; researchToken?: 'magnifying'|'journal'; bonusTileId?:string; costAlternativeIndex?:number; feedbackOrigin?: { x:number; y:number } };
 let researchPayment: PaymentDraft | undefined;
 type ResearchCostChoice = { action:'research'|'pending-research'; destinationId:string; researchToken:'magnifying'|'journal'; costs:Record<string,unknown>[]; discount:Record<string,number>; bonusTileId?:string };
 let researchCostChoice: ResearchCostChoice | undefined;
@@ -1300,11 +1300,13 @@ render = () => {
   const discard = Number(researchPayment.cost.discardCard ?? 0) ? `<div class="payment-discard"><span>弃置手牌</span>${player.hand.map((id,index) => `<button class="card ${researchPayment.discardCardIndex === index ? 'selected-choice' : ''}" data-payment-discard-index="${index}" title="弃置 ${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('')}</div>` : '';
   const tracking = researchPayment.action === 'discover' && player.leader?.id === 'falconer' && player.leader.data.trackingGuardianChoiceThisTurn === true
     ? `<div class="tracking-choice"><strong>Tracking：选择本次探索出现的守卫</strong><div>${state.discovery.guardianDeck.slice(0,2).map((id,index)=>`<button class="guardian-choice ${researchPayment!.guardianChoiceIndex===index?'selected-choice':''}" data-tracking-guardian="${index}" title="${context.guardians?.[id]?.name??id}" style="${sprite(assets[`guardian:${id}:face`])}"></button>`).join('')}</div></div>` : '';
+  const blindsight = researchPayment.action === 'discover' && player.leader?.id === 'mystic' && player.leader.data.blindsightIdolExileThisTurn === true
+    ? `<div class="tracking-choice"><strong>Blindsight：选择本次正面神像奖励</strong><div><button class="${researchPayment.useBlindsight?'selected-choice':''}" data-blindsight-toggle>${researchPayment.useBlindsight?'放逐自己 1 张牌':'使用神像原本奖励'}</button></div></div>` : '';
   const hasTravel = researchPayment.cost.travel && typeof researchPayment.cost.travel === 'object';
   const hiredPlanes = researchPayment.hiredPlanes ?? 0;
   const hirePlane = hasTravel ? `<button class="hire-plane ${hiredPlanes ? 'selected-choice' : ''}" data-hire-plane title="花费2金币租用1架飞机">${paymentIconArtwork('coin',2)}<span>→</span>${paymentIconArtwork('plane',1)}${hiredPlanes ? `<b>×${hiredPlanes}</b>` : ''}</button>` : '';
   if (discard) app.insertAdjacentHTML('beforeend', `<section class="payment-panel payment-discard-panel">${discard}</section>`);
-  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${tracking}${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
+  app.insertAdjacentHTML('beforeend', `<section class="payment-panel" role="dialog" aria-label="research payment"><div class="payment-cost">${paymentCost(researchPayment.cost)}</div>${tracking}${blindsight}${temporary?`<div class="payment-temporary-pool"><strong>临时交通</strong>${temporary}</div>`:''}${hirePlane}<div class="payment-cards">${cards}</div><div class="payment-actions"><button data-payment-cancel title="cancel">×</button><button data-payment-confirm title="confirm">✓</button></div></section>`);
 };
 const renderWithPaymentTitle = render;
 render = () => {
@@ -1451,7 +1453,7 @@ app.addEventListener('click', (event) => {
     researchPayment.cardIds = paymentCardIds(researchPayment);
     render();
     const travel = researchPayment.cost.travel;
-    if (travel && typeof travel === 'object' && researchPayment.guardianChoiceIndex === undefined && state.players[state.currentPlayer].leader?.data.trackingGuardianChoiceThisTurn !== true && canPayTravel(travel as Record<'boot'|'car'|'boat'|'plane',number>, researchPayment.cardIds, context)) queueMicrotask(() => app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
+    if (travel && typeof travel === 'object' && researchPayment.guardianChoiceIndex === undefined && state.players[state.currentPlayer].leader?.data.trackingGuardianChoiceThisTurn !== true && state.players[state.currentPlayer].leader?.data.blindsightIdolExileThisTurn !== true && canPayTravel(travel as Record<'boot'|'car'|'boat'|'plane',number>, researchPayment.cardIds, context)) queueMicrotask(() => app.querySelector<HTMLButtonElement>('[data-payment-confirm]')?.click());
     return;
   }
   if (button.dataset.paymentDiscardIndex !== undefined) {
@@ -1468,6 +1470,10 @@ app.addEventListener('click', (event) => {
   if (button.dataset.trackingGuardian !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation();
     researchPayment.guardianChoiceIndex = Number(button.dataset.trackingGuardian) as 0|1; render(); return;
+  }
+  if (button.dataset.blindsightToggle !== undefined) {
+    event.preventDefault(); event.stopImmediatePropagation();
+    researchPayment.useBlindsight = !researchPayment.useBlindsight; render(); return;
   }
   if (button.dataset.hirePlane !== undefined) {
     event.preventDefault(); event.stopImmediatePropagation();
@@ -1494,7 +1500,7 @@ app.addEventListener('click', (event) => {
           ? { type: 'OVERCOME_GUARDIAN', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId }
           : researchPayment.action === 'lizard-guardian'
             ? { type: 'OVERCOME_LIZARD_TRACK_GUARDIAN', playerId: state.currentPlayer, paymentCardIds: researchPayment.cardIds, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId }
-            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId, ...(researchPayment.action==='discover'&&researchPayment.guardianChoiceIndex!==undefined?{useTracking:true,guardianChoiceIndex:researchPayment.guardianChoiceIndex}:{}) };
+            : { type: researchPayment.action === 'site' ? 'PLACE_WORKER' : 'DISCOVER_SITE', playerId: state.currentPlayer, siteId: researchPayment.destinationId, paymentCardIds: researchPayment.cardIds, temporaryTravel:researchPayment.temporaryTravel??{}, hiredPlanes:researchPayment.hiredPlanes, discardCardId: researchPayment.discardCardId, ...(researchPayment.action==='discover'&&researchPayment.guardianChoiceIndex!==undefined?{useTracking:true,guardianChoiceIndex:researchPayment.guardianChoiceIndex}:{}), ...(researchPayment.action==='discover'&&researchPayment.useBlindsight?{useBlindsight:true}:{}) };
       state = applyEngineCommand(state, { type: 'action', action }, context);
       researchPayment = undefined; message = '';
       recordReducerEvent(action, 'accepted');
@@ -2423,6 +2429,24 @@ render();
 
 // Keep turn-critical information together: every resource summary first,
 // followed by the active hand and board. Inactive boards remain below it.
+function persistentEffectHtml(playerId: string) {
+  const player = state.players[playerId];
+  if (!player) return '';
+  const effects: Array<{ cardId?:string; title:string; text:string }> = [];
+  const leaderData = player.leader?.data ?? {};
+  if (leaderData.trackingGuardianChoiceThisTurn === true) effects.push({ cardId:'1002', title:'Tracking', text:'本回合发现地点时，查看两个守卫并选择一个。' });
+  if (leaderData.scoutingSiteChoiceThisTurn === true) effects.push({ cardId:'1005', title:'Scouting', text:'本回合发现地点时，查看两个地点并选择一个。' });
+  if (leaderData.blindsightIdolExileThisTurn === true) effects.push({ cardId:'1014', title:'Blindsight', text:'本回合发现地点时，可将正面神像奖励改为放逐自己 1 张牌。' });
+  if (leaderData.specialDeliveryArmed === true) effects.push({ cardId:'1019', title:'Special Delivery', text:'本回合购买的下一件物品进入手牌。' });
+  if (player.guardianFearImmuneThisRound) effects.push({ title:'守卫恐惧免疫', text:'本轮不会因未击败的守卫获得恐惧牌。' });
+  if (player.guardianDefeatRewardsThisRound?.length) effects.push({ title:'击败守卫奖励', text:`本轮每次击败守卫触发额外奖励（${player.guardianDefeatRewardsThisRound.length} 项）。` });
+  if (player.allTravelIconsArePlanesThisRound) effects.push({ title:'交通转换', text:'本轮提供的所有交通图标均可视为飞机。' });
+  if (player.boughtItemsToDeckTopThisRound) effects.push({ title:'物品牌库顶', text:'本轮购买的物品放到牌库顶。' });
+  if (player.boughtArtifactsWithCoinThisRound) effects.push({ title:'金币购买神器', text:'本轮可用金币代替罗盘购买神器。' });
+  if ((player.nextSiteActionPlaneDiscount ?? 0) > 0 || (player.nextDiscoveryCompassDiscount ?? 0) > 0) effects.push({ title:'下一次行动折扣', text:'下一次放置或发现地点享受尚未使用的费用减免。' });
+  if (!effects.length) return '';
+  return `<aside class="persistent-effects" aria-label="${playerId} ongoing effects"><strong>持续效果</strong><div>${effects.map(effect=>`<article title="${effect.text}">${effect.cardId?`<img src="${publicAsset(`/assets/cropped/card-${effect.cardId}-face.webp`)}" alt="${effect.title}">`:''}<span><b>${effect.title}</b><small>${effect.text}</small></span></article>`).join('')}</div></aside>`;
+}
 function applyTurnFocusedPlayerLayout() {
   if (screen !== 'game') return;
   const main = app.querySelector('main'), players = main?.querySelector<HTMLElement>('.players'), hand = main?.querySelector<HTMLElement>('.hand'), surface = main?.querySelector<HTMLElement>('.play-surface');
@@ -2444,6 +2468,8 @@ function applyTurnFocusedPlayerLayout() {
     summary.insertAdjacentHTML('afterbegin', `<span class="player-summary-identity ${playerState?.color.toLowerCase() ?? ''}">${playerId === state.firstPlayer ? `<i class="summary-first-player" title="本轮起始玩家"><img src="${publicAsset('/assets/starting-player-marker.png')}" alt="起始玩家"></i>` : ''}${leader ? `<i class="player-leader-avatar avatar-${leader}" style="background-image:url('${publicAsset(`/assets/boards/leader-${leader}.jpg`)}')" title="${leader}"></i>` : ''}<span><b>玩家 ${index + 1}</b>${leader ? `<small>${leader}</small>` : ''}</span><em>本轮 ${roundOrder} · 下轮 ${nextRoundOrder}</em></span>`);
     if (zone.querySelector('.player.current')) summary.classList.add('current');
     overview.append(summary);
+    const persistentEffects = persistentEffectHtml(playerId ?? '');
+    if (persistentEffects) overview.insertAdjacentHTML('beforeend', persistentEffects);
   });
   const activeZone = zones.find((zone) => Boolean(zone.querySelector('.player.current')));
   surface.before(overview);
