@@ -34,10 +34,19 @@ test('canonical pending route validates owner and resolves through public dispat
 });
 
 test('canonical action route lets Falconer flip a guardian boon to advance the eagle',()=>{
-  const s=game();s.players.p1.leader={id:'falconer',data:{eaglePosition:1,eagleMaxPosition:4}};s.players.p1.defeatedGuardians=['g1'];
+  const s=game();s.players.p1.leader={id:'falconer',data:{eaglePosition:1,eagleMaxPosition:4}};s.players.p1.defeatedGuardians=['g1'];delete (s.players.p1 as Partial<typeof s.players.p1>).usedGuardianBoons;
   const next=applyEngineCommand(s,{type:'action',action:{type:'LEADER_FALCONER_GUARDIAN_BOON',playerId:'p1',guardianId:'g1'}},context);
   assert.equal(next.players.p1.leader!.data.eaglePosition,2);
   assert.deepEqual(next.players.p1.usedGuardianBoons,['g1']);
+});
+
+test('canonical guardian boon route supports immediate and pending printed rewards',()=>{
+  let s=game();s.players.p1.defeatedGuardians=['travel'];delete (s.players.p1 as Partial<typeof s.players.p1>).usedGuardianBoons;
+  const ctx:EngineContext={cards:{},guardians:{travel:{id:'travel',expansion:'Base Game',boon:{type:'GAIN_TRAVEL',travel:{plane:1}}},exile:{id:'exile',expansion:'Base Game',boon:{type:'EXILE_OWN_CARD',max:1}}}};
+  s=applyEngineCommand(s,{type:'action',action:{type:'ACTIVATE_GUARDIAN_BOON',playerId:'p1',guardianId:'travel'}},ctx);
+  assert.equal(s.actionWindow?.temporaryTravel.plane,1);assert.deepEqual(s.players.p1.usedGuardianBoons,['travel']);
+  s.players.p1.defeatedGuardians.push('exile');s=applyEngineCommand(s,{type:'action',action:{type:'ACTIVATE_GUARDIAN_BOON',playerId:'p1',guardianId:'exile'}},ctx);
+  assert.equal(s.pendingRewards[0]?.code,'guardian:ACTIVATE_EFFECT');assert.equal((s.pendingRewards[0]?.payload as {effect?:{type?:string}})?.effect?.type,'EXILE_OWN_CARD');
 });
 
 test('public command API rejects internal resource and lifecycle reducer transitions',()=>{

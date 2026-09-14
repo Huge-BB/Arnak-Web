@@ -11,7 +11,7 @@ function requireLeader(state:GameState,playerId:PlayerId,id:string){
 export function falconerUseGuardianBoonForFlight(state:GameState,playerId:PlayerId,guardianId:string):GameState{
   const {player,leader}=requireLeader(state,playerId,'falconer');
   if(!player.defeatedGuardians.includes(guardianId))throw new Error('Falconer does not own this guardian');
-  const used=player.usedGuardianBoons;
+  const used=(player.usedGuardianBoons??=[]);
   if(used.includes(guardianId))throw new Error('Guardian boon has already been used');
   const next=falconerAdvanceEagle(state,playerId,1);
   next.players[playerId].usedGuardianBoons=[...used,guardianId];
