@@ -466,7 +466,7 @@ pending = () => {
   const player = state.players[queued.playerId];
   const cardIds = [...player.hand, ...player.playedCards];
   const cards = cardIds.map((cardId) => `<button class="card exile-card-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({ type: 'card', cardId }))}" title="放逐：${context.cards[cardId]?.name ?? cardId}"><i style="${sprite(assets[`card:${cardId}:face`])}"></i></button>`).join('');
-  return `<section class="pending-panel exile-card-panel"><span>选择要放逐的牌</span><div>${cards || '<span class="pending-unsupported">没有可放逐的牌</span>'}</div></section>`;
+  return `<section class="pending-panel exile-card-panel"><span>选择要放逐的牌</span><div>${cards || '<span class="pending-unsupported">没有可放逐的牌</span>'}${pendingButton('跳过删牌',{type:'skip'})}</div></section>`;
 };
 render();
 
@@ -2613,6 +2613,11 @@ render();
 // temporarily when a player needs to inspect the board before deciding.
 let choicePanelCollapsed = false;
 let choicePanelSignature = '';
+let choiceOriginState:GameState|undefined;
+const runBeforeChoiceOrigin=run;
+run=(action:GameAction)=>{const before=structuredClone(state),pendingCount=state.pendingRewards.length;runBeforeChoiceOrigin(action);if(!roomSession&&pendingCount===0&&state.pendingRewards.length>0)choiceOriginState=before;};
+const chooseBeforeChoiceOrigin=choose;
+choose=(choice:PendingChoice)=>{chooseBeforeChoiceOrigin(choice);if(!state.pendingRewards.length)choiceOriginState=undefined;};
 const minimizableChoicePanels = '.pending-panel,.payment-panel,.payment-discard-panel,.research-bonus-picker,.research-cost-picker,.temple-shop,.idol-picker';
 function enhanceChoicePanels() {
   const panels = [...app.querySelectorAll<HTMLElement>(minimizableChoicePanels)];
@@ -2627,6 +2632,7 @@ function enhanceChoicePanels() {
     if (!panel.querySelector('[data-choice-overlay-toggle]')) {
       panel.insertAdjacentHTML('afterbegin', `<button class="choice-overlay-toggle" data-choice-overlay-toggle title="${choicePanelCollapsed ? '展开选项' : '收起选项'}" aria-label="${choicePanelCollapsed ? '展开选项' : '收起选项'}">${choicePanelCollapsed ? '展开' : '收起'}</button>`);
     }
+    if(!panel.querySelector('[data-choice-overlay-cancel]'))panel.insertAdjacentHTML('afterbegin','<button class="choice-overlay-cancel" data-choice-overlay-cancel title="返回上一层选择">取消</button>');
     const toggle = panel.querySelector<HTMLButtonElement>('[data-choice-overlay-toggle]');
     if (toggle) {
       toggle.textContent = choicePanelCollapsed ? '展开' : '收起';
@@ -2646,10 +2652,17 @@ function simplifyRunningLabControls() {
 const renderWithChoiceOverlay = render;
 render = () => { renderWithChoiceOverlay(); simplifyRunningLabControls(); enhanceChoicePanels(); };
 app.addEventListener('click', (event) => {
-  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice-overlay-toggle]');
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice-overlay-toggle],[data-choice-overlay-cancel]');
   if (!button) return;
   event.preventDefault();
   event.stopImmediatePropagation();
+  if(button.dataset.choiceOverlayCancel!==undefined){
+    choicePanelCollapsed=false;
+    if(state.pendingRewards.length&&choiceOriginState&&!roomSession){state=choiceOriginState;choiceOriginState=undefined;message='已返回上一层选择。';}
+    else if(state.pendingRewards.length&&roomSession){void undoLanTurn();return;}
+    else {artifactId=undefined;leaderStartingCardId=undefined;specialDeliveryPurchaseCardId=undefined;researchPayment=undefined;leaderDiscoveryChoice=undefined;researchCostChoice=undefined;researchBonusChoice=undefined;leaderIdolDraft=undefined;leaderIdolSnackDraft=undefined;captainSpecialistDraft=undefined;mysticRitualDraft=undefined;baseIdolDraft=undefined;pendingRevealAction=undefined;pendingRevealChoice=undefined;pendingSelection=[];}
+    render();return;
+  }
   choicePanelCollapsed = !choicePanelCollapsed;
   enhanceChoicePanels();
 });

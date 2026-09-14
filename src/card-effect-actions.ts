@@ -102,12 +102,15 @@ export function resolvePendingCardEffect(state:GameState, playerId:PlayerId, pen
     hand.splice(index,1); next.players[playerId].playedCards.push(choice.cardId);
     followUps=payload.effect.effects;
   } else if (payload.effect.type === 'EXILE_OWN_CARD') {
+    if(choice.type==='skip'){followUps=payload.effect.effects??[];}
+    else {
     if (choice.type !== 'card') throw new Error('Card effect exile requires a card choice');
     const player=next.players[playerId];
     const zones=choice.zone==='hand'?[player.hand]:choice.zone==='played'?[player.playedCards]:[player.hand,player.playedCards];let removed=false;
     for(const zone of zones){const index=zone.indexOf(choice.cardId);if(index>=0){zone.splice(index,1);next.market.exiled.push(choice.cardId);resolveOwnedCardExile(next,playerId,choice.cardId,context);removed=true;break;}}
     if(!removed) throw new Error('Card effect exile requires a card in hand or play area');
     followUps=payload.effect.effects??[];
+    }
   } else if (payload.effect.type === 'RETURN_FEAR_FROM_PLAY_TO_HAND') {
     if(choice.type!=='card')throw new Error('Card effect requires a Fear card in play');
     const index=next.players[playerId].playedCards.indexOf(choice.cardId);

@@ -23,6 +23,7 @@ export function resolveLeaderPendingChoice(state:GameState,playerId:PlayerId,pen
   case'leader:MYSTIC_RITUAL_CHOICE':{if(choice.type!=='ritual')throw new Error('Mystic ritual choice requires a fear count');const allowed=(payload.allowedFearCounts??[2,3,4]) as number[];if(!allowed.includes(choice.fearCount))throw new Error('Ritual fear count is not allowed');return mysticPerformRitual(removePending(state,pendingIndex),playerId,choice.fearCount);}
   case'leader:REFRESH_OWN_ASSISTANT':{if(choice.type!=='assistant')throw new Error('Assistant refresh requires an assistant choice');return removePending(refreshOwnedAssistant(state,playerId,choice.assistantId),pendingIndex);}
   case'leader:EXILE_OWN_CARD':{
+   if(choice.type==='skip')return removePending(state,pendingIndex);
    if(choice.type!=='card')throw new Error('Exile effect requires a card choice');const card=context.cards[choice.cardId];let resolved:GameState;
    if(state.players[playerId].leader?.id==='mystic'&&card?.type==='Fear')resolved=mysticExileFear(state,playerId,choice.cardId,context,choice.zone);else resolved=removeOwnedCard(state,playerId,choice.cardId,context,choice.zone);
    resolved=removePending(resolved,pendingIndex);
