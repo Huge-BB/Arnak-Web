@@ -87,7 +87,7 @@ export class RoomService {
       if (actor !== member.playerId) throw new Error('A session may only submit commands for its own seat');
       const before=room.state, reveals=commandRevealsHiddenInformation(before,command,this.context);
       room.state = applyEngineCommand(before, command, this.context);
-      if(reveals) room.turnUndoLocked=true;
+      if(reveals){room.turnStartState=structuredClone(room.state);room.turnUndoLocked=false;}
       if(room.state.currentPlayer!==before.currentPlayer){room.turnStartState=structuredClone(room.state);room.turnUndoLocked=false;}
       room.version += 1;
       room.events.push({ version: room.version, at: new Date().toISOString(), kind: 'command', command });
