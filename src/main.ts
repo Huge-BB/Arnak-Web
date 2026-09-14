@@ -100,7 +100,7 @@ function calibratedResearchComponent(board: ResearchBoardId, id: string, fallbac
 function researchComponentStyle(component: { x: number; y: number; width: number; height: number }) {
   return `${pointStyle(component, RESEARCH_BOARD_SIZE)};--component-w:${component.width / RESEARCH_BOARD_SIZE.width * 100}%;--component-h:${component.height / RESEARCH_BOARD_SIZE.height * 100}%`;
 }
-let falconerGuardianDraft:string|undefined;
+let falconerGuardianDraft:string|undefined,falconerReturnDraft=false;
 let state:GameState=createGame(['p1','p2']),screen:'setup'|'game'|'rooms'|'room'='setup',setupPlayerCount=2,setupSeed='',setupMoonStaff:MoonStaffVariant='blue',setupSurpriseShipment=false,setupLeadersMarket=false,setupLeaders:Record<string,LeaderId|''>={p1:'',p2:'',p3:'',p4:''},mainBoard:'bird'|'snake'='bird',researchBoard:ResearchBoardId='bird',researchToken:'magnifying'|'journal'='magnifying',pendingSelection:string[]=[],artifactId:string|undefined,leaderStartingCardId:string|undefined,specialDeliveryPurchaseCardId:string|undefined,message='',researchLab=false,soloDifficulty=2,labSeed='',researchMoveChoice:{destination:string;tokens:('magnifying'|'journal')[]}|undefined,researchBonusChoice:{destination:string;token:'magnifying'|'journal';tileIds:string[]}|undefined,leaderIdolDraft:{playerId:PlayerId;slotIndex:number}|undefined,leaderIdolSnackDraft:{playerId:PlayerId;slotIndex:number;effect:IdolEffect}|undefined,captainSpecialistDraft:PlayerId|undefined,mysticRitualDraft:PlayerId|undefined;
 const SOLO_ACTION_ART=new Set(['dig-coin','dig-tablet','dig-jewel','dig-compass','dig-arrowhead','discover-green','discover-red','buy-item-green','buy-item-red','buy-artifact-green','buy-artifact-red','research-green','research-red','overcome-green','overcome-red']);
 function soloActionFace(tileId:string){return SOLO_ACTION_ART.has(tileId)?`<i class="solo-action-face" style="background-image:url('${publicAsset(`/assets/solo-actions/${tileId}.webp`)}')" aria-hidden="true"></i>`:'';}
@@ -188,6 +188,10 @@ pending = () => {
   }
   if (queued.code === 'leader:REFRESH_OWN_ASSISTANT') return panel(player.assistants.map((assistant) => pendingButton('♙', { type: 'assistant', assistantId: assistant.id })).join(''));
   if (queued.code === 'leader:UPGRADE_RESOURCE') return panel((['tablet', 'arrowhead'] as const).filter((resource) => player.resources[resource] > 0).map((resource) => pendingButton(resource === 'tablet' ? '▰' : '▲', { type: 'resource', resource })).join(''));
+  if(queued.code==='leader:FALCONER_EAGLE_REWARD'){
+    const level=Number(payload.rewardPosition)===4?2:1,sites=Object.values(state.sites).filter(site=>site.level===level&&site.tileId);
+    return `<section class="pending-panel falconer-site-picker"><strong>选择一个已发现的 ${level} 级地点并触发其效果</strong><div>${sites.map(site=>`<button class="pending-button falconer-site-choice" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'site',siteId:site.id}))}" title="${context.sites?.[site.tileId!]?.name??site.tileId}"><i style="${sprite(assets[`site:${site.tileId}:face`])}"></i></button>`).join('')}</div></section>`;
+  }
   if (queued.code === 'leader:OPTIONAL_EXILE_FAR_LEFT_ITEM') {
     const itemId=state.market.items[0];
     const item=itemId?`<button class="card" data-pending-choice="${encodeURIComponent(JSON.stringify({type:'card',cardId:itemId}))}" title="放逐并刷新：${context.cards[itemId]?.name??itemId}"><i style="${sprite(assets[`card:${itemId}:face`])}"></i></button>`:'';
@@ -2049,7 +2053,8 @@ player = (id: PlayerId) => playerWithPhysicalComponents(id).replace('</section>'
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-falcon-return]');
   if (!button || button.disabled) return;
-  run({ type: 'LEADER_FALCONER_RETURN_EAGLE', playerId: state.currentPlayer, rewardPosition: Number(button.dataset.falconReturn) });
+  falconerReturnDraft=true;
+  render();
 });
 // Leader panels use the same un-cropped 1270×328 art viewport as the
 // coordinate collector. This keeps calibrated positions and component scale
@@ -2669,6 +2674,12 @@ render = () => {
     const guardianId=falconerGuardianDraft;
     app.insertAdjacentHTML('beforeend',`<section class="pending-panel falconer-guardian-picker choice-overlay" role="dialog" aria-modal="true"><strong>使用守卫奖励</strong><div><button class="pending-button guardian-choice" style="${sprite(assets[`guardian:${guardianId}:face`])}" data-falconer-guardian-original title="执行该守卫印刷的奖励"></button><button class="pending-button falconer-flight-choice" data-falconer-guardian-flight>将此守卫翻面，推进猎鹰 1 格</button></div><button class="pending-button" data-falconer-guardian-cancel>取消</button></section>`);
   }
+  if(screen==='game'&&falconerReturnDraft){
+    const leader=state.players[state.currentPlayer].leader,current=leader?.id==='falconer'?Math.max(0,Math.min(4,Number(leader.data.eaglePosition??0))):0;
+    const labels=['','获得 1 金币','获得 1 石板和 1 飞机','触发一个已发现的 1 级地点','触发一个已发现的 2 级地点'];
+    const choices=Array.from({length:current},(_,index)=>index+1).map(position=>{const level=position===3?1:position===4?2:0,hasTarget=!level||Object.values(state.sites).some(site=>site.level===level&&site.tileId);return `<button class="pending-button" data-falconer-return-choice="${position}" ${hasTarget?'':'disabled'}>${position}：${labels[position]}</button>`;}).join('');
+    app.insertAdjacentHTML('beforeend',`<section class="pending-panel falconer-return-picker choice-overlay" role="dialog" aria-modal="true"><strong>召回猎鹰：选择当前格或之前任一格的奖励</strong><div>${choices}</div><button class="pending-button" data-falconer-return-cancel>取消</button></section>`);
+  }
 };
 app.addEventListener('click',event=>{
   const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -2677,6 +2688,14 @@ app.addEventListener('click',event=>{
   if(button.dataset.falconerGuardianCancel!==undefined){falconerGuardianDraft=undefined;render();return;}
   if(button.dataset.falconerGuardianOriginal!==undefined){falconerGuardianDraft=undefined;run({type:'ACTIVATE_GUARDIAN_BOON',playerId:state.currentPlayer,guardianId});return;}
   if(button.dataset.falconerGuardianFlight!==undefined){falconerGuardianDraft=undefined;run({type:'LEADER_FALCONER_GUARDIAN_BOON',playerId:state.currentPlayer,guardianId});}
+});
+app.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-falconer-return-choice],[data-falconer-return-cancel]');
+  if(!button||!falconerReturnDraft)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  if(button.dataset.falconerReturnCancel!==undefined){falconerReturnDraft=false;render();return;}
+  const rewardPosition=Number(button.dataset.falconerReturnChoice);falconerReturnDraft=false;
+  run({type:'LEADER_FALCONER_RETURN_EAGLE',playerId:state.currentPlayer,rewardPosition});
 });
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-choice-overlay-toggle],[data-choice-overlay-cancel]');
