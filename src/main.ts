@@ -298,7 +298,8 @@ function leaderBoardHotspots(id: PlayerId) {
     const markId = `leader-${leader.id}-idol-effect-${key}`, mark = calibrationMark(`leader-${leader.id}`, markId);
     const calibrated = calibratedLeaderPoint(leader.id, markId, point);
     const dimensions = mark ? `;--leader-hotspot-w:${mark.width / 1270 * 100}%;--leader-hotspot-h:${mark.height / 328 * 100}%` : '';
-    const enabled = canUseIdol && (!needsBlue || slots[nextSlot]?.blue);
+    const hasEmptyBlueSlot = slots.some((slot, slotIndex) => slot.blue && !playerState.idols.some((idol) => idol.inSlot && idol.slotIndex === slotIndex));
+    const enabled = canUseIdol && (!needsBlue || hasEmptyBlueSlot);
     return `<button class="leader-panel-hotspot leader-idol-effect" style="${playerPointStyle(calibrated, true)}${dimensions}" ${enabled ? `data-leader-idol-direct="${effect}" data-leader-idol-owner="${id}"` : 'disabled'} title="use idol: ${label}"></button>`;
   };
   const printedStandard = leader.id === 'mystic' ? LEADER_IDOL_EFFECT_LAYOUT.mysticStandard : LEADER_IDOL_EFFECT_LAYOUT.standard;
@@ -357,8 +358,10 @@ app.addEventListener('click', (event) => {
   if (button.dataset.leaderPanelCancel !== undefined) { leaderIdolDraft = undefined; leaderIdolSnackDraft = undefined; captainSpecialistDraft = undefined; mysticRitualDraft = undefined; render(); return; }
   if (button.dataset.leaderIdolDirect && button.dataset.leaderIdolOwner) {
     const playerId = button.dataset.leaderIdolOwner as PlayerId, playerState = state.players[playerId], leader = playerState.leader;
-    const slotIndex = leader ? idolSlotConfig(leader.id).findIndex((_, index) => !playerState.idols.some((idol) => idol.inSlot && idol.slotIndex === index)) : -1;
     const effect = button.dataset.leaderIdolDirect as IdolEffect;
+    const slots = leader ? idolSlotConfig(leader.id) : [];
+    const needsBlue = effect === 'leaderUnique' || effect === 'mysticExileArrowhead' || effect === 'mysticExileRitual';
+    const slotIndex = slots.findIndex((slot, index) => (!needsBlue || slot.blue) && !playerState.idols.some((idol) => idol.inSlot && idol.slotIndex === index));
     if (slotIndex < 0) return;
     if (effect === 'leaderUnique' && leader?.id === 'explorer') { leaderIdolSnackDraft = { playerId, slotIndex, effect }; render(); return; }
     const idol = playerState.idols.find((candidate) => !candidate.inSlot);
