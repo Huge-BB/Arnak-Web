@@ -837,7 +837,8 @@ function leaderCardChoices(cardId: string): LeaderCardUiChoice[] {
 function leaderStartingCardPanel() {
   if (!leaderStartingCardId) return '';
   const options = leaderCardChoices(leaderStartingCardId);
-  return `<section class="pending-panel leader-card-panel"><span>✦</span><div>${options.map((option) => `<button class="pending-button" data-leader-card-choice="${encodeURIComponent(JSON.stringify({ cardId: leaderStartingCardId, choice: option.choice, snackId: option.snackId }))}" title="${option.title??option.choice}" ${option.disabled?'disabled':''}>${option.label}</button>`).join('') || '<span class="pending-unsupported">…</span>'}<button class="pending-button" data-leader-card-cancel>×</button></div></section>`;
+  const cardName=context.cards[leaderStartingCardId]?.name;
+  return `<section class="pending-panel leader-card-panel"><span>选择要执行的效果</span><div>${options.map((option) => {const payload=encodeURIComponent(JSON.stringify({cardId:leaderStartingCardId,choice:option.choice,snackId:option.snackId}));return option.snackId&&(cardName==='Hike'||cardName==='Cartography')?`<button class="pending-button explorer-snack-choice" data-leader-card-choice="${payload}" title="使用这枚零食" ${option.disabled?'disabled':''}><img src="${publicAsset(`/assets/leader-snack-${option.snackId}.png`)}" alt="${option.snackId} 零食"></button>`:`<button class="pending-button" data-leader-card-choice="${payload}" title="${option.title??option.choice}" ${option.disabled?'disabled':''}>${option.label}</button>`;}).join('') || '<span class="pending-unsupported">…</span>'}<button class="pending-button" data-leader-card-cancel>×</button></div></section>`;
 }
 const renderWithLeaderCardPanel = render;
 render = () => {
@@ -1741,7 +1742,9 @@ board = () => `<section class="map-board"><img src="${publicAsset(`/assets/board
     const anchor=workerAnchor(spot,slot.id),left=(anchor.x-spot.left)/siteWidth*100+50,top=(anchor.y-spot.top)/siteHeight*100+50;
     return `<i class="camp-space-blocker" style="--worker-left:${left}%;--worker-top:${top}%" title="该营地工位按玩家人数关闭"></i>`;
   }).join('');
-  return `<button class="map-hotspot ${status}" style="--site-x:${spot.left}%;--site-y:${spot.top}%;--site-w:${siteWidth}%;--site-h:${siteHeight}%" ${blocked ? 'disabled ' : ''}${ready ? 'data-site' : 'data-discover'}="${spot.id}" title="${blocked ? 'blocked camp' : spot.rewardCode ? 'camp' : `level ${spot.level}`}">${archaeologist}${blockers}${idols}</button>${tile}${guardian}`;
+  const explorerPending=state.pendingRewards[0]?.code;
+  const explorerTargetId=explorerPending==='leader:ACTIVATE_TENT_SITE'&&campSlots.length?campSlots[0]?.id:explorerPending==='leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL'&&!site.tileId&&site.faceUpIdolId?site.id:undefined;
+  return `<button class="map-hotspot ${status} ${explorerTargetId?'explorer-action-target':''}" style="--site-x:${spot.left}%;--site-y:${spot.top}%;--site-w:${siteWidth}%;--site-h:${siteHeight}%" ${blocked&&!explorerTargetId ? 'disabled ' : ''}${explorerTargetId?`data-explorer-pending-site="${explorerTargetId}"`:`${ready ? 'data-site' : 'data-discover'}="${spot.id}"`} title="${explorerTargetId?'选择此目标':blocked ? 'blocked camp' : spot.rewardCode ? 'camp' : `level ${spot.level}`}">${archaeologist}${blockers}${idols}</button>${tile}${guardian}`;
 }).join('')}${research()}</section>${supplyBoard()}`;
 render();
 
@@ -2187,6 +2190,18 @@ pending = () => {
   }).join('');
   return `<section class="pending-panel"><span>Choose assistant</span><div>${choices}</div></section>`;
 };
+const pendingBeforeExplorerBoardTarget = pending;
+pending = () => {
+  const code=state.pendingRewards[0]?.code;
+  if(code!=='leader:ACTIVATE_TENT_SITE'&&code!=='leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL')return pendingBeforeExplorerBoardTarget();
+  return `<section class="leader-action-hint explorer-action-hint">${code==='leader:ACTIVATE_TENT_SITE'?'请选择要激活的营地':'请选择要激活的正面神像'}</section>`;
+};
+app.addEventListener('click',(event)=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-explorer-pending-site]');
+  if(!button)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  choose({type:'site',siteId:button.dataset.explorerPendingSite!});
+},true);
 render();
 
 // Professor archive cards are public information. Mouse users get a transient
