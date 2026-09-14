@@ -58,6 +58,20 @@ test('Fear cannot be played and remains in hand', () => {
   assert.deepEqual(state.players.p1.playedCards, []);
 });
 
+test('Captain Hidden Fear cannot be played and its exile reward works through the shared exile route', () => {
+  const hiddenContext:EngineContext={cards:{
+    hidden:{id:'hidden',name:'Hidden Fear',type:'Starter',expansion:'Expedition Leaders'},
+    fear:{id:'fear',name:'Fear',type:'Fear',expansion:'Base Game'},
+  }};
+  const state=createGame(['p1']);state.phase='playing';state.currentPlayer='p1';state.players.p1.leader={id:'captain',data:{}};state.players.p1.hand=['hidden'];
+  assert.throws(()=>reduce(state,{type:'PLAY_CARD',playerId:'p1',cardId:'hidden'},hiddenContext),/Fear cards cannot be played/);
+  state.pendingRewards=[{playerId:'p1',sourceId:'research:test',code:'research:EXILE_OWN_CARD',payload:{type:'EXILE_OWN_CARD'}}];
+  const exiled=resolvePendingChoice(state,'p1',0,{type:'card',cardId:'hidden',zone:'hand'},hiddenContext);
+  assert.deepEqual(exiled.market.exiled,['hidden']);
+  assert.deepEqual(exiled.players.p1.playedCards,['fear']);
+  assert.equal(exiled.players.p1.resources.compass,1);
+});
+
   test('audited free card timing leaves the turn main action available', () => {
  const state=playableState('funding');state.players.p1.hand=['funding'];state.sites.site={id:'site',level:1,idolSlots:0};
  const timingContext:EngineContext={cards:{funding:{id:'funding',name:'Funding',type:'Starter',expansion:'Base Game'}},cardEffects:{funding:[{type:'GAIN_RESOURCE',resource:'coin',amount:1}]},cardActionTiming:{funding:'free'}};

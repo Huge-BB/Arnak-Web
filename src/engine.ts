@@ -289,7 +289,8 @@ function playCard(
   // Fear is a burden card, not a playable action. It can still be used as an
   // Artifact discard payment or removed by effects, but may never enter play
   // through the public PLAY_CARD command.
-  if (card.type === "Fear") throw new Error("Fear cards cannot be played");
+  if (card.type === "Fear" || (card.expansion === 'Expedition Leaders' && card.name === 'Hidden Fear'))
+    throw new Error("Fear cards cannot be played");
   const isMainAction = c.cardActionTiming?.[a.cardId] === 'main';
   if (isMainAction) assertMainActionAvailable(s, a.playerId);
   if (card.type === 'Artifact') {
