@@ -33,6 +33,13 @@ test('canonical pending route validates owner and resolves through public dispat
   assert.equal(next.players.p1.assistants[0].id,'a1');assert.equal(next.pendingRewards.length,0);
 });
 
+test('canonical action route lets Falconer flip a guardian boon to advance the eagle',()=>{
+  const s=game();s.players.p1.leader={id:'falconer',data:{eaglePosition:1,eagleMaxPosition:4}};s.players.p1.defeatedGuardians=['g1'];
+  const next=applyEngineCommand(s,{type:'action',action:{type:'LEADER_FALCONER_GUARDIAN_BOON',playerId:'p1',guardianId:'g1'}},context);
+  assert.equal(next.players.p1.leader!.data.eaglePosition,2);
+  assert.deepEqual(next.players.p1.usedGuardianBoons,['g1']);
+});
+
 test('public command API rejects internal resource and lifecycle reducer transitions',()=>{
  const state=game(),before=structuredClone(state);
  assert.throws(()=>applyEngineCommand(state,{type:'action',action:{type:'GAIN_RESOURCE',playerId:'p1',resource:'coin',amount:99}},context),/Internal reducer action/);

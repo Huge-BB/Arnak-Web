@@ -159,6 +159,7 @@ export type GameAction =
  | { type:'LEADER_USE_IDOL'; playerId:PlayerId; idolId:CardId; slotIndex:number; effect:'coinToJewel'|'arrowhead'|'tablets'|'coinCompass'|'draw'|'leaderUnique'|'mysticExileArrowhead'|'mysticExileRitual'; snackId?:ExplorerSnackId }
  | { type:'LEADER_CAPTAIN_SPECIALIST'; playerId:PlayerId; stackIndex:number }
  | { type:'LEADER_FALCONER_RETURN_EAGLE'; playerId:PlayerId; rewardPosition:number }
+ | { type:'LEADER_FALCONER_GUARDIAN_BOON'; playerId:PlayerId; guardianId:string }
  | { type:'LEADER_PROFESSOR_BUY_ARCHIVE'; playerId:PlayerId; cardId:CardId; suitcaseCompass?:number }
  | { type:'LEADER_EXPLORER_SPEND_SNACK'; playerId:PlayerId; snackId:ExplorerSnackId; siteId:string }
  | { type:'LEADER_MYSTIC_RITUAL'; playerId:PlayerId; fearCount:2|3|4 };

@@ -1322,10 +1322,17 @@ render = () => {
   if (!researchPayment) return;
   const player = state.players[state.currentPlayer];
   const selected = new Set(researchPayment.cardIndexes);
-  const cards = player.hand.map((id,index) => `<button class="card ${selected.has(index) ? 'selected-choice' : ''} ${researchPayment.discardCardIndex === index ? 'discard-choice' : ''}" data-payment-card-index="${index}" title="${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('');
+  const requiresDiscard=Number(researchPayment.cost.discardCard??0)>0;
+  const hasPrintedTravel=Boolean(researchPayment.cost.travel&&typeof researchPayment.cost.travel==='object');
+  const cards = player.hand.map((id,index) => {
+    const art=`<i style="${sprite(assets[`card:${id}:face`])}"></i>`;
+    if(!requiresDiscard)return `<button class="card ${selected.has(index)?'selected-choice':''}" data-payment-card-index="${index}" title="${context.cards[id]?.name??id}">${art}</button>`;
+    if(!hasPrintedTravel)return `<button class="card ${researchPayment!.discardCardIndex===index?'discard-choice selected-choice':''}" data-payment-discard-index="${index}" title="弃置 ${context.cards[id]?.name??id}">${art}</button>`;
+    return `<span class="payment-card-choice"><button class="card ${selected.has(index)?'selected-choice':''}" data-payment-card-index="${index}" title="用 ${context.cards[id]?.name??id} 支付交通">${art}</button><button class="payment-card-discard ${researchPayment!.discardCardIndex===index?'selected-choice':''}" data-payment-discard-index="${index}" title="将此牌作为弃牌费用">弃</button></span>`;
+  }).join('');
   const temporaryPool=state.actionWindow?.playerId===state.currentPlayer?state.actionWindow.temporaryTravel:{};
   const temporary=(researchPayment.action==='site'||researchPayment.action==='discover')?(['boot','car','boat','plane'] as const).flatMap(kind=>Array.from({length:temporaryPool[kind]??0},(_,index)=>`<button class="payment-temporary ${index<(researchPayment!.temporaryTravel?.[kind]??0)?'selected-choice':''}" data-payment-temporary="${kind}" title="临时${kind}（点击选择）">${paymentIconArtwork(kind,1)}</button>`)).join(''):'';
-  const discard = Number(researchPayment.cost.discardCard ?? 0) ? `<div class="payment-discard"><span>弃置手牌</span>${player.hand.map((id,index) => `<button class="card ${researchPayment.discardCardIndex === index ? 'selected-choice' : ''}" data-payment-discard-index="${index}" title="弃置 ${context.cards[id]?.name ?? id}"><i style="${sprite(assets[`card:${id}:face`])}"></i></button>`).join('')}</div>` : '';
+  const discard = requiresDiscard ? `<div class="payment-discard"><span>${hasPrintedTravel?'点击牌面支付交通；点击“弃”支付弃牌费用':'选择一张手牌弃置'}</span></div>` : '';
   const hasTravel = researchPayment.cost.travel && typeof researchPayment.cost.travel === 'object';
   const hiredPlanes = researchPayment.hiredPlanes ?? 0;
   const hirePlane = hasTravel ? `<button class="hire-plane ${hiredPlanes ? 'selected-choice' : ''}" data-hire-plane title="花费2金币租用1架飞机">${paymentIconArtwork('coin',2)}<span>→</span>${paymentIconArtwork('plane',1)}${hiredPlanes ? `<b>×${hiredPlanes}</b>` : ''}</button>` : '';
