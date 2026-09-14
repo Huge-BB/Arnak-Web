@@ -1212,7 +1212,7 @@ app.addEventListener('click', (event) => {
   if (!button || button.disabled) return;
   if (button.dataset.archiveCard) { pendingArchiveSwap.archiveCardId = button.dataset.archiveCard; render(); return; }
   if (button.dataset.marketArtifact) { pendingArchiveSwap.marketCardId = button.dataset.marketArtifact; render(); return; }
-  if (button.dataset.archiveConfirm && pendingArchiveSwap.archiveCardId && pendingArchiveSwap.marketCardId) {
+  if (button.dataset.archiveConfirm !== undefined && pendingArchiveSwap.archiveCardId && pendingArchiveSwap.marketCardId) {
     const { archiveCardId, marketCardId } = pendingArchiveSwap;
     pendingArchiveSwap = {};
     choose({ type: 'archive-swap', archiveCardId, marketCardId });
