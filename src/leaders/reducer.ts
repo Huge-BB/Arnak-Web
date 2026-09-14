@@ -23,7 +23,7 @@ function moveStartingCardToPlayArea(state:GameState,playerId:PlayerId,cardId:Car
 export function reduceExpeditionLeaderAction(state:GameState,action:ExpeditionLeaderAction,context:EngineContext):GameState{
  assertLeaderTurn(state,action.playerId);
  switch(action.type){
-  case'LEADER_STARTING_CARD_EFFECT':{const isCartographyMainAction=context.cards[action.cardId]?.name==='Cartography'&&action.choice==='activateFaceupIdol';if(isCartographyMainAction)assertMainActionAvailable(state,action.playerId);const next=moveStartingCardToPlayArea(state,action.playerId,action.cardId);const resolved=resolveLeaderStartingCard(next,action.playerId,action.cardId,action.choice,context,{snackId:action.snackId});if(isCartographyMainAction)consumeMainAction(resolved,action.playerId);return resolved;}
+  case'LEADER_STARTING_CARD_EFFECT':{const isDeferredMainAction=['activateSite','activateFaceupIdol'].includes(action.choice);if(isDeferredMainAction)assertMainActionAvailable(state,action.playerId);const next=moveStartingCardToPlayArea(state,action.playerId,action.cardId);return resolveLeaderStartingCard(next,action.playerId,action.cardId,action.choice,context,{snackId:action.snackId});}
   case'LEADER_USE_IDOL':{
     const timing=leaderIdolActionTiming(state.players[action.playerId].leader!.id,action.effect);
     if(timing==='main')assertMainActionAvailable(state,action.playerId);

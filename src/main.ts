@@ -838,7 +838,10 @@ function leaderStartingCardPanel() {
   if (!leaderStartingCardId) return '';
   const options = leaderCardChoices(leaderStartingCardId);
   const cardName=context.cards[leaderStartingCardId]?.name;
-  return `<section class="pending-panel leader-card-panel"><span>选择要执行的效果</span><div>${options.map((option) => {const payload=encodeURIComponent(JSON.stringify({cardId:leaderStartingCardId,choice:option.choice,snackId:option.snackId}));return option.snackId&&(cardName==='Hike'||cardName==='Cartography')?`<button class="pending-button explorer-snack-choice" data-leader-card-choice="${payload}" title="使用这枚零食" ${option.disabled?'disabled':''}><img src="${publicAsset(`/assets/leader-snack-${option.snackId}.png`)}" alt="${option.snackId} 零食"></button>`:`<button class="pending-button" data-leader-card-choice="${payload}" title="${option.title??option.choice}" ${option.disabled?'disabled':''}>${option.label}</button>`;}).join('') || '<span class="pending-unsupported">…</span>'}<button class="pending-button" data-leader-card-cancel>×</button></div></section>`;
+  const button=(option:LeaderCardUiChoice)=>{const payload=encodeURIComponent(JSON.stringify({cardId:leaderStartingCardId,choice:option.choice,snackId:option.snackId}));return option.snackId?`<button class="pending-button explorer-snack-choice" data-leader-card-choice="${payload}" title="使用这枚零食" ${option.disabled?'disabled':''}><img src="${publicAsset(`/assets/leader-snack-${option.snackId}.png`)}" alt="${option.snackId} 零食"></button>`:`<button class="pending-button" data-leader-card-choice="${payload}" title="${option.title??option.choice}" ${option.disabled?'disabled':''}>${option.label}</button>`;};
+  const explorerCard=cardName==='Hike'||cardName==='Cartography';
+  const body=explorerCard?`<div class="explorer-card-options"><section><small>上半部</small>${options.filter(option=>!option.snackId).map(button).join('')}</section><section><small>下半部 · 选择要支付的零食</small><div>${options.filter(option=>option.snackId).map(button).join('')}</div></section></div>`:options.map(button).join('');
+  return `<section class="pending-panel leader-card-panel"><span>选择要执行的效果</span><div>${body||'<span class="pending-unsupported">…</span>'}<button class="pending-button" data-leader-card-cancel>×</button></div></section>`;
 }
 const renderWithLeaderCardPanel = render;
 render = () => {
@@ -2442,7 +2445,7 @@ function marketChoiceHeading(queued: GameState['pendingRewards'][number] | undef
 function makePendingChoicesReadable() {
   const queued = state.pendingRewards[0];
   app.querySelectorAll<HTMLButtonElement>('.pending-panel button').forEach((button) => {
-    if (button.classList.contains('card') || button.classList.contains('pending-assistant-choice')) return;
+    if (button.classList.contains('card') || button.classList.contains('pending-assistant-choice') || button.classList.contains('explorer-snack-choice')) return;
     const label = choiceLabel(button, queued);
     if (label && (isGlyphOnly(button.textContent ?? '') || button.dataset.leaderCardChoice !== undefined)) {
       button.innerHTML = label;

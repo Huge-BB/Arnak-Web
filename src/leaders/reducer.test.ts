@@ -41,10 +41,10 @@ test('every Mystic starting card can self-exile to queue a ritual choice',()=>{
   }
 });
 
-test('Explorer Cartography snack branch consumes the main action',()=>{
+test('Explorer Cartography defers its main action until a board target is chosen',()=>{
   let s=stateFor('explorer'); const id='l:Cartography'; s.players.p1.hand=[id];
   s=reduceExpeditionLeaderAction(s,{type:'LEADER_STARTING_CARD_EFFECT',playerId:'p1',cardId:id,choice:'activateFaceupIdol',snackId:'free'},context);
-  assert.equal(s.players.p1.mainActionUsed,true); assert.equal(s.pendingRewards[0].code,'leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL');
+  assert.equal(s.players.p1.mainActionUsed,undefined); assert.equal(s.pendingRewards[0].code,'leader:ACTIVATE_FACEUP_UNDISCOVERED_IDOL');
 });
 
 test('Mystic ritual idol defers its main action until the ritual choice resolves',()=>{
