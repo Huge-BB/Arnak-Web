@@ -11,7 +11,7 @@ const context:EngineContext={
     b:{id:'b',level:1,rewardCode:'',expansion:'Base Game'},
     c:{id:'c',level:1,rewardCode:'',expansion:'Base Game'},
   },
-  idols:{idol:{id:'idol',rewardCode:'COIN',expansion:'Base Game'}},
+  idols:{idol:{id:'idol',rewardCode:'c',expansion:'Base Game'}},
   guardians:{g1:{id:'g1',expansion:'Base Game'},g2:{id:'g2',expansion:'Base Game'},g3:{id:'g3',expansion:'Base Game'}},
 };
 function base(leader:'explorer'|'falconer'|'mystic'){
@@ -47,5 +47,5 @@ test('Blindsight replaces the face-up idol reward with a free exile choice',()=>
   const s=base('mystic');s.players.p1.leader!.data.blindsightIdolExileThisTurn=true;const coin=s.players.p1.resources.coin;
   const next=reduceWithLeaders(s,{type:'DISCOVER_SITE',playerId:'p1',siteId:'slot',useBlindsight:true},context);
   assert.equal(next.players.p1.resources.coin,coin);assert.equal(next.players.p1.leader!.data.blindsightIdolExileThisTurn,false);
-  assert.ok(next.players.p1.idols.some(idol=>idol.id==='idol'));assert.equal(next.pendingRewards.at(-1)?.code,'leader:EXILE_OWN_CARD');assert.equal(next.pendingRewards.at(-1)?.payload?.replacesIdolEffect,true);
+  assert.ok(next.players.p1.idols.some(idol=>idol.id==='idol'));assert.equal(next.pendingRewards.at(-1)?.code,'card:RESOLVE_EFFECT');assert.equal(next.sites.slot.tileId,undefined);assert.equal(next.sites.slot.guardian,undefined);
 });

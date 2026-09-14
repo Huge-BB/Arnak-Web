@@ -3,6 +3,7 @@ import { assertMainActionAvailable, consumeMainAction } from './action-economy.t
 import { activateOwnedAssistant } from "./assistant-actions.ts";
 import { assistantEffectFor } from './assistant-effect-data.ts';
 import { prepareBaseGameSetup } from "./cards.ts";
+import { revealDiscoveredSite } from './discovery-resolution.ts';
 import { applyCardEffects, getCardEffects } from "./effects.ts";
 import { beginForcedSiteAction } from './action-window.ts';
 import {
@@ -394,17 +395,14 @@ function discoverSite(
   const pendingBeforeIdol = s.pendingRewards.length;
   takeIdol(s, a.playerId, true, c);
   if (site.level === 2) takeIdol(s, a.playerId, false, c);
-  site.tileId = deck.shift()!;
-  site.guardian = s.discovery.guardianDeck.shift()!;
-  // Choice-based idol rewards must finish before the newly discovered site's
-  // effect.  Attach the site activation to the final idol prompt instead of
-  // allowing an immediate draw (or other site effect) to jump the queue.
+  // A choice-based idol reward must finish before either the site or guardian
+  // is revealed. The final idol prompt resumes discovery atomically.
   const idolPending = s.pendingRewards.slice(pendingBeforeIdol);
   if (idolPending.length) {
     const last = idolPending.at(-1)!;
     last.payload = { ...(last.payload ?? {}), afterDiscoverySiteId: a.siteId };
   } else {
-    resolveSite(s, a.playerId, a.siteId, c);
+    revealDiscoveredSite(s,a.playerId,a.siteId,c);
   }
   consumeSiteActionDiscount(s,a.playerId);
 }

@@ -60,8 +60,8 @@ test('level II discovery costs 6 compasses and takes one face-up plus one face-d
     { id: 'idolCoin', faceUp: false },
   ]);
   assert.deepEqual(next.pendingRewards, [{ playerId: 'p1', sourceId: 'idolChoice', code: 'card:RESOLVE_EFFECT', payload: { type: 'CARD_EFFECT', sourceCardId: 'idolChoice', effect: { type: 'EXILE_OWN_CARD' }, afterDiscoverySiteId: 'slot' } }]);
-  assert.equal(next.sites.slot.tileId, 'level2Tile');
-  assert.equal(next.sites.slot.guardian, 'guardian1');
+  assert.equal(next.sites.slot.tileId, undefined);
+  assert.equal(next.sites.slot.guardian, undefined);
 });
 
 test('choice idol fully resolves before a discovered site draws a card', () => {
@@ -90,6 +90,8 @@ test('choice idol fully resolves before a discovered site draws a card', () => {
   assert.deepEqual(resolved.players.p1.hand, ['drawn']);
   assert.deepEqual(resolved.players.p1.deck, []);
   assert.deepEqual(resolved.market.exiled, ['old']);
+  assert.equal(resolved.sites.slot.tileId, 'level1Draw');
+  assert.equal(resolved.sites.slot.guardian, 'guardian1');
 });
 
 test('failed discovery is atomic when compass payment is insufficient', () => {
